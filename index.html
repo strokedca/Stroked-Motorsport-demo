@@ -637,4 +637,587 @@ updateProvinceSummary();
 render();
 if(v47RequestedEvent&&state.events.some(e=>e.id===v47RequestedEvent))setTimeout(()=>openEvent(v47RequestedEvent),100);
 </script>
+  
+<!-- STROKED V5 LIVE CONNECTION -->
+<style>
+@media(max-width:650px){
+.more-options{
+left:0!important;
+right:auto!important;
+width:min(310px,calc(100vw - 30px))!important
+}}
+#sv5Open{
+position:fixed;right:12px;bottom:14px;
+z-index:9000;background:#bf3c32;color:white;
+border:0;border-radius:9px;padding:13px 16px;
+font-weight:700;box-shadow:0 3px 15px #0009
+}
+#sv5Panel[hidden],#sv5Panel [hidden]{
+display:none!important
+}
+#sv5Panel{
+position:fixed;inset:0;overflow-y:auto;
+z-index:9001;background:#111b28;color:#f7f8fa;
+padding:18px;font:16px/1.45 system-ui,Arial,sans-serif
+}
+#sv5Panel *{box-sizing:border-box}
+#sv5Panel .sv5Inner{max-width:780px;margin:auto}
+#sv5Panel input{
+display:block;width:100%;margin:5px 0 14px;
+padding:12px;background:white;color:#151515;
+border:1px solid #8191a1;border-radius:7px
+}
+#sv5Panel button{
+background:#c54235;color:white;border:0;
+border-radius:7px;padding:11px 15px;
+margin:4px 6px 7px 0;font-weight:700
+}
+#sv5Panel button.secondary{background:#45566c}
+#sv5Panel .sv5Card{
+border:1px solid #566579;background:#202f41;
+border-radius:10px;padding:15px;margin:12px 0;
+overflow-wrap:anywhere
+}
+#sv5Panel .sv5Card h3{margin:0 0 8px}
+#sv5Panel #sv5Message{
+min-height:24px;color:#c9e5ff
+}
+</style>
+
+<button type="button" id="sv5Open">
+Account / Approvals
+</button>
+
+<section id="sv5Panel" hidden
+aria-label="Stroked event accounts and approvals">
+<div class="sv5Inner">
+
+<button type="button" class="secondary" id="sv5Close">
+Close
+</button>
+
+<h2>Stroked Motorsports Events</h2>
+<p>Organizer accounts, event submissions and administrator approval</p>
+
+<p id="sv5Message" role="status">
+Connecting to events database...
+</p>
+<p id="sv5Identity">Not signed in</p>
+
+<form id="sv5Auth">
+<label>Email address
+<input type="email" name="email"
+autocomplete="username" required>
+</label>
+
+<label>Password
+<input type="password" name="password"
+autocomplete="current-password"
+minlength="8" required>
+</label>
+
+<button type="submit" data-action="login">
+Sign in
+</button>
+
+<button type="submit" data-action="signup"
+class="secondary">
+Create organizer account
+</button>
+</form>
+
+<div id="sv5SignedIn" hidden>
+<button type="button" id="sv5Post">
+Post an event
+</button>
+<button type="button" id="sv5Refresh"
+class="secondary">
+Refresh
+</button>
+<button type="button" id="sv5Logout"
+class="secondary">
+Sign out
+</button>
+
+<h3>My submissions</h3>
+<div id="sv5Mine"></div>
+</div>
+
+<section id="sv5Admin" hidden>
+<h2>Private administrator approval dashboard</h2>
+<div id="sv5Queue"></div>
+</section>
+
+</div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+(()=>{
+'use strict';
+
+const $v=id=>document.getElementById(id);
+const notice=t=>$v('sv5Message').textContent=t;
+const err=e=>String(e?.message||e||'Unknown error');
+
+let user=null,admin=false;
+
+$v('sv5Open').onclick=()=>{
+$v('sv5Panel').hidden=false
+};
+
+$v('sv5Close').onclick=()=>{
+$v('sv5Panel').hidden=true
+};
+
+if(!window.supabase?.createClient){
+notice('Unable to load Supabase. Check the connection.');
+return;
+}
+
+const db=window.supabase.createClient(
+'https://aodywiwkhtxwlscpqnda.supabase.co',
+'sb_publishable_jJH7MJkeTxWDGV3RSc0sTg_MvdqjM_c',
+{
+auth:{
+persistSession:true,
+autoRefreshToken:true,
+detectSessionInUrl:false
+}
+}
+);
+
+const node=(tag,value)=>{
+const n=document.createElement(tag);
+n.textContent=String(value??'');
+return n
+};
+
+function card(row,reviewable){
+const p=row.payload||{};
+const c=document.createElement('div');
+c.className='sv5Card';
+
+c.append(
+node('h3',p.name||'Unnamed event'),
+node('p',[p.club,p.date,p.city,p.province]
+.filter(Boolean).join(' | ')),
+node('p','Status: '+(row.status||'Approved')+
+(row.review_note?' | '+row.review_note:'')),
+node('p',[
+p.startLocation,
+p.ksu?'KSU '+p.ksu:'',
+p.details
+].filter(Boolean).join(' | '))
+);
+
+if(reviewable&&row.status==='pending'){
+const yes=node('button','Approve and publish');
+const no=node('button','Reject');
+
+yes.type=no.type='button';
+no.className='secondary';
+
+yes.onclick=()=>review(row.id,'approved');
+no.onclick=()=>review(row.id,'rejected');
+
+c.append(yes,no);
+}
+
+return c;
+}
+
+async function loadPublic(){
+const {data,error}=await db.rpc(
+'stroked_v5_public_events'
+);
+
+if(error)throw error;
+
+state.events=state.events.filter(
+e=>!e.strokedLive
+);
+
+for(const row of data||[]){
+const p=row.payload||{};
+
+state.events.push(normalize({
+id:'live-'+row.id,
+name:p.name||'Unnamed event',
+club:p.club||'Organizer',
+categories:Array.isArray(p.categories)
+?p.categories:['Motorcycles'],
+province:p.province||'PEI',
+city:p.city||'',
+date:p.date||'',
+time:p.time||'',
+rain:p.rain||'',
+startLocation:p.startLocation||'',
+endLocation:p.endLocation||'',
+registration:p.registration||'',
+ksu:p.ksu||'',
+organizerContact:p.organizerContact||'',
+stops:p.stops||'',
+food:p.food||'',
+status:p.status||'Scheduled',
+details:'Approved organizer submission. '+
+(p.details||''),
+sponsors:[],
+rsvps:[],
+changes:[],
+upgrades:[],
+strokedLive:true
+}));
+}
+
+render();
+}
+
+async function review(id,decision){
+if(!admin||!confirm(
+decision==='approved'
+?'Approve and publish this event?'
+:'Reject this event?'
+))return;
+
+const note=decision==='rejected'
+?(prompt('Reason (optional):')||''):'';
+
+try{
+const {data,error}=await db.rpc(
+'stroked_v5_review',{
+p_id:id,
+p_decision:decision,
+p_note:note
+}
+);
+
+if(error)throw error;
+if(!data)throw Error('This event was already reviewed.');
+
+await loadPublic();
+await loadAccount();
+notice('Event '+decision+'.');
+
+}catch(e){
+notice('Approval error: '+err(e));
+}
+}
+
+async function loadAccount(){
+if(!user)return;
+
+const mine=$v('sv5Mine');
+mine.replaceChildren();
+
+const result=await db.rpc(
+'stroked_v5_my_events'
+);
+
+if(result.error){
+mine.textContent=err(result.error);
+}else if(!result.data?.length){
+mine.textContent='No submissions yet.';
+}else{
+result.data.forEach(
+x=>mine.append(card(x,false))
+);
+}
+
+const check=await db.rpc(
+'stroked_v5_is_admin'
+);
+
+admin=!check.error&&check.data===true;
+$v('sv5Admin').hidden=!admin;
+
+if(admin){
+const q=$v('sv5Queue');
+q.replaceChildren();
+
+const result=await db.rpc(
+'stroked_v5_admin_events'
+);
+
+if(result.error){
+q.textContent=err(result.error);
+}else if(!result.data?.length){
+q.textContent='No events waiting.';
+}else{
+result.data.forEach(
+x=>q.append(card(x,true))
+);
+}
+}
+}
+
+async function session(){
+const {data,error}=await db.auth.getUser();
+
+user=error?null:data.user;
+
+$v('sv5Auth').hidden=!!user;
+$v('sv5SignedIn').hidden=!user;
+$v('sv5Admin').hidden=true;
+
+$v('sv5Identity').textContent=user
+?'Signed in: '+user.email
+:'Not signed in';
+
+if(user){
+await loadAccount();
+}else{
+admin=false;
+}
+}
+
+$v('sv5Auth').addEventListener(
+'submit',async e=>{
+e.preventDefault();
+
+const f=e.currentTarget;
+const fd=new FormData(f);
+
+const email=String(
+fd.get('email')||''
+).trim();
+
+const password=String(
+fd.get('password')||''
+);
+
+const signup=e.submitter?.dataset.action==='signup';
+
+try{
+notice('Checking account...');
+
+const result=signup
+?await db.auth.signUp({email,password})
+:await db.auth.signInWithPassword({email,password});
+
+if(result.error)throw result.error;
+
+if(signup&&!result.data.session){
+notice('Check your email for the confirmation link, then sign in.');
+}else{
+await session();
+notice('Signed in.');
+}
+
+f.elements.namedItem('password').value='';
+
+}catch(e){
+notice('Sign-in error: '+err(e));
+}
+});
+
+$v('sv5Logout').onclick=async()=>{
+await db.auth.signOut();
+await session();
+notice('Signed out.');
+};
+
+$v('sv5Refresh').onclick=async()=>{
+try{
+await loadPublic();
+await loadAccount();
+notice('Updated.');
+}catch(e){
+notice('Refresh error: '+err(e));
+}
+};
+
+$v('sv5Post').onclick=()=>{
+$v('sv5Panel').hidden=true;
+tab('add');
+};
+
+// Connect existing event form to Supabase.
+// New submissions require administrator approval.
+
+$v('eventForm').addEventListener(
+'submit',async e=>{
+
+if(editingEventId!==null)return;
+
+e.preventDefault();
+e.stopImmediatePropagation();
+
+if(!user){
+alert('Sign in through Account / Approvals first.');
+$v('sv5Panel').hidden=false;
+return;
+}
+
+const fd=new FormData(e.currentTarget);
+
+const get=(k,max=700)=>
+String(fd.get(k)||'').trim().slice(0,max);
+
+const payload={
+name:get('name',90),
+club:get('club',80),
+categories:fd.getAll('categories').map(String),
+province:get('province',50),
+city:get('city',70),
+date:get('date',10),
+time:get('time',5),
+rain:get('rain',10),
+startLocation:get('startLocation',180),
+endLocation:get('endLocation',180),
+registration:get('registration',5),
+ksu:get('ksu',5),
+organizerContact:get('organizerContact',220),
+stops:get('stops',700),
+food:get('food',400),
+status:get('status',30),
+details:get('details',600)
+};
+
+if(!payload.categories.length){
+alert('Choose at least one event category.');
+return;
+}
+
+const b=$v('eventSubmitButton');
+b.disabled=true;
+
+try{
+const {error}=await db.rpc(
+'stroked_v5_submit',{
+p_payload:payload
+}
+);
+
+if(error)throw error;
+
+resetEventForm();
+
+alert('Event submitted. It will appear publicly only after administrator approval.');
+
+$v('sv5Panel').hidden=false;
+
+await loadAccount();
+
+notice('Submission received — pending approval.');
+
+}catch(e){
+alert('Submission failed: '+err(e));
+}finally{
+b.disabled=false;
+}
+
+},true);
+
+// Keep live events separate from browser-only demo data.
+
+const oldSave=save;
+
+save=function(){
+const live=state.events.filter(
+e=>e.strokedLive
+);
+
+state.events=state.events.filter(
+e=>!e.strokedLive
+);
+
+try{
+oldSave();
+}finally{
+state.events.push(...live);
+}
+};
+
+// Hide live events from local demo management controls.
+
+const oldManage=renderManage;
+
+renderManage=function(){
+const live=state.events.filter(
+e=>e.strokedLive
+);
+
+state.events=state.events.filter(
+e=>!e.strokedLive
+);
+
+try{
+oldManage();
+}finally{
+state.events.push(...live);
+}
+};
+
+// Online RSVP for live events is not active yet.
+
+$v('rsvpForm').addEventListener(
+'submit',e=>{
+
+if(state.events.some(
+x=>x.id===selectedId&&x.strokedLive
+)){
+e.preventDefault();
+e.stopImmediatePropagation();
+
+alert('Online RSVP is not active for live events yet. Contact the organizer directly.');
+}
+
+},true);
+
+// Identify approved live events on the calendar.
+
+const oldRender=render;
+
+render=function(){
+oldRender();
+
+document.querySelectorAll(
+'#cards article.card'
+).forEach(c=>{
+
+const b=c.querySelector('button[onclick]');
+
+if(b?.getAttribute('onclick')?.includes(
+"openEvent('live-"
+)){
+b.textContent='View approved event';
+
+const tag=node(
+'small',
+'Approved organizer event · Live listing'
+);
+
+tag.style.color='#b5e4c3';
+c.insertBefore(tag,b);
+}
+
+});
+};
+
+db.auth.onAuthStateChange(()=>{
+setTimeout(()=>{
+session().catch(
+e=>notice(err(e))
+);
+},0);
+});
+
+loadPublic()
+.then(()=>{
+notice('Live approved events connected.');
+})
+.catch(e=>{
+notice('Calendar connection error: '+err(e));
+});
+
+session().catch(e=>{
+notice('Account error: '+err(e));
+});
+
+})();
+</script>
+<!-- END STROKED V5 -->
+
 </body></html>
