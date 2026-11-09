@@ -1220,4 +1220,136 @@ notice('Account error: '+err(e));
 </script>
 <!-- END STROKED V5 -->
 
+<!-- STROKED V5.1 - EVENT APPROVAL FIX -->
+<script>
+(function () {
+  "use strict";
+
+  if (window.strokedApprovalFix) return;
+  window.strokedApprovalFix = true;
+
+  const form = document.getElementById("eventForm");
+
+  if (!form) {
+    console.error("Stroked: eventForm not found");
+    return;
+  }
+
+  // Intercept the original form before its demo
+  // submission handler can publish locally.
+  document.addEventListener("submit", async function (e) {
+    if (e.target !== form) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    if (window.strokedSubmitting) return;
+
+    const sb = window.supabase;
+
+    if (!sb || !sb.createClient) {
+      alert("Event service unavailable. Nothing was submitted.");
+      return;
+    }
+
+    const client = sb.createClient(
+      "https://aodywiwkhtxwlscpqnda.supabase.co",
+      "sb_publishable_jJH7MJkeTxWDGV3RSc0sTg_MvdqjM_c"
+    );
+
+    const { data: auth, error: authError } =
+      await client.auth.getUser();
+
+    if (authError || !auth?.user) {
+      alert(
+        "Please sign in using Account / Approvals before posting an event."
+      );
+      document.getElementById("sv5Open")?.click();
+      return;
+    }
+
+    const fd = new FormData(form);
+
+    const field = (name, max = 700) =>
+      String(fd.get(name) || "").trim().slice(0, max);
+
+    const payload = {
+      name: field("name", 90),
+      club: field("club", 80),
+      categories: fd.getAll("categories").map(String),
+      province: field("province", 50),
+      city: field("city", 70),
+      date: field("date", 10),
+      time: field("time", 5),
+      rain: field("rain", 10),
+      startLocation: field("startLocation", 180),
+      endLocation: field("endLocation", 180),
+      registration: field("registration", 5),
+      ksu: field("ksu", 5),
+      organizerContact: field("organizerContact", 220),
+      stops: field("stops", 700),
+      food: field("food", 400),
+      status: field("status", 30),
+      details: field("details", 600)
+    };
+
+    if (
+      !payload.name ||
+      !payload.club ||
+      !payload.province ||
+      !payload.city ||
+      !payload.date ||
+      !payload.categories.length
+    ) {
+      alert(
+        "Please complete all required event information."
+      );
+      return;
+    }
+
+    window.strokedSubmitting = true;
+
+    try {
+      const { error } = await client.rpc(
+        "stroked_v5_submit",
+        { p_payload: payload }
+      );
+
+      if (error) throw error;
+
+      alert(
+        "Event submitted successfully!\n\n" +
+        "Status: PENDING APPROVAL\n\n" +
+        "Your event will not appear publicly until approved."
+      );
+
+      form.reset();
+
+      document.getElementById("sv5Open")?.click();
+      document.getElementById("sv5Refresh")?.click();
+
+    } catch (error) {
+      alert(
+        "Submission failed: " +
+        String(error?.message || error)
+      );
+    } finally {
+      window.strokedSubmitting = false;
+    }
+
+  }, true);
+
+  const submitButton =
+    document.getElementById("eventSubmitButton");
+
+  if (submitButton) {
+    submitButton.textContent =
+      "Submit Event for Approval";
+  }
+
+  console.log("Stroked V5.1 approval fix installed");
+})();
+</script>
+<!-- END STROKED V5.1 -->
+
 </body></html>
