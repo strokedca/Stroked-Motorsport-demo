@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Stroked Motorsports Events — Version 5.3 — Live Approval Preview</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Stroked Motorsports Events — Version 5.4 — Public Events & RSVP</title><style>
 :root{font-family:system-ui,-apple-system,Arial,sans-serif;color-scheme:dark;background:#10151d;color:#f3f5f8}*{box-sizing:border-box}body{margin:0}header{background:#191f2a;border-bottom:3px solid #d13d35;padding:22px 5%}h1{margin:0;font-size:clamp(24px,5vw,38px);letter-spacing:.7px}header .brand-logo{display:block;width:min(100%,520px);height:auto;margin:6px 0 12px;object-fit:contain}header p{color:#bdc5d2;margin:7px 0 0}.tag{display:inline-block;color:#fff;background:#96352e;border-radius:30px;padding:5px 11px;font-size:12px;margin-bottom:9px}main{max-width:1120px;margin:auto;padding:24px 5%}nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}button,.btn{border:0;border-radius:8px;background:#d2473d;color:white;padding:11px 15px;font-weight:700;cursor:pointer;font:inherit}button.secondary{background:#313b4a}button.active{outline:2px solid white}input,select,textarea{width:100%;border:1px solid #586474;background:#1c2531;color:#fff;padding:12px;border-radius:7px;font:inherit}label{display:block;margin:12px 0 5px;color:#d5dce6;font-size:14px}.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:16px;margin-top:18px}.card,.panel{background:#1d2632;border:1px solid #3b4757;border-radius:12px;padding:18px}.card h3{margin:9px 0}.muted{color:#aab7c7}.category{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:#ffaca6}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hidden{display:none!important}.notice{border-left:4px solid #f2b74b;background:#29291f;padding:10px 14px;margin:12px 0;border-radius:5px}small{color:#aeb8c7}footer{color:#aab7c7;padding:30px 5%;text-align:center}a{color:#ffc0b8}dialog{background:#1d2632;color:#fff;border:1px solid #647183;border-radius:12px;max-width:570px;width:95%;max-height:90vh;overflow:auto}dialog::backdrop{background:#000b}.line{display:flex;justify-content:space-between;gap:10px;align-items:center}.line button{padding:8px}.stats{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0}.stats strong{font-size:24px;display:block}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{background:#303b4c;border-radius:999px;padding:4px 9px;font-size:12px}.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}.check{display:flex;gap:9px;align-items:center;margin:0;border:1px solid #586474;padding:11px;border-radius:8px;background:#17202a}.check input{width:auto;accent-color:#d2473d}.featured{border-color:#d46a58;background:linear-gradient(135deg,#312129,#1d2632)}.sponsor-mark{display:grid;place-items:center;width:72px;height:72px;background:#303b4c;color:#fff;border:2px solid #d2473d;border-radius:12px;font-size:25px;font-weight:900;letter-spacing:1px;flex-shrink:0}.banner{display:flex;gap:15px;align-items:center;margin:18px 0}.actions{display:flex;gap:8px;flex-wrap:wrap}.subtle{font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:#d9a99e}.split{display:flex;align-items:start;gap:14px}.grow{flex:1;min-width:0}fieldset{border:1px solid #596475;border-radius:10px;padding:12px;margin:15px 0}legend{padding:0 6px}.intro{margin-bottom:10px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #ffac7c;outline-offset:2px}@media(max-width:650px){.controls,.grid,.checks{grid-template-columns:1fr}main{padding:18px 4%}nav button{flex:1 1 42%}.banner{align-items:flex-start}}
 .calendar-panel{margin-top:18px}.calendar-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.calendar-toolbar h3{flex:1;min-width:120px;margin:4px 0;font-size:20px}.calendar-toolbar button{font-size:17px}.calendar-view-switch{display:flex;gap:8px;margin:16px 0}.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.weekday{text-align:center;font-size:12px;color:#bac6d5;padding:7px 0}.day-cell{min-width:0;min-height:88px;border:1px solid #455166;background:#18212c;border-radius:8px;padding:6px;text-align:left;color:#fff;font-weight:normal;cursor:pointer}.day-cell.outside{opacity:.4}.day-cell.selected{border:2px solid #f07868}.day-cell.today{box-shadow:inset 0 0 0 1px #f5b86c}.day-number{font-size:13px;font-weight:800;display:block}.event-dot{display:block;background:#9a3734;border-radius:4px;margin-top:4px;padding:3px 4px;font-size:10px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.week-list{display:grid;gap:8px}.week-row{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid #455166;border-radius:9px}.week-row>strong{min-width:85px}.cal-event{display:block;text-align:left;width:100%;margin:4px 0;padding:8px 10px;background:#65332f;font-size:13px}.calendar-empty{color:#bac6d5;font-size:12px;margin-top:5px}@media(max-width:650px){.day-cell{min-height:70px;padding:4px}.event-dot{font-size:0;height:7px;width:7px;border-radius:50%;padding:0;display:inline-block;margin:3px 2px 0 0}.calendar-grid{gap:3px}.calendar-toolbar h3{font-size:17px}} 
 [hidden]{display:none!important}
@@ -114,8 +114,19 @@
 .clothing-launch-logo{display:block;width:min(100%,560px);height:auto;object-fit:contain;margin:8px auto 16px;background:#000;border-radius:10px}
 .clothing-coming-soon{font-weight:900;font-size:clamp(32px,6vw,56px);letter-spacing:.075em;line-height:1.15;color:#fff;margin:16px 0 12px}
 .clothing-launch-subtitle{font-size:clamp(17px,2.5vw,22px);margin:0 0 12px}
+</style><style>
+.sv54-filter-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 6px;padding:14px;border:1px solid #425267;border-radius:12px;background:#1b2634}
+.sv54-note{font-size:13px;margin:8px 0 16px}
+.sv54-flag{display:inline-block;padding:4px 9px;background:#1f5439;color:#e2ffed;border-radius:30px;font-size:12px;font-weight:700}
+.sv54-detail{border-top:1px solid #506074;margin-top:12px;padding-top:12px}
+.sv54-detail p{line-height:1.5}
+.sv54-detail a{overflow-wrap:anywhere}
+.sv54-counts{padding:10px;background:#20364a;border-radius:9px;margin:12px 0;font-size:14px}
+.sv54-status{font-size:14px;min-height:22px;margin:8px 0;color:#d4e8fb}
+.sv54-live-rsvp{color:#c2f5d6}
+@media(max-width:650px){.sv54-filter-row{grid-template-columns:1fr}#detailsDialog{width:97%;max-height:95dvh;padding:14px}#eventExtraActions button{flex:1 1 45%}}
 </style></head><body>
-<header><span class="tag">VERSION 5.3 • LIVE EVENT APPROVAL • OTHER FEATURES IN DEMO</span><img class="brand-logo" src="events-logo-1.png" alt="Stroked Motorsports Events official red white and black logo"><h1 class="hidden">Stroked Motorsports Events</h1><p>Find the ride. Share the event. Plan the turnout.</p></header>
+<header><span class="tag">VERSION 5.4 • LIVE APPROVED EVENTS • ORGANIZER RSVP</span><img class="brand-logo" src="events-logo-1.png" alt="Stroked Motorsports Events official red white and black logo"><h1 class="hidden">Stroked Motorsports Events</h1><p>Find the ride. Share the event. Plan the turnout.</p></header>
 <main><nav class="main-nav" aria-label="Main navigation">
   <button id="tabBrowse" type="button" onclick="tab('browse')">Explore events</button>
   <button id="tabAdd" type="button" class="secondary" onclick="tab('add')">Post an event</button>
@@ -131,12 +142,13 @@
 </nav>
 
 <section id="browse"><div class="notice compact-demo-note"><strong>Website preview:</strong> Approved organizer submissions are live; sample events and advertisements are demonstrations. Verify event details with the organizer.
-<details><summary>About this preview and its limitations</summary><p>Prototype only: no live notifications, AI, payments, accounts or cross-device publishing. Original sample events are fictional; sourced real-world event previews are clearly labeled and have NOT been verified by organizers. Atlantic Riders for Kids (ARK) is used as an <strong>illustrative advertiser</strong>, not a claim of a paid sponsorship. Event and business changes stay on your current browser/device; nothing is submitted to other users. Sponsor application previews are local only; do not enter real contact details.</p><p><strong>Real-world event preview:</strong> 12 publicly announced event sessions have been added from association and organizer calendars, alongside the original fictional examples. These are independent demonstration listings, not organizer submissions or endorsements. Dates and details may change. Open an event to follow its original source before travelling.</p></details></div>
+<details><summary>About this preview and its limitations</summary><p>Live organizer accounts, approved event listings and signed-in RSVPs are supported. Notifications, AI and payments remain demonstrations. Original sample events are fictional; sourced real-world event previews are clearly labeled and have NOT been verified by organizers. Atlantic Riders for Kids (ARK) is used as an <strong>illustrative advertiser</strong>, not a claim of a paid sponsorship. Only approved organizer events and their RSVP totals are shared between devices. Other demo event and business changes stay in this browser. Sponsor application previews are local only; do not enter real contact details.</p><p><strong>Real-world event preview:</strong> 12 publicly announced event sessions have been added from association and organizer calendars, alongside the original fictional examples. These are independent demonstration listings, not organizer submissions or endorsements. Dates and details may change. Open an event to follow its original source before travelling.</p></details></div>
 
 <h2>Event calendar</h2><div class="controls"><div><label for="filterCat">Event category</label><select id="filterCat" onchange="render()"><option value="">All motorsports</option><option>Motorcycles</option><option>ATVs / Off-road</option><option>Classic cars</option><option>Snowmobiles</option><option>Motocross / Dirt track</option></select></div><div><label for="filterYear">Event year</label><select id="filterYear" onchange="changeEventYear()"><option value="">All years</option></select></div><div><label id="provinceFilterLabel">Province / territory</label><details id="provincePicker" class="province-picker"><summary id="provinceSummary" aria-labelledby="provinceFilterLabel provinceSummary">All Canada — select regions</summary><div class="province-options"><p class="province-help">Choose any number of provinces or territories.</p><button type="button" class="secondary" onclick="showAllCanada()">All Canada (clear selection)</button><div class="province-checkboxes"><label class="check"><input type="checkbox" name="filterProvince" value="PEI" onchange="changeProvinceSelection()"><span>PEI</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Nova Scotia" onchange="changeProvinceSelection()"><span>Nova Scotia</span></label><label class="check"><input type="checkbox" name="filterProvince" value="New Brunswick" onchange="changeProvinceSelection()"><span>New Brunswick</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Newfoundland and Labrador" onchange="changeProvinceSelection()"><span>Newfoundland and Labrador</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Quebec" onchange="changeProvinceSelection()"><span>Quebec</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Ontario" onchange="changeProvinceSelection()"><span>Ontario</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Manitoba" onchange="changeProvinceSelection()"><span>Manitoba</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Saskatchewan" onchange="changeProvinceSelection()"><span>Saskatchewan</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Alberta" onchange="changeProvinceSelection()"><span>Alberta</span></label><label class="check"><input type="checkbox" name="filterProvince" value="British Columbia" onchange="changeProvinceSelection()"><span>British Columbia</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Yukon" onchange="changeProvinceSelection()"><span>Yukon</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Northwest Territories" onchange="changeProvinceSelection()"><span>Northwest Territories</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Nunavut" onchange="changeProvinceSelection()"><span>Nunavut</span></label></div></div></details></div><div><label for="search">Search</label><input id="search" placeholder="Event, city or club" oninput="render()"></div><div><label for="filterDateRange">Date range</label><select id="filterDateRange" onchange="changeDateRange()"><option value="full">Full year (Jan 1 – Dec 31)</option><option value="next30">Next 30 days</option><option value="custom">Custom dates</option></select></div><div id="customStartWrap" hidden><label for="filterDateStart">From</label><input type="date" id="filterDateStart" onchange="render()"></div><div id="customEndWrap" hidden><label for="filterDateEnd">To</label><input type="date" id="filterDateEnd" onchange="render()"></div></div><div class="search-actions"><button type="button" class="secondary" onclick="resetEventSearch()">Clear filters</button><span class="muted" id="filterStatus" aria-live="polite"></span></div>
+<div class="sv54-filter-row"><div><label for="sv54Country">Country</label><select id="sv54Country"><option value="all">Canada and United States</option><option value="ca">Canada</option><option value="us">United States</option></select></div><div><label for="sv54State">U.S. state</label><select id="sv54State"><option value="">All states</option></select></div><div><label for="sv54When">Quick date search</label><select id="sv54When"><option value="">Use date range above</option><option value="weekend">This weekend</option><option value="month">This month</option><option value="upcoming">All upcoming events</option></select></div></div><p class="muted sv54-note">Live events are administrator-approved. Listings marked as samples or public-source previews are not organizer-submitted.</p>
 <section id="yearResults" class="year-results" aria-label="Events for selected year" aria-live="polite" hidden><h3 id="yearResultsHeading"></h3><p id="yearResultsSummary" class="year-summary"></p><div id="yearResultsList"></div></section>
 
-<div class="panel calendar-panel"><div class="calendar-toolbar"><button class="secondary" onclick="moveMonth(-1)" aria-label="Previous month">‹</button><h3 id="calendarTitle" aria-live="polite"></h3><button class="secondary" onclick="moveMonth(1)" aria-label="Next month">›</button><button class="secondary" onclick="goToday()">Today</button></div><div class="calendar-view-switch"><button id="monthBtn" onclick="setView('month')">Month</button><button id="weekBtn" class="secondary" onclick="setView('week')">Week</button><button id="listBtn" class="secondary" onclick="setView('list')">List</button></div><div id="calendar" aria-label="Event calendar"></div><p class="muted" id="calendarHint">Double-click a date on a computer, or tap once on a phone, to see every event that day. Select an event for details and RSVP.</p></div>
+<div class="panel calendar-panel"><div class="calendar-toolbar"><button class="secondary" onclick="moveMonth(-1)" aria-label="Previous month">‹</button><h3 id="calendarTitle" aria-live="polite"></h3><button class="secondary" onclick="moveMonth(1)" aria-label="Next month">›</button><button class="secondary" onclick="goToday()">Today</button></div><div class="calendar-view-switch"><button id="monthBtn" onclick="setView('month')">Month</button><button id="weekBtn" class="secondary" onclick="setView('week')">Week</button><button id="listBtn" class="secondary" onclick="setView('list')">List</button></div><div id="calendar" aria-label="Event calendar"></div><p class="muted" id="calendarHint">Double-click a date on a computer, or tap once on a phone, to see events. Sign in to RSVP to approved organizer events; sample events use demo-only RSVPs.</p></div>
 <div class="sponsor-zone" id="categorySponsorZone" aria-label="Category sponsor advertisements">
   <h3>Category sponsors <span class="ad-disclosure">· Relevant to your selected event category · Demo</span></h3>
   <div class="sponsor-grid" id="categorySponsorCards">
@@ -165,7 +177,7 @@
 <div class="panel featured banner"><div class="sponsor-mark" aria-label="ARK demo initials">ARK</div><div class="grow"><span class="subtle">Featured demo advertiser</span><h2 style="margin:5px 0">Atlantic Riders for Kids (ARK)</h2><p class="muted" style="margin:4px 0 10px">PEI motorcycle organization supporting children and families. Demo advertising placement.</p><button class="secondary" onclick="tab('business')">See business listing</button></div></div>
 <section class="panel" id="contactStroked" style="margin:24px 0"><h2>Contact Stroked Motorsports Events</h2><p>For event listing assistance, advertising inquiries, technical support, or questions about the platform:</p><p><a href="mailto:Strokedca@gmail.com">Strokedca@gmail.com</a> · <a href="mailto:Strokedca@gmail.com?subject=Stroked%20Motorsports%20Events%20Inquiry">Email Stroked</a></p><p class="muted">For details about a specific ride, contact the event organizer. Stroked only provides information entered in the event listing.</p></section>
 </section>
-<section id="add" class="hidden"><h2 id="eventFormHeading">Submit an event for approval</h2><p class="muted">Select as many categories as apply. Events can have multiple categories without duplicate listings.</p><form id="eventForm" class="panel"><div class="grid"><div><label for="evName">Event name</label><input id="evName" name="name" required maxlength="90"></div><div><label for="evClub">Organizing club</label><input id="evClub" name="club" required maxlength="80"></div><div><label for="evProv">Province / territory</label><select id="evProv" name="province"><option>PEI</option><option>Nova Scotia</option><option>New Brunswick</option><option>Newfoundland and Labrador</option><option>Quebec</option><option>Ontario</option><option>Manitoba</option><option>Saskatchewan</option><option>Alberta</option><option>British Columbia</option><option>Yukon</option><option>Northwest Territories</option><option>Nunavut</option></select></div><div><label for="evCity">City / town</label><input id="evCity" name="city" required maxlength="70"></div><div><label for="evDate">Event date</label><input id="evDate" type="date" name="date" required></div><div><label for="evTime">Start time</label><input id="evTime" type="time" name="time" value="10:00"></div><div><label for="evRain">Rain date (optional)</label><input id="evRain" type="date" name="rain"></div></div><fieldset><legend><strong>Event categories — choose one or more</strong></legend><div id="eventCategories" class="checks"></div></fieldset><fieldset><legend><strong>Ride information &amp; organizer contact</strong></legend><div class="grid">
+<section id="add" class="hidden"><h2 id="eventFormHeading">Submit an event for approval</h2><p class="muted">Select as many categories as apply. Events can have multiple categories without duplicate listings.</p><form id="eventForm" class="panel"><div class="grid"><div><label for="evName">Event name</label><input id="evName" name="name" required maxlength="90"></div><div><label for="evClub">Organizing club</label><input id="evClub" name="club" required maxlength="80"></div><div><label for="evProv">Province / territory</label><select id="evProv" name="province"><option>PEI</option><option>Nova Scotia</option><option>New Brunswick</option><option>Newfoundland and Labrador</option><option>Quebec</option><option>Ontario</option><option>Manitoba</option><option>Saskatchewan</option><option>Alberta</option><option>British Columbia</option><option>Yukon</option><option>Northwest Territories</option><option>Nunavut</option><option>United States</option></select></div><div id="sv54EventStateWrap" hidden><label for="sv54EventState">U.S. state</label><select id="sv54EventState" name="state"><option value="">Select a state</option></select></div><div><label for="evCity">City / town</label><input id="evCity" name="city" required maxlength="70"></div><div><label for="evDate">Event date</label><input id="evDate" type="date" name="date" required></div><div><label for="evTime">Start time</label><input id="evTime" type="time" name="time" value="10:00"></div><div><label for="evRain">Rain date (optional)</label><input id="evRain" type="date" name="rain"></div></div><fieldset><legend><strong>Event categories — choose one or more</strong></legend><div id="eventCategories" class="checks"></div></fieldset><fieldset><legend><strong>Ride information &amp; organizer contact</strong></legend><div class="grid">
 <div><label for="evLocation">Registration / starting location</label><input id="evLocation" name="startLocation" maxlength="180" placeholder="Street address or public meeting point"></div>
 <div><label for="evRegistration">Registration opens</label><input id="evRegistration" name="registration" type="time"></div>
 <div><label for="evKsu">Kickstands up / departure</label><input id="evKsu" name="ksu" type="time"></div>
@@ -248,8 +260,8 @@
 <section id="notifications" class="hidden"><h2>Rider notification preferences</h2><div class="notice">Demonstration only. Do not enter your real email or phone number here. No subscriptions or messages are sent.</div><form id="riderPrefsForm" class="panel"><h3>Choose your regions</h3><div class="checks" id="notifyRegions"></div><h3>Choose event categories</h3><label class="check"><input type="checkbox" id="notifyAllCategories"> All categories in selected regions</label><div class="checks" id="notifyCategories"></div><h3>Notification channels (future)</h3><div class="checks"><label class="check"><input type="checkbox" name="channel" value="Email" checked>Email</label><label class="check"><input type="checkbox" name="channel" value="SMS">SMS (requires separate opt-in and phone verification)</label></div><p><button type="submit">Save demo preferences</button></p><p id="riderPrefsSummary" class="muted"></p></form><h3>Events followed on this device</h3><div id="followedEvents"></div></section>
 <section id="clubs" class="hidden"><h2>Organizations &amp; their events</h2><p class="muted">Find event organizers and follow their future event listings. No membership recruitment features.</p><div id="clubCards" class="cards"></div></section>
 <section id="assistant" class="hidden"><h2>Ask Stroked — AI interface preview</h2><div class="notice"><strong>Not connected to AI.</strong> This demonstration uses a basic local event search and guided form; it cannot answer open-ended questions. A secure backend and AI service are required for a real assistant.</div><div class="panel"><label for="askQuestion">Ask about listed events or how to use Stroked</label><input id="askQuestion" maxlength="220" placeholder="e.g. Show motorcycle events in PEI"><p><button onclick="askStrokedDemo()" type="button">Search listed events</button></p><div id="askAnswer" aria-live="polite"></div></div><div class="panel" style="margin-top:14px"><h3>Create an event with guided assistance</h3><p class="muted">This guided prototype helps prefill the regular event form. You review and submit it yourself.</p><button onclick="guidedEventStart()" type="button">Start guided event creation</button><div id="guidedOutput" class="muted" aria-live="polite"></div></div></section>
-</main><dialog id="dayEventsDialog" aria-labelledby="dayEventsTitle"><div class="line"><h2 id="dayEventsTitle">Events for this day</h2><button type="button" class="secondary" onclick="document.getElementById('dayEventsDialog').close()">Close</button></div><p class="muted" id="dayEventsCount"></p><div id="dayEventsList"></div></dialog><dialog id="detailsDialog"><div class="line"><h2 id="detailName"></h2><button class="secondary" onclick="document.getElementById('detailsDialog').close()">Close</button></div><div id="detailBody"></div><div id="eventExtraActions" class="actions"></div><form id="rsvpForm"><label for="rsvpStatus">Your response</label><select id="rsvpStatus" name="status"><option>Going</option><option>Interested</option><option>Not Going</option></select><label for="rsvpGuests">Additional people coming with you (0–10)</label><input id="rsvpGuests" name="guests" type="number" min="0" max="10" value="0"><p><button type="submit">Save demo RSVP</button></p></form><small>Demo RSVPs are saved on this device only. No personal contact information is collected or messages sent.</small></dialog>
-<footer><p><a href="mailto:Strokedca@gmail.com">Contact Stroked: Strokedca@gmail.com</a> · <a href="#contactStroked" onclick="tab('browse')">Contact Us</a></p>Stroked Motorsports Events • Version 5.3 • Event submissions require approval • Advertising and payments remain demonstrations</footer>
+</main><dialog id="dayEventsDialog" aria-labelledby="dayEventsTitle"><div class="line"><h2 id="dayEventsTitle">Events for this day</h2><button type="button" class="secondary" onclick="document.getElementById('dayEventsDialog').close()">Close</button></div><p class="muted" id="dayEventsCount"></p><div id="dayEventsList"></div></dialog><dialog id="detailsDialog"><div class="line"><h2 id="detailName"></h2><button class="secondary" onclick="document.getElementById('detailsDialog').close()">Close</button></div><div id="detailBody"></div><div id="eventExtraActions" class="actions"></div><form id="rsvpForm"><label for="rsvpStatus">Your response</label><select id="rsvpStatus" name="status"><option>Going</option><option>Interested</option><option>Not Going</option></select><label for="rsvpGuests">Additional people coming with you (0–10)</label><input id="rsvpGuests" name="guests" type="number" min="0" max="10" value="0"><p><button type="submit">Save RSVP</button></p></form><small>Approved organizer events use account-based RSVPs. Sample events use browser-only demonstrations. No RSVP emails are sent.</small></dialog>
+<footer><p><a href="mailto:Strokedca@gmail.com">Contact Stroked: Strokedca@gmail.com</a> · <a href="#contactStroked" onclick="tab('browse')">Contact Us</a></p>Stroked Motorsports Events • Version 5.4 • Event submissions require approval • Advertising and payments remain demonstrations</footer>
 <script>
 'use strict';
 const KEY='stroked-demo-v2', LEGACY='stroked-demo-v1';
@@ -744,7 +756,7 @@ Sign out
 </button>
 
 <h3>My organizer profile</h3>
-<form id="sv53ProfileForm" class="sv5Card"><label>Club / organization name<input name="organization" maxlength="100" required></label><label>City / town<input name="city" maxlength="80"></label><label>Province / state<input name="region" maxlength="80"></label><label>Public contact email<input name="public_email" type="email" maxlength="160"></label><label>Website / Facebook URL<input name="website" type="url" maxlength="300" placeholder="https://"></label><button type="submit">Save organizer profile</button></form>
+<form id="sv53ProfileForm" class="sv5Card"><label>Club / organization name<input name="organization" maxlength="100" required></label><label>City / town<input name="city" maxlength="80"></label><label>Province / state<input name="region" maxlength="80"></label><p class="muted">Only enter a contact email and website if you want visitors to approved events to see them. Your login email stays private.</p><label>Public contact email<input name="public_email" type="email" maxlength="160"></label><label>Website / Facebook URL<input name="website" type="url" maxlength="300" placeholder="https://"></label><button type="submit">Save organizer profile</button></form>
 <h3>My Events</h3><p>Track submissions, request changes or cancellation, and see review decisions.</p>
 <div id="sv5Mine"></div>
 <section id="sv53ChangePanel" class="sv5Card" hidden><h3 id="sv53ChangeHeading">Request event changes</h3><p>Changes are not public until approved. Approved events stay unchanged while the request is reviewed.</p><form id="sv53ChangeForm"><input type="hidden" name="event_id"><label>Event name<input name="name" required maxlength="90"></label><label>Organizing club<input name="club" required maxlength="80"></label><label>Event date<input name="date" type="date" required></label><label>Start time<input name="time" type="time"></label><label>Starting location<input name="startLocation" maxlength="180"></label><label>Departure / KSU<input name="ksu" type="time"></label><label>Additional details<textarea name="details" rows="4" maxlength="600"></textarea></label><label>Request type<select name="request_type"><option value="edit">Request changes</option><option value="cancel">Request cancellation</option></select></label><button type="submit">Submit request for approval</button><button type="button" class="secondary" id="sv53CancelChange">Close</button></form></section>
@@ -856,6 +868,7 @@ club:p.club||'Organizer',
 categories:Array.isArray(p.categories)
 ?p.categories:['Motorcycles'],
 province:p.province||'PEI',
+state:p.state||'',
 city:p.city||'',
 date:p.date||'',
 time:p.time||'',
@@ -1067,6 +1080,7 @@ name:get('name',90),
 club:get('club',80),
 categories:fd.getAll('categories').map(String),
 province:get('province',50),
+state:get('state',50),
 city:get('city',70),
 date:get('date',10),
 time:get('time',5),
@@ -1168,7 +1182,7 @@ x=>x.id===selectedId&&x.strokedLive
 e.preventDefault();
 e.stopImmediatePropagation();
 
-alert('Online RSVP is not active for live events yet. Contact the organizer directly.');
+if(typeof window.strokedV54SubmitRsvp==='function')window.strokedV54SubmitRsvp(e);else alert('Online RSVP is temporarily unavailable.');
 }
 
 },true);
@@ -1285,6 +1299,7 @@ notice('Account error: '+err(e));
       club: field("club", 80),
       categories: fd.getAll("categories").map(String),
       province: field("province", 50),
+      state: field("state", 50),
       city: field("city", 70),
       date: field("date", 10),
       time: field("time", 5),
@@ -1484,5 +1499,150 @@ setTimeout(refreshAll,700);
 })();
 </script>
 <!-- END STROKED V5.3 -->
+
+<!-- STROKED V5.4: PUBLIC SEARCH, SHARING, ORGANIZER DETAILS & SECURE RSVP -->
+<script>
+(()=>{
+'use strict';
+const el=id=>document.getElementById(id);
+const client=window.supabase?.createClient?.(
+ 'https://aodywiwkhtxwlscpqnda.supabase.co',
+ 'sb_publishable_jJH7MJkeTxWDGV3RSc0sTg_MvdqjM_c',
+ {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}}
+);
+const states=['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming','District of Columbia'];
+for(const id of ['sv54State','sv54EventState']){
+ const sel=el(id);if(!sel)continue;
+ for(const st of states){const o=document.createElement('option');o.value=st;o.textContent=st;sel.append(o);}
+}
+function showEventState(){const isUS=el('evProv').value==='United States';el('sv54EventStateWrap').hidden=!isUS;el('sv54EventState').required=isUS;if(!isUS)el('sv54EventState').value='';}
+el('evProv').addEventListener('change',showEventState);showEventState();
+let totals=new Map();
+const eventUuid=e=>e?.strokedLive&&/^live-[0-9a-f-]{36}$/i.test(e.id)?e.id.slice(5):null;
+const summary=e=>totals.get(eventUuid(e))||{going:0,interested:0,guests:0,attendees:0};
+const clean=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl=s=>{try{const u=new URL(s);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch{return '';}};
+const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
+const caRegions=new Set(['PEI','Prince Edward Island','Nova Scotia','New Brunswick','Newfoundland and Labrador','Quebec','Ontario','Manitoba','Saskatchewan','Alberta','British Columbia','Yukon','Northwest Territories','Nunavut']);
+const isUS=e=>e.province==='United States'||states.includes(e.province);
+const oldGetFiltered=getFiltered;
+getFiltered=function(){
+ const list=oldGetFiltered();const country=el('sv54Country').value,usState=el('sv54State').value,when=el('sv54When').value;
+ const now=new Date();const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ let lo='',hi='';
+ if(when==='upcoming'){lo=iso(now);}
+ if(when==='month'){lo=iso(new Date(now.getFullYear(),now.getMonth(),1));hi=iso(new Date(now.getFullYear(),now.getMonth()+1,0));}
+ if(when==='weekend'){const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());start.setDate(start.getDate()+(6-start.getDay()+7)%7);const end=new Date(start);end.setDate(end.getDate()+1);lo=iso(start);hi=iso(end);}
+ return list.filter(e=>(country==='all'||(country==='us'?isUS(e):!isUS(e)))&&(!usState||(isUS(e)&&(e.state||e.province)===usState))&&(!lo||e.date>=lo)&&(!hi||e.date<=hi));
+};
+function changeFilters(){
+ const us=el('sv54Country').value==='us';el('sv54State').disabled=!us;if(!us)el('sv54State').value='';
+ // Quick date options override the existing date-range controls, including year limits.
+ if(el('sv54When').value){el('filterYear').value='';el('filterDateRange').value='full';changeDateRange();}
+ render();
+}
+for(const id of ['sv54Country','sv54State','sv54When'])el(id).addEventListener('change',changeFilters);
+changeFilters();
+const previousReset=resetEventSearch;
+resetEventSearch=function(){el('sv54Country').value='all';el('sv54State').value='';el('sv54When').value='';previousReset();changeFilters();};
+const oldRender=render;
+render=function(){
+ oldRender();
+ // The old demo counts are not authoritative for approved events.
+ el('cards').querySelectorAll('article.card').forEach(card=>{
+  const b=card.querySelector('button[onclick^="openEvent"]');if(!b)return;
+  const m=b.getAttribute('onclick')?.match(/openEvent\('([^']+)'\)/);if(!m)return;
+  const e=state.events.find(x=>x.id===m[1]);if(!e?.strokedLive)return;
+  const count=summary(e);const info=card.querySelector('p:nth-of-type(3)');
+  if(info&&info.textContent.includes('expected attendees'))info.textContent=count.attendees+' expected attendees · '+count.interested+' interested (live RSVPs)';
+  if(!card.querySelector('.sv54-flag')){const flag=document.createElement('span');flag.className='sv54-flag';flag.textContent='Approved organizer event';card.prepend(flag);}
+ });
+ if(!deepLinkOpened){const id=new URLSearchParams(location.search).get('event');if(id&&/^live-[0-9a-f-]{36}$/i.test(id)&&state.events.some(e=>e.id===id)){deepLinkOpened=true;queueMicrotask(()=>openEvent(id));}}
+};
+let deepLinkOpened=false;
+const oldOpen=openEvent;
+openEvent=function(id){
+ oldOpen(id);const e=state.events.find(x=>x.id===id);if(!e)return;
+ const uuid=eventUuid(e);if(!uuid)return;
+ const c=summary(e);
+ // Replace demo-only attendance counts with the shared, aggregated counts.
+ const stats=el('detailBody').querySelector('.stats');if(stats)stats.innerHTML='<div><strong>'+c.attendees+'</strong><small>expected attendees (live)</small></div><div><strong>'+c.interested+'</strong><small>interested (live)</small></div>';
+ let detail=el('sv54Detail');if(!detail){detail=document.createElement('div');detail.id='sv54Detail';detail.className='sv54-detail';el('detailBody').append(detail);}
+ detail.replaceChildren();
+ const line=document.createElement('p');line.textContent='Approved organizer listing · Shared RSVPs are estimates, not confirmed registrations.';detail.append(line);
+ const organizer=document.createElement('div');organizer.textContent='Loading public organizer information…';detail.append(organizer);
+ const rsvpForm=el('rsvpForm');rsvpForm.hidden=false;
+ const available=e.date>=today()&&e.status!=='Cancelled';rsvpForm.style.display=available?'block':'none';
+ const submit=rsvpForm.querySelector('button[type="submit"]');submit.textContent='Save my RSVP';
+ let status=el('sv54RsvpStatus');if(!status){status=document.createElement('p');status.id='sv54RsvpStatus';status.className='sv54-status';rsvpForm.append(status);}
+ status.textContent='Sign in to RSVP. One response per account; you can change it later.';
+ el('rsvpStatus').value='Going';el('rsvpGuests').value='0';
+ const link=location.origin+location.pathname+'?event='+encodeURIComponent(id);
+ // Replace legacy share behavior for real, approved events.
+ const shareButton=[...el('eventExtraActions').querySelectorAll('button')].find(x=>x.textContent==='Share');
+ if(shareButton)shareButton.onclick=()=>shareEvent(e,link);
+ client?.rpc('stroked_v54_public_organizer',{p_event_id:uuid}).then(({data,error})=>{
+  if(selectedId!==id)return;
+  organizer.replaceChildren();if(error||!data){organizer.textContent='No public organizer profile available.';return;}
+  const h=document.createElement('h3');h.textContent='About the organizer';organizer.append(h);
+  const p=document.createElement('p');p.textContent=[data.organization||e.club,data.city,data.region].filter(Boolean).join(' · ');organizer.append(p);
+  const url=safeUrl(data.website);if(url){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Organizer website / Facebook';organizer.append(a);}
+  if(data.public_email&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.public_email)){const p2=document.createElement('p'),a=document.createElement('a');a.href='mailto:'+data.public_email;a.textContent='Contact organizer';p2.append(a);organizer.append(p2);}
+ });
+ client?.auth.getUser().then(async({data})=>{
+  if(selectedId!==id)return;
+  if(!data?.user)return;
+  const {data:mine,error}=await client.rpc('stroked_v54_my_rsvp',{p_event_id:uuid});
+  if(selectedId!==id)return;
+  if(error){status.textContent='Unable to load your RSVP: '+error.message;return;}
+  if(mine){el('rsvpStatus').value=mine.response==='going'?'Going':'Interested';el('rsvpGuests').value=mine.guests||0;status.textContent='Your saved RSVP: '+(mine.response==='going'?'Going':'Interested')+'. You can update or remove it.';}
+  else status.textContent='Signed in. Choose Going, Interested or Not Going.';
+ });
+};
+async function shareEvent(e,link){
+ try{if(navigator.share){await navigator.share({title:e.name,url:link});return;}
+  if(navigator.clipboard){await navigator.clipboard.writeText(link);alert('Shareable event link copied.');return;}
+  prompt('Copy this event link:',link);
+ }catch(ex){if(ex?.name!=='AbortError')prompt('Copy this event link:',link);}
+}
+// V5 capture handler delegates LIVE RSVP submission to this function.
+window.strokedV54SubmitRsvp=async function(){
+ const e=state.events.find(x=>x.id===selectedId);const uuid=eventUuid(e);if(!uuid||!client)return;
+ const status=el('sv54RsvpStatus');
+ const {data:{user},error:authError}=await client.auth.getUser();
+ if(authError||!user){status.textContent='Sign in using Organizer Login / Register before submitting an RSVP.';el('sv5Open').click();return;}
+ const response=el('rsvpStatus').value==='Going'?'going':el('rsvpStatus').value==='Interested'?'interested':'not_going';
+ const guests=response==='going'?Number(el('rsvpGuests').value):0;
+ if(!Number.isInteger(guests)||guests<0||guests>10){status.textContent='Additional people must be between 0 and 10.';return;}
+ const btn=el('rsvpForm').querySelector('button[type="submit"]');btn.disabled=true;status.textContent='Saving RSVP…';
+ try{
+  const {error}=await client.rpc('stroked_v54_save_rsvp',{p_event_id:uuid,p_response:response,p_guests:guests});
+  if(error)throw error;
+  status.textContent=response==='not_going'?'Your RSVP was removed.':'RSVP saved. You can update it any time.';
+  await refreshCounts();
+  if(selectedId===e.id){const c=summary(e),stats=el('detailBody').querySelector('.stats');if(stats)stats.innerHTML='<div><strong>'+c.attendees+'</strong><small>expected attendees (live)</small></div><div><strong>'+c.interested+'</strong><small>interested (live)</small></div>';}
+ }catch(ex){status.textContent='RSVP failed: '+(ex?.message||ex);}
+ finally{btn.disabled=false;}
+};
+async function refreshCounts(){
+ if(!client)return;
+ const {data,error}=await client.rpc('stroked_v54_public_rsvp_counts');
+ if(error){console.warn('RSVP counts unavailable:',error.message);return;}
+ totals=new Map((data||[]).map(x=>[x.event_id,x]));render();
+ // Show organizers their aggregate turnout estimates, without attendee identities.
+ const mine=el('sv5Mine');if(mine){mine.querySelectorAll('.sv54-organizer-count').forEach(n=>n.remove());
+  mine.querySelectorAll('.sv5Card').forEach(c=>{
+   const name=c.querySelector('h3')?.textContent;const candidates=state.events.filter(e=>e.strokedLive&&e.name===name);
+   if(candidates.length!==1)return;const x=summary(candidates[0]);const p=document.createElement('p');p.className='sv54-organizer-count';p.textContent='RSVPs: '+x.going+' going, '+x.guests+' additional guests, '+x.interested+' interested · '+x.attendees+' estimated attendees';c.append(p);
+  });
+ }
+}
+// Refresh after approved events load, on account refresh, and after a new RSVP.
+setTimeout(refreshCounts,1600);
+el('sv5Refresh')?.addEventListener('click',()=>setTimeout(refreshCounts,800));
+window.addEventListener('pageshow',()=>setTimeout(refreshCounts,900));
+})();
+</script>
+<!-- END STROKED V5.4 -->
 
 </body></html>
