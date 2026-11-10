@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Stroked Motorsports Events — Version 5.2 — Live Approval Preview</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Stroked Motorsports Events — Version 5.3 — Live Approval Preview</title><style>
 :root{font-family:system-ui,-apple-system,Arial,sans-serif;color-scheme:dark;background:#10151d;color:#f3f5f8}*{box-sizing:border-box}body{margin:0}header{background:#191f2a;border-bottom:3px solid #d13d35;padding:22px 5%}h1{margin:0;font-size:clamp(24px,5vw,38px);letter-spacing:.7px}header .brand-logo{display:block;width:min(100%,520px);height:auto;margin:6px 0 12px;object-fit:contain}header p{color:#bdc5d2;margin:7px 0 0}.tag{display:inline-block;color:#fff;background:#96352e;border-radius:30px;padding:5px 11px;font-size:12px;margin-bottom:9px}main{max-width:1120px;margin:auto;padding:24px 5%}nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}button,.btn{border:0;border-radius:8px;background:#d2473d;color:white;padding:11px 15px;font-weight:700;cursor:pointer;font:inherit}button.secondary{background:#313b4a}button.active{outline:2px solid white}input,select,textarea{width:100%;border:1px solid #586474;background:#1c2531;color:#fff;padding:12px;border-radius:7px;font:inherit}label{display:block;margin:12px 0 5px;color:#d5dce6;font-size:14px}.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:16px;margin-top:18px}.card,.panel{background:#1d2632;border:1px solid #3b4757;border-radius:12px;padding:18px}.card h3{margin:9px 0}.muted{color:#aab7c7}.category{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:#ffaca6}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hidden{display:none!important}.notice{border-left:4px solid #f2b74b;background:#29291f;padding:10px 14px;margin:12px 0;border-radius:5px}small{color:#aeb8c7}footer{color:#aab7c7;padding:30px 5%;text-align:center}a{color:#ffc0b8}dialog{background:#1d2632;color:#fff;border:1px solid #647183;border-radius:12px;max-width:570px;width:95%;max-height:90vh;overflow:auto}dialog::backdrop{background:#000b}.line{display:flex;justify-content:space-between;gap:10px;align-items:center}.line button{padding:8px}.stats{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0}.stats strong{font-size:24px;display:block}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{background:#303b4c;border-radius:999px;padding:4px 9px;font-size:12px}.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}.check{display:flex;gap:9px;align-items:center;margin:0;border:1px solid #586474;padding:11px;border-radius:8px;background:#17202a}.check input{width:auto;accent-color:#d2473d}.featured{border-color:#d46a58;background:linear-gradient(135deg,#312129,#1d2632)}.sponsor-mark{display:grid;place-items:center;width:72px;height:72px;background:#303b4c;color:#fff;border:2px solid #d2473d;border-radius:12px;font-size:25px;font-weight:900;letter-spacing:1px;flex-shrink:0}.banner{display:flex;gap:15px;align-items:center;margin:18px 0}.actions{display:flex;gap:8px;flex-wrap:wrap}.subtle{font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:#d9a99e}.split{display:flex;align-items:start;gap:14px}.grow{flex:1;min-width:0}fieldset{border:1px solid #596475;border-radius:10px;padding:12px;margin:15px 0}legend{padding:0 6px}.intro{margin-bottom:10px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #ffac7c;outline-offset:2px}@media(max-width:650px){.controls,.grid,.checks{grid-template-columns:1fr}main{padding:18px 4%}nav button{flex:1 1 42%}.banner{align-items:flex-start}}
 .calendar-panel{margin-top:18px}.calendar-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.calendar-toolbar h3{flex:1;min-width:120px;margin:4px 0;font-size:20px}.calendar-toolbar button{font-size:17px}.calendar-view-switch{display:flex;gap:8px;margin:16px 0}.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.weekday{text-align:center;font-size:12px;color:#bac6d5;padding:7px 0}.day-cell{min-width:0;min-height:88px;border:1px solid #455166;background:#18212c;border-radius:8px;padding:6px;text-align:left;color:#fff;font-weight:normal;cursor:pointer}.day-cell.outside{opacity:.4}.day-cell.selected{border:2px solid #f07868}.day-cell.today{box-shadow:inset 0 0 0 1px #f5b86c}.day-number{font-size:13px;font-weight:800;display:block}.event-dot{display:block;background:#9a3734;border-radius:4px;margin-top:4px;padding:3px 4px;font-size:10px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.week-list{display:grid;gap:8px}.week-row{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid #455166;border-radius:9px}.week-row>strong{min-width:85px}.cal-event{display:block;text-align:left;width:100%;margin:4px 0;padding:8px 10px;background:#65332f;font-size:13px}.calendar-empty{color:#bac6d5;font-size:12px;margin-top:5px}@media(max-width:650px){.day-cell{min-height:70px;padding:4px}.event-dot{font-size:0;height:7px;width:7px;border-radius:50%;padding:0;display:inline-block;margin:3px 2px 0 0}.calendar-grid{gap:3px}.calendar-toolbar h3{font-size:17px}} 
 [hidden]{display:none!important}
@@ -115,7 +115,7 @@
 .clothing-coming-soon{font-weight:900;font-size:clamp(32px,6vw,56px);letter-spacing:.075em;line-height:1.15;color:#fff;margin:16px 0 12px}
 .clothing-launch-subtitle{font-size:clamp(17px,2.5vw,22px);margin:0 0 12px}
 </style></head><body>
-<header><span class="tag">VERSION 5.2 • LIVE EVENT APPROVAL • OTHER FEATURES IN DEMO</span><img class="brand-logo" src="events-logo-1.png" alt="Stroked Motorsports Events official red white and black logo"><h1 class="hidden">Stroked Motorsports Events</h1><p>Find the ride. Share the event. Plan the turnout.</p></header>
+<header><span class="tag">VERSION 5.3 • LIVE EVENT APPROVAL • OTHER FEATURES IN DEMO</span><img class="brand-logo" src="events-logo-1.png" alt="Stroked Motorsports Events official red white and black logo"><h1 class="hidden">Stroked Motorsports Events</h1><p>Find the ride. Share the event. Plan the turnout.</p></header>
 <main><nav class="main-nav" aria-label="Main navigation">
   <button id="tabBrowse" type="button" onclick="tab('browse')">Explore events</button>
   <button id="tabAdd" type="button" class="secondary" onclick="tab('add')">Post an event</button>
@@ -249,7 +249,7 @@
 <section id="clubs" class="hidden"><h2>Organizations &amp; their events</h2><p class="muted">Find event organizers and follow their future event listings. No membership recruitment features.</p><div id="clubCards" class="cards"></div></section>
 <section id="assistant" class="hidden"><h2>Ask Stroked — AI interface preview</h2><div class="notice"><strong>Not connected to AI.</strong> This demonstration uses a basic local event search and guided form; it cannot answer open-ended questions. A secure backend and AI service are required for a real assistant.</div><div class="panel"><label for="askQuestion">Ask about listed events or how to use Stroked</label><input id="askQuestion" maxlength="220" placeholder="e.g. Show motorcycle events in PEI"><p><button onclick="askStrokedDemo()" type="button">Search listed events</button></p><div id="askAnswer" aria-live="polite"></div></div><div class="panel" style="margin-top:14px"><h3>Create an event with guided assistance</h3><p class="muted">This guided prototype helps prefill the regular event form. You review and submit it yourself.</p><button onclick="guidedEventStart()" type="button">Start guided event creation</button><div id="guidedOutput" class="muted" aria-live="polite"></div></div></section>
 </main><dialog id="dayEventsDialog" aria-labelledby="dayEventsTitle"><div class="line"><h2 id="dayEventsTitle">Events for this day</h2><button type="button" class="secondary" onclick="document.getElementById('dayEventsDialog').close()">Close</button></div><p class="muted" id="dayEventsCount"></p><div id="dayEventsList"></div></dialog><dialog id="detailsDialog"><div class="line"><h2 id="detailName"></h2><button class="secondary" onclick="document.getElementById('detailsDialog').close()">Close</button></div><div id="detailBody"></div><div id="eventExtraActions" class="actions"></div><form id="rsvpForm"><label for="rsvpStatus">Your response</label><select id="rsvpStatus" name="status"><option>Going</option><option>Interested</option><option>Not Going</option></select><label for="rsvpGuests">Additional people coming with you (0–10)</label><input id="rsvpGuests" name="guests" type="number" min="0" max="10" value="0"><p><button type="submit">Save demo RSVP</button></p></form><small>Demo RSVPs are saved on this device only. No personal contact information is collected or messages sent.</small></dialog>
-<footer><p><a href="mailto:Strokedca@gmail.com">Contact Stroked: Strokedca@gmail.com</a> · <a href="#contactStroked" onclick="tab('browse')">Contact Us</a></p>Stroked Motorsports Events • Version 5.2 • Event submissions require approval • Advertising and payments remain demonstrations</footer>
+<footer><p><a href="mailto:Strokedca@gmail.com">Contact Stroked: Strokedca@gmail.com</a> · <a href="#contactStroked" onclick="tab('browse')">Contact Us</a></p>Stroked Motorsports Events • Version 5.3 • Event submissions require approval • Advertising and payments remain demonstrations</footer>
 <script>
 'use strict';
 const KEY='stroked-demo-v2', LEGACY='stroked-demo-v1';
@@ -638,6 +638,7 @@ if(v47RequestedEvent&&state.events.some(e=>e.id===v47RequestedEvent))setTimeout(
 </script>
   
 <!-- STROKED V5 LIVE CONNECTION -->
+<style>.sv53Welcome{border:1px solid #556579;border-radius:10px;padding:18px;background:#202f41;margin:14px 0}.sv53Choice{display:flex;gap:10px;flex-wrap:wrap}#sv53ChangeForm textarea,#sv53ChangeForm select,#sv53ProfileForm input{width:100%;background:#fff;color:#111;padding:11px;border-radius:6px}#sv5Panel .sv53Pill{display:inline-block;border-radius:15px;padding:4px 10px;font-weight:bold;background:#485d77;margin:5px 0}#sv5Panel .sv53Pill.approved{background:#285b3e}#sv5Panel .sv53Pill.pending{background:#75541f}#sv5Panel .sv53Pill.rejected{background:#773631}</style>
 <style>
 @media(max-width:650px){
 .more-options{
@@ -696,14 +697,18 @@ Close
 </button>
 
 <h2>Stroked Motorsports Events</h2>
-<p>Organizer accounts, event submissions and administrator approval</p>
+<p>Create an organizer account, manage your events and track approvals</p>
 
 <p id="sv5Message" role="status">
 Connecting to events database...
 </p>
 <p id="sv5Identity">Not signed in</p>
 
-<form id="sv5Auth">
+<div id="sv53Welcome" class="sv53Welcome">
+<h3>Welcome, event organizers</h3><p>Create a free organizer account to submit events across Canada and the United States. All submissions require administrator approval before publication.</p>
+<div class="sv53Choice"><button type="button" id="sv53ShowSignup">Create Account</button><button type="button" class="secondary" id="sv53ShowLogin">Sign In</button></div>
+</div>
+<form id="sv5Auth" hidden><h3 id="sv53AuthHeading">Sign in</h3>
 <label>Email address
 <input type="email" name="email"
 autocomplete="username" required>
@@ -722,7 +727,7 @@ Sign in
 <button type="submit" data-action="signup"
 class="secondary">
 Create organizer account
-</button>
+</button><button type="button" class="secondary" id="sv53ResetPassword">Forgot password?</button><button type="button" class="secondary" id="sv53AuthBack">Back</button>
 </form>
 
 <div id="sv5SignedIn" hidden>
@@ -738,13 +743,16 @@ class="secondary">
 Sign out
 </button>
 
-<h3>My submissions</h3>
+<h3>My organizer profile</h3>
+<form id="sv53ProfileForm" class="sv5Card"><label>Club / organization name<input name="organization" maxlength="100" required></label><label>City / town<input name="city" maxlength="80"></label><label>Province / state<input name="region" maxlength="80"></label><label>Public contact email<input name="public_email" type="email" maxlength="160"></label><label>Website / Facebook URL<input name="website" type="url" maxlength="300" placeholder="https://"></label><button type="submit">Save organizer profile</button></form>
+<h3>My Events</h3><p>Track submissions, request changes or cancellation, and see review decisions.</p>
 <div id="sv5Mine"></div>
+<section id="sv53ChangePanel" class="sv5Card" hidden><h3 id="sv53ChangeHeading">Request event changes</h3><p>Changes are not public until approved. Approved events stay unchanged while the request is reviewed.</p><form id="sv53ChangeForm"><input type="hidden" name="event_id"><label>Event name<input name="name" required maxlength="90"></label><label>Organizing club<input name="club" required maxlength="80"></label><label>Event date<input name="date" type="date" required></label><label>Start time<input name="time" type="time"></label><label>Starting location<input name="startLocation" maxlength="180"></label><label>Departure / KSU<input name="ksu" type="time"></label><label>Additional details<textarea name="details" rows="4" maxlength="600"></textarea></label><label>Request type<select name="request_type"><option value="edit">Request changes</option><option value="cancel">Request cancellation</option></select></label><button type="submit">Submit request for approval</button><button type="button" class="secondary" id="sv53CancelChange">Close</button></form></section>
 </div>
 
 <section id="sv5Admin" hidden>
 <h2>Private administrator approval dashboard</h2>
-<div id="sv5Queue"></div>
+<p>Review each event or change request. Approved event changes replace the published details only after your approval.</p><div id="sv5Queue"></div>
 </section>
 
 </div>
@@ -956,7 +964,7 @@ const {data,error}=await db.auth.getUser();
 
 user=error?null:data.user;
 
-$v('sv5Auth').hidden=!!user;
+$v('sv5Auth').hidden=true; // V5.3 welcome controls login/registration
 $v('sv5SignedIn').hidden=!user;
 $v('sv5Admin').hidden=true;
 
@@ -1044,7 +1052,7 @@ e.preventDefault();
 e.stopImmediatePropagation();
 
 if(!user){
-alert('Sign in through Account / Approvals first.');
+alert('Sign in through Organizer Login / Register first.');
 $v('sv5Panel').hidden=false;
 return;
 }
@@ -1261,7 +1269,7 @@ notice('Account error: '+err(e));
 
     if (authError || !auth?.user) {
       alert(
-        "Please sign in using Account / Approvals before posting an event."
+        "Please sign in using Organizer Login / Register before posting an event."
       );
       document.getElementById("sv5Open")?.click();
       return;
@@ -1350,5 +1358,131 @@ notice('Account error: '+err(e));
 })();
 </script>
 <!-- END STROKED V5.1 -->
+
+<!-- STROKED V5.3 ORGANIZER EXPERIENCE -->
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const base='https://aodywiwkhtxwlscpqnda.supabase.co';
+const key='sb_publishable_jJH7MJkeTxWDGV3RSc0sTg_MvdqjM_c';
+if(!window.supabase?.createClient)return;
+const db=window.supabase.createClient(base,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const msg=t=>{$('sv5Message').textContent=t;};
+const authForm=$('sv5Auth'),welcome=$('sv53Welcome');
+const buttons=authForm.querySelectorAll('button[data-action]');
+function choose(mode){welcome.hidden=true;authForm.hidden=false;$('sv53AuthHeading').textContent=mode==='signup'?'Create an organizer account':'Sign in to your account';buttons.forEach(b=>b.hidden=b.dataset.action!==mode);$('sv53ResetPassword').hidden=mode==='signup';}
+$('sv53ShowSignup').onclick=()=>choose('signup');
+$('sv53ShowLogin').onclick=()=>choose('login');
+$('sv53AuthBack').onclick=()=>{authForm.hidden=true;welcome.hidden=false;};
+$('sv53ResetPassword').onclick=async()=>{
+ const email=authForm.elements.namedItem('email').value.trim();
+ if(!email){msg('Enter your email address first, then select Forgot password.');return;}
+ try{const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;msg('If this email has an account, a password reset link will be sent.');}catch(e){msg('Password reset error: '+e.message);}
+};
+// Handle password-recovery links on this same page without exposing passwords.
+(async()=>{
+ const {data}=await db.auth.getSession();
+ if(location.hash.includes('type=recovery')||new URLSearchParams(location.search).get('type')==='recovery'){
+ const password=prompt('Enter your new Stroked password (at least 8 characters):');
+ if(password&&password.length>=8){const {error}=await db.auth.updateUser({password});msg(error?'Password update failed: '+error.message:'Password updated. You can now sign in.');}
+ }
+})();
+const profile=$('sv53ProfileForm');
+let currentUser=null;
+async function refreshProfile(){
+ const {data:{user}}=await db.auth.getUser();currentUser=user;
+ welcome.hidden=!!user;
+ if(!user){profile.reset();return;}
+ authForm.hidden=true;
+ const {data,error}=await db.rpc('stroked_v53_my_profile');
+ if(error){msg('Profile service not ready: '+error.message);return;}
+ for(const [k,v] of Object.entries(data||{})){const el=profile.elements.namedItem(k);if(el)el.value=v||'';}
+}
+profile.addEventListener('submit',async e=>{
+ e.preventDefault();const fd=new FormData(profile),p={};for(const [k,v] of fd)p[k]=String(v).trim();
+ const {error}=await db.rpc('stroked_v53_save_profile',{p_profile:p});
+ msg(error?'Profile could not be saved: '+error.message:'Organizer profile saved.');
+});
+// Fill in club and location for a new event when a profile is available.
+$('sv5Post').addEventListener('click',async()=>{
+ const {data}=await db.rpc('stroked_v53_my_profile');if(!data)return;
+ const club=$('evClub'),city=$('evCity'),region=$('evProv');
+ if(club&&!club.value)club.value=data.organization||'';
+ if(city&&!city.value)city.value=data.city||'';
+ if(region&&data.region&&[...region.options].some(o=>o.value===data.region))region.value=data.region;
+});
+const change=$('sv53ChangePanel'),changeForm=$('sv53ChangeForm');
+let myRows=[];
+function openChange(row){
+ const p=row.payload||{};change.hidden=false;
+ $('sv53ChangeHeading').textContent='Request changes: '+(p.name||'Event');
+ for(const k of ['name','club','date','time','startLocation','ksu','details']){const el=changeForm.elements.namedItem(k);if(el)el.value=p[k]||'';}
+ changeForm.elements.namedItem('event_id').value=row.id;
+ changeForm.elements.namedItem('request_type').value='edit';
+ change.scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('sv53CancelChange').onclick=()=>change.hidden=true;
+changeForm.addEventListener('submit',async e=>{
+ e.preventDefault();const fd=new FormData(changeForm);
+ const id=fd.get('event_id'),row=myRows.find(r=>r.id===id);
+ if(!row){msg('Event not found. Refresh your account.');return;}
+ const payload={...row.payload};
+ for(const k of ['name','club','date','time','startLocation','ksu','details'])payload[k]=String(fd.get(k)||'').trim();
+ const requestType=fd.get('request_type');
+ if(!confirm(requestType==='cancel'?'Request cancellation of this event?':'Submit these changes for approval?'))return;
+ const {error}=await db.rpc('stroked_v53_request_change',{p_event_id:id,p_payload:payload,p_action:requestType});
+ if(error){msg('Request failed: '+error.message);return;}
+ change.hidden=true;msg('Request submitted. The public event will not change until approved.');
+ $('sv5Refresh').click();
+});
+async function enhanceMine(){
+ const {data,error}=await db.rpc('stroked_v5_my_events');if(error||!data)return;
+ myRows=data;
+ const cards=$('sv5Mine').querySelectorAll('.sv5Card');
+ cards.forEach((card,i)=>{
+  const row=data[i];if(!row||card.querySelector('.sv53ChangeButton'))return;
+  const b=document.createElement('button');b.type='button';b.className='secondary sv53ChangeButton';
+  b.textContent='Request change / cancellation';b.onclick=()=>openChange(row);card.append(b);
+  const status=card.querySelector('p:nth-of-type(2)');if(status){const pill=document.createElement('span');pill.className='sv53Pill '+row.status;pill.textContent=row.status==='pending'?'Pending review':row.status==='approved'?'Approved':'Rejected';card.append(pill);}
+ });
+}
+async function enhanceAdmin(){
+ const {data,error}=await db.rpc('stroked_v53_admin_requests');if(error||!data)return;
+ const q=$('sv5Queue');
+ // Existing V5 admin queue already shows pending submissions; append change requests separately.
+ let section=$('sv53AdminRequests');if(!section){section=document.createElement('section');section.id='sv53AdminRequests';q.after(section);}
+ section.replaceChildren();const h=document.createElement('h3');h.textContent='Event change and cancellation requests';section.append(h);
+ if(!data.length){const p=document.createElement('p');p.textContent='No change requests awaiting review.';section.append(p);return;}
+ for(const r of data){
+  const box=document.createElement('div');box.className='sv5Card';
+  const p=r.payload||{},title=document.createElement('h4');title.textContent=(r.action==='cancel'?'Cancellation: ':'Changes: ')+(p.name||'Event');box.append(title);
+  for(const val of ['Organizer: '+(r.organizer||'Unknown'), 'Date: '+(p.date||''),'Location: '+(p.city||'')+', '+(p.province||''),'Details: '+(p.details||'')]){const line=document.createElement('p');line.textContent=val;box.append(line);}
+  for(const [decision,label] of [['approved','Approve request'],['rejected','Reject request']]){
+   const b=document.createElement('button');b.type='button';b.textContent=label;
+   if(decision==='rejected')b.className='secondary';
+   b.onclick=async()=>{
+    if(!confirm(label+'?'))return;
+    const note=decision==='rejected'?(prompt('Reason for rejection (optional)')||''):'';
+    const {error}=await db.rpc('stroked_v53_review_request',{p_id:r.id,p_decision:decision,p_note:note});
+    if(error){msg('Review failed: '+error.message);return;}
+    msg('Request '+decision+'.');$('sv5Refresh').click();
+   };box.append(b);
+  }section.append(box);
+ }
+}
+async function refreshAll(){
+ await refreshProfile();
+ if(!currentUser)return;
+ await enhanceMine();
+ const {data}=await db.rpc('stroked_v5_is_admin');if(data===true)await enhanceAdmin();
+}
+$('sv5Refresh').addEventListener('click',()=>setTimeout(refreshAll,450));
+$('sv5Open').addEventListener('click',()=>setTimeout(refreshAll,350));
+db.auth.onAuthStateChange(()=>setTimeout(refreshAll,550));
+setTimeout(refreshAll,700);
+})();
+</script>
+<!-- END STROKED V5.3 -->
 
 </body></html>
