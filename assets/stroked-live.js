@@ -61,6 +61,7 @@
     el('sv55NameFields').hidden=!signup;el('sv55ConfirmWrap').hidden=!signup;el('sv55PasswordWrap').hidden=reset;
     for (const name of ['first_name','last_name','confirm_password']) {form.elements.namedItem(name).required=signup;form.elements.namedItem(name).disabled=!signup;}
     form.elements.namedItem('password').required=!reset;form.elements.namedItem('password').disabled=reset;
+    form.elements.namedItem('password').minLength=signup?8:1;
     form.elements.namedItem('password').autocomplete=signup?'new-password':'current-password';
     el('sv55AuthSubmit').textContent=signup?'Create '+requestedType+' account':reset?'Send password reset email':'Sign in';
     el('sv53ResetPassword').hidden=signup||reset;el('sv55Resend').hidden=reset;
