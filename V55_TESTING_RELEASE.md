@@ -40,7 +40,7 @@ The migration does not modify live application tables, existing functions, auth 
 | Legacy public tables unchanged by the new workflow; migration rerun preserves test data | Passed local PostgreSQL |
 | Calendar/filter/branding and account controls render in Chromium | Checked in local browser preview |
 | Registration at 454 CSS-pixel viewport, no horizontal overflow, sticky Close and scrolling | Checked in Chromium with browser zoom; physical iPhone not tested |
-| Real Supabase registration, email delivery/verification, login and persistence across devices | Not yet run; requires an email delivery provider and a valid real test identity; testing redirects are configured |
+| Real Supabase registration, email delivery/verification, login and persistence across devices | Pending a user-created real test identity and inbox verification; Resend SMTP and testing redirects are now saved |
 | Actual Supabase submission, approval and RSVP writes | Passed against the installed testing API in a rollback-only server transaction; synthetic verified identities were used, not real browser logins |
 
 ## Required next steps
@@ -68,7 +68,7 @@ Reference: [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redire
 
 Supabase dashboard sign-in was completed and independently verified. The Authentication redirect allowlist now contains `https://v5-5-testing.stroked-motorsport-demo.pages.dev/**`; the dashboard confirmed the save. This permits confirmation/recovery redirects and shared-event query parameters on the specific testing origin. The shared default Site URL remains `http://localhost:3000` to avoid changing the live V5.4 authentication default during the production hold; correct it as part of the approved production transition.
 
-The confirmation template uses `{{ .ConfirmationURL }}`. Custom SMTP is disabled, and the dashboard states that default email templates are used. Supabase's default sender only delivers to project team addresses, so public rider/organizer confirmation and recovery emails need an email delivery provider. No provider account was created, no spending was authorized, and confirmations were not disabled. An existing provider/domain or a user decision on email setup is needed before public email verification can be certified.
+The confirmation template uses `{{ .ConfirmationURL }}`. The user reused the existing Resend account and verified `mail.stroked.ca` domain, privately entered the Resend credential, and saved custom SMTP. After a fresh dashboard reload, SMTP remains enabled with host `smtp.resend.com`, port `465`, sender name `Stroked Motorsports Events`, a stored hidden password, and no unsaved changes. The prepared sender is `events@mail.stroked.ca` with username `resend`. Credential values were not read or stored by the agent. No provider account, DNS records, or paid services were created, and confirmations remain enabled. A successful settings save does not prove email delivery; real registration, inbox verification and browser login are the next checks.
 
 A real Stroked Events browser login was attempted using the secure credential prompt. The application returned `Invalid login credentials`; no successful real browser login or email verification is claimed. The credential values were not read or stored. Server-side workflow tests remain passed, with browser login/verification still pending.
 
