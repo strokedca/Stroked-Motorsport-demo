@@ -1,12 +1,9 @@
-# Stroked Motorsports Events
+# Stroked Motorsports Events — V5.5
 
-V5.5 is consolidated on `v5.5-testing`. Main and live V5.4 remain on hold until explicit production deployment approval.
+Public visitor address: [stroked.ca](https://stroked.ca).
 
-- [Public website](https://stroked.ca) — existing visitor address; V5.5 publication remains on hold
-- [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/)
-- [Audit and completed testing](V55_TESTING_RELEASE.md)
-- [Production deployment preparation](PRODUCTION_DEPLOYMENT.md)
+This production source uses the approved live services. The v5.5-testing branch retains isolated testing data.
 
-Run `npm ci --ignore-scripts` and `npm test` for the eight regression checks. `npm run build:production` creates the reviewed production upload in `dist/`. Cloudflare's `npm run build` selects production only for main; other branches build against isolated testing data.
+Run npm test for the eight regression checks. npm run build:production generates the standalone production bundle and checksum manifest in dist/.
 
-The production SQL is prepared and locally tested. Apply it only during the approved deployment sequence; do not upload the testing root configuration directly as the live site.
+The user approved production publication on November 11, 2026. The live database migration preserves the authoritative event, profile, request, RSVP and administrator records. Authentication redirects use stroked.ca; confirmation remains enabled.
