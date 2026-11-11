@@ -32,7 +32,7 @@ test('production upload contains the current app and routes to live services wit
     document.document.write(html);
     for(const asset of document.document.querySelectorAll('img[src],script[src],link[rel="stylesheet"][href]')){
       const path=asset.getAttribute('src')||asset.getAttribute('href');
-      if(!/^(?:https?:|data:|\/\/)/.test(path))assert.ok(files.includes(path),'upload contains referenced asset '+path);
+      if(!/^(?:https?:|data:|\/\/)/.test(path))assert.ok(files.includes(new URL(path,'https://release.invalid/').pathname.slice(1)),'upload contains referenced asset '+path);
     }
     document.happyDOM.abort();
     for(const [path,sha] of Object.entries(manifest.files))assert.equal(createHash('sha256').update(await readFile(join(dir,path))).digest('hex'),sha);
