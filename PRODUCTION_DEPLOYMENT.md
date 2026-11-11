@@ -15,7 +15,9 @@ Cloudflare dashboard access must be restored to verify the current production br
 - New production RPCs use `stroked_live_v55_*`. Public functions use security invoker; checked privileged implementations and account state live in the private `stroked_live_v55` schema.
 - Existing V5/V5.3/V5.4 RPC signatures forward to the same checked implementations. Unused pre-V5 submission/review functions lose browser execution permission. The legacy data remains intact.
 - Pending requests receive a baseline of their current live event for stale-change protection. Their payloads, owners, dates and review statuses remain unchanged. Existing requests still require administrator review.
-- The production migration was tested against schema-only definitions captured from live V5.4, with fictional records. Tests preserve an event added after the testing snapshot, existing profiles and RSVPs, reject testing-only administrator authority, and verify idempotent reapplication. This is local PostgreSQL validation; hosted production execution remains pending approval.
+- The production migration was tested against schema-only definitions captured from live V5.4, with fictional records. Tests preserve an event added after the testing snapshot, existing profiles and RSVPs, a previously cancelled/rejected event and its approved cancellation, reject testing-only administrator authority, and verify idempotent reapplication. This is local PostgreSQL validation; hosted production execution remains pending approval.
+
+The latest read-only live-data check observed one event now rejected under the old approved-cancellation behavior, four reviewed requests, zero profiles, zero RSVPs and one administrator. The event-record fingerprint is `f18c9094156c86ece8b87c568b63271d`. This is newer than the original testing baseline. Preserve this current state and re-read it at deployment; no production migration has been executed.
 
 ## Approved deployment sequence
 
@@ -28,7 +30,7 @@ Execute these steps only after explicit production approval.
 5. Apply only `20261111205005_v55_production.sql` to Supabase project `aodywiwkhtxwlscpqnda`. Do not replay every migration or replace live tables with the testing snapshot. The transaction uses a five-second lock timeout and aborts atomically on failure. Verify unchanged existing application records and administrator membership, then check hosted security/performance advisors.
 6. Set Supabase Auth's default Site URL to the verified production HTTPS origin and allow its exact callback origin/path. Retain the canonical testing redirect. Keep confirmation enabled, the existing ConfirmationURL templates and the user-configured Resend SMTP service. Do not read or replace its stored credential.
 7. Publish the verified production source commit to main using an expected-head check. Deploy that exact commit in Cloudflare, confirm the production hostname and restore the intended automatic production deployment setting.
-8. Check the production manifest, existing public event and counts, account roles, sign-in and public/contact privacy. Confirm the testing-only QA listing is absent. Validate the production callback configuration and review the canonical testing preview as well. Production smoke checks must use the existing authorized identities; passwords stay private.
+8. Check the production manifest, currently approved public records and counts, account roles, sign-in and public/contact privacy. The latest baseline has no approved live event after the legacy cancellation; keep that rejected record unpublished. Confirm the testing-only QA listing is absent. Validate the production callback configuration and review the canonical testing preview as well. Production smoke checks must use the existing authorized identities; passwords stay private.
 
 ## Failure handling
 

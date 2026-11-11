@@ -72,8 +72,10 @@ test('production migration preserves authoritative live records and secures both
     for(const n of [1,2,3,4,5,6,7,8])await pg.query('insert into auth.users values($1,$2,$3)',[uid(n),n===4?null:new Date().toISOString(),{account_type:[1,3,4,8].includes(n)?'organizer':'rider',is_admin:n===2}]);
     await pg.query('insert into public.event_admins(user_id) values($1)',[uid(5)]);
     await pg.query("insert into public.stroked_v5_events(id,created_by,payload,status) values($1,$2,$3,'approved')",[eventId(1),uid(6),payload]);
+    await pg.query("insert into public.stroked_v5_events(id,created_by,payload,status) values($1,$2,$3,'rejected')",[eventId(3),uid(6),{...payload,name:'Previously cancelled legacy event'}]);
     await pg.query('insert into public.stroked_v53_profiles(user_id,organization) values($1,$2)',[uid(7),'Preserved profile']);
     await pg.query("insert into public.stroked_v53_requests(id,event_id,created_by,payload,action) values($1,$2,$3,$4,'edit')",[eventId(10),eventId(1),uid(6),{...payload,name:'Existing pending change'}]);
+    await pg.query("insert into public.stroked_v53_requests(id,event_id,created_by,payload,action,status,reviewed_at,reviewed_by) values($1,$2,$3,$4,'cancel','approved',now(),$5)",[eventId(11),eventId(3),uid(6),{...payload,name:'Previously cancelled legacy event'},uid(5)]);
     await pg.query("insert into public.stroked_v54_rsvps(event_id,user_id,response,guests) values($1,$2,'going',2),($1,$3,'interested',7)",[eventId(1),uid(2),uid(3)]);
     await pg.exec(await readFile(new URL('../supabase/migrations/20261111_v55_testing.sql',import.meta.url),'utf8'));
     await pg.query('insert into stroked_v55_testing.admins(user_id) values($1)',[uid(8)]);
@@ -84,7 +86,7 @@ test('production migration preserves authoritative live records and secures both
     let rows=await call(null,'public_events');assert.deepEqual(rows.map(r=>r.id).sort(),[eventId(1),eventId(2)].sort());
     assert.deepEqual(rows.find(r=>r.id===eventId(1)).counts,{going:1,guests:2,interested:1});
     await pg.exec('reset role');assert.equal((await pg.query('select count(*)::int as n from stroked_live_v55.accounts')).rows[0].n,0);
-    assert.deepEqual((await pg.query('select base_payload from public.stroked_v53_requests')).rows[0].base_payload,payload);
+    assert.deepEqual((await pg.query('select base_payload from public.stroked_v53_requests where id=$1',[eventId(10)])).rows[0].base_payload,payload);
     await assert.rejects(()=>call(null,'my_account'),/permission denied/);
     await assert.rejects(()=>call(4,'submit',[payload]),/verified email/);
     assert.equal((await call(2,'my_account')).account_type,'rider');

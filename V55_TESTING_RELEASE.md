@@ -58,7 +58,7 @@ All eight local tests pass, including real PostgreSQL execution through PGlite, 
 | Mobile organizer account and administrator review | At a 454 CSS-pixel viewport using native browser zoom, the dialogs fit without horizontal overflow, scrolled, and kept Close visible; review disclosures have a 44-pixel target |
 | Actual Supabase workflow and permissions | Previously passed rollback-only server tests for anonymous/unverified denial, ownership, submission, approval, duplicate review, RSVPs, changes and cancellation; all synthetic fixtures rolled back |
 | Production migration and build | Local PostgreSQL tests preserve authoritative live records and an event created after the test snapshot, enforce new and legacy API permissions, reject copied testing administrators and permit safe reapplication. Both production and testing DOM flows pass; the production bundle contains current runtime assets and a checksum manifest |
-| Live V5.4 preservation | Live event fingerprint and counts remain unchanged after the browser tests |
+| Live V5.4 preservation | Main remains unchanged. The earlier browser tests preserved the original live baseline; later read-only checks observed approved live cancellations. The migration preserves current authoritative records |
 
 The DOM regressions specifically cover the visible reason for blocked rider submission, immediate profile reuse, clearing the old permission error, preserving the saved-profile result when listings cannot refresh, complete proposed information with escaped markup, read-only cancelled-event RSVPs and restoring local sample controls. The user also supplied a physical iPhone screenshot of the successful email callback and organizer account form. Complete event and RSVP touch workflows on a physical phone have not been independently observed.
 
@@ -90,7 +90,9 @@ The shared default Site URL remains http://localhost:3000 during the production 
 
 Main remains at **9fe05fc5556130e5421fe0487b91333335c0afef**. The candidate has testing enabled and points to the isolated testing RPCs; it must not be merged in that state.
 
-Live baseline after the latest browser tests: one event, zero organizer profiles, two change requests, zero RSVPs and one administrator. The live event-record fingerprint remains **3e10faeb0f0493ee84078c64061fb36b**.
+At the end of the earlier browser tests, the live baseline was one event, zero organizer profiles, two change requests, zero RSVPs and one administrator; its event-record fingerprint was **3e10faeb0f0493ee84078c64061fb36b**.
+
+A later read-only production-preparation check observed four live requests and event-record fingerprint **f18c9094156c86ece8b87c568b63271d**. Two cancellation requests created on November 11 at 20:54 and 20:58 UTC were approved, and the existing event is now rejected under the legacy cancellation behavior. There is one retained event, zero profiles, zero RSVPs and one administrator. These current records are authoritative; the prepared production migration is still unapplied. The local preservation test now also covers a previously cancelled/rejected legacy event, which stays unpublished.
 
 An existing baseline event contains pasted HTML in its details. It is rendered as text, and its content was not rewritten during testing. Review that description with the authoritative live data during the production transition.
 
