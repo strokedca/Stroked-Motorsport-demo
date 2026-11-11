@@ -3,12 +3,12 @@
   "mode": "production",
   "rpcPrefix": "stroked_live_v55_",
   "files": {
-    "index.html": "8e1b047a25f8a1b3f84a56585dc36cbfda6a8db8e599c82aa875c558965dbd65",
+    "index.html": "c18426791ff9be648dd3fa2b9cdba3ab7ebdc858145b9d9fab1cd59ef6345cdf",
     "events-logo-1.png": "7315576883420cd5653372e3c82f1357e0af5d03663ce4803ce6598db3bc20a7",
     "clothing-apparel-logo.png": "54484e08625253ddd8e624bedffda5562212dda4e25d706780a2cde4ad61448b",
     "assets/stroked-config.js": "c48636b870d2b34f5bd36ddd1e04577d70850e38db8312d6eee4c4e2c9509de6",
     "assets/stroked-core.js": "02a4a8e5f3afdadc895649a9713ed450c85d9d91dc0def43175c2f5c01da94ae",
-    "assets/stroked-live.js": "ea4a0386d10e358eb1e1e2c276a547d8f1a9bb80cef6c80adeaf8d379585ae39",
+    "assets/stroked-live.js": "1c230f9b254f616a156f6f5c51481214cfae328c840abed856c5b57e5b265bf0",
     "assets/stroked-live.css": "14215e38071054fda2c64a17f0e62052d7ff05b03cbf3add25b2ead18b63ac4e",
     "_headers": "c9944d067f0a53bb06636f4939b12ea64d7c9ed8d52a9834faae775042a5e563"
   }
