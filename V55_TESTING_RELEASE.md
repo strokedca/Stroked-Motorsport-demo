@@ -2,7 +2,7 @@
 
 [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/) · [Draft pull request](https://github.com/strokedca/Stroked-Motorsport-demo/pull/1)
 
-The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Core account, event approval, change/cancellation and RSVP browser workflows have now passed with separate organizer and administrator identities. Fresh organizer registration, actual Gmail receipt and a human confirmation callback also passed on an iPhone. Password recovery still requires validation. Main and the V5.4 deployment remain unchanged.
+The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Core account, event approval, change/cancellation and RSVP browser workflows have now passed with separate organizer and administrator identities. Fresh organizer registration, actual Gmail receipt and a human confirmation callback also passed on an iPhone. The recovery link and password update are confirmed; fresh sign-in with the new password still requires validation. Main and the V5.4 deployment remain unchanged.
 
 ## Audit and implementation
 
@@ -39,6 +39,7 @@ Five local regression test groups pass after the organizer fixes, including real
 | One HTML document, unique IDs and one Supabase client | Automated structural/interface checks passed |
 | Rider/organizer signup fields, mismatched passwords and explicit redirects | DOM checks passed, including native form validation for new versus existing passwords; actual rider signup reached Supabase Auth |
 | Fresh organizer registration and email confirmation | User received the Gmail confirmation and followed its link on an iPhone; the screenshot showed the canonical testing site, Email confirmed, and Organizer access. Server records independently confirmed the verified identity and organizer account with no administrator membership |
+| Password recovery link and password update | User followed the reset link and submitted a new password; Supabase audit records independently show user_recovery_requested, recovery-session login and user_updated_password. A separate fresh-password sign-in remains to be verified |
 | Real rider sign-in and session reload | Independently observed in Chromium after the user signed in; session persisted across reloads |
 | Logout | Browser displayed Signed out and removed signed-in controls |
 | Existing administrator sign-in and approval | Independently verified administrator dashboard; approved the other organizer's QA submission; it appeared once in the public testing calendar and did not expose the organizer's login email |
@@ -72,13 +73,15 @@ Supabase recorded the rider identity as confirmed about 22 seconds after signup.
 
 A separate fresh organizer signup used the user's accessible Gmail inbox. The user followed the received confirmation link on an iPhone. Their screenshot showed the canonical testing site with Email confirmed, a signed-in Organizer identity and the organizer profile form. Supabase recorded confirmation and sign-in at 20:12:35 UTC on November 11, 2026; the testing account is Organizer and has no administrator membership. This completes the actual receipt and human callback check independently of the unresolved corporate mailbox placement.
 
+The user then completed the recovery email link and privately submitted a new password. Supabase audit logs record user_recovery_requested at 20:24:49 UTC, login at 20:25:52 and user_updated_password at 20:26:10 on November 11, 2026. The user reported being returned to the app after the update. The recovery session signs the user in automatically; this is separate from proving a subsequent password login. A later secure credential submission returned Invalid login credentials, so fresh sign-in with the changed password is still pending. No credential values were inspected.
+
 The shared default Site URL remains http://localhost:3000 during the production hold. The testing code supplies explicit redirects. Correct the production default as part of the approved production transition.
 
 ## Remaining checks
 
-1. Test password recovery and the returned password form. The user must privately enter and submit the new password. The new Gmail identity had not requested recovery at the last inspection; no recovery completion is claimed.
+1. Complete a fresh sign-in with the changed password. The recovery request, link and password update have passed, but the separate credential sign-in attempt was rejected. A manual sign-in is needed to establish this final result.
 2. Complete event and RSVP touch workflows on a physical phone when available. The iPhone confirmation and organizer account screen passed; concurrent distinct-account workflow tests used separate testing origins in Chromium.
-3. Keep this release in testing until password recovery is validated and the user explicitly approves production deployment. Earlier credential failures were resolved by manual rider, administrator and owner-organizer sign-ins; they are not current login blockers.
+3. Keep this release in testing until fresh password sign-in is validated and the user explicitly approves production deployment. Earlier rider, administrator and owner-organizer sign-ins passed manually; the newly changed-password login is the remaining account check.
 
 ## Production hold and baseline
 
