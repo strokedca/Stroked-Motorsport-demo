@@ -57,7 +57,7 @@
   function choose(next) {
     mode=next; el('sv53Welcome').hidden=true;form.hidden=false;
     const signup=mode==='signup', reset=mode==='reset';
-    el('sv53AuthHeading').textContent=signup?'Create a '+requestedType+' account':reset?'Reset your password':'Sign in to Stroked';
+    el('sv53AuthHeading').textContent=signup?'Create your '+requestedType+' account':reset?'Reset your password':'Sign in to Stroked';
     el('sv55NameFields').hidden=!signup;el('sv55ConfirmWrap').hidden=!signup;el('sv55PasswordWrap').hidden=reset;
     for (const name of ['first_name','last_name','confirm_password']) {form.elements.namedItem(name).required=signup;form.elements.namedItem(name).disabled=!signup;}
     form.elements.namedItem('password').required=!reset;form.elements.namedItem('password').disabled=reset;

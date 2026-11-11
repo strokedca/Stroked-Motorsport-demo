@@ -2,7 +2,7 @@
 
 [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/) · [Draft pull request](https://github.com/strokedca/Stroked-Motorsport-demo/pull/1)
 
-The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Core account, event approval, change/cancellation and RSVP browser workflows have now passed with separate organizer and administrator identities. Human confirmation-email receipt/callback, a fresh organizer signup, and password recovery still require validation. Main and the V5.4 deployment remain unchanged.
+The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Core account, event approval, change/cancellation and RSVP browser workflows have now passed with separate organizer and administrator identities. Fresh organizer registration, actual Gmail receipt and a human confirmation callback also passed on an iPhone. Password recovery still requires validation. Main and the V5.4 deployment remain unchanged.
 
 ## Audit and implementation
 
@@ -38,6 +38,7 @@ Five local regression test groups pass after the organizer fixes, including real
 | --- | --- |
 | One HTML document, unique IDs and one Supabase client | Automated structural/interface checks passed |
 | Rider/organizer signup fields, mismatched passwords and explicit redirects | DOM checks passed, including native form validation for new versus existing passwords; actual rider signup reached Supabase Auth |
+| Fresh organizer registration and email confirmation | User received the Gmail confirmation and followed its link on an iPhone; the screenshot showed the canonical testing site, Email confirmed, and Organizer access. Server records independently confirmed the verified identity and organizer account with no administrator membership |
 | Real rider sign-in and session reload | Independently observed in Chromium after the user signed in; session persisted across reloads |
 | Logout | Browser displayed Signed out and removed signed-in controls |
 | Existing administrator sign-in and approval | Independently verified administrator dashboard; approved the other organizer's QA submission; it appeared once in the public testing calendar and did not expose the organizer's login email |
@@ -55,7 +56,7 @@ Five local regression test groups pass after the organizer fixes, including real
 | Actual Supabase workflow and permissions | Previously passed rollback-only server tests for anonymous/unverified denial, ownership, submission, approval, duplicate review, RSVPs, changes and cancellation; all synthetic fixtures rolled back |
 | Live V5.4 preservation | Live event fingerprint and counts remain unchanged after the browser tests |
 
-The DOM regressions specifically cover the visible reason for blocked rider submission, immediate profile reuse, clearing the old permission error, preserving the saved-profile result when listings cannot refresh, complete proposed information with escaped markup, read-only cancelled-event RSVPs and restoring local sample controls. Phone-width Chromium testing does not substitute for testing a physical iPhone.
+The DOM regressions specifically cover the visible reason for blocked rider submission, immediate profile reuse, clearing the old permission error, preserving the saved-profile result when listings cannot refresh, complete proposed information with escaped markup, read-only cancelled-event RSVPs and restoring local sample controls. The user also supplied a physical iPhone screenshot of the successful email callback and organizer account form. Complete event and RSVP touch workflows on a physical phone have not been independently observed.
 
 The QA event is **V5.5 QA — Not a real event**, now retained as Cancelled in the testing data. Its owner change and cancellation requests are approved. Both the original copied-event RSVP tests and the QA-event response were removed through the normal interface; testing RSVPs are zero and no QA request remains pending. The record explicitly says there is no real gathering.
 
@@ -69,14 +70,15 @@ A user-provided Resend screenshot shows the real rider confirmation email as Sen
 
 Supabase recorded the rider identity as confirmed about 22 seconds after signup. This does not independently prove human receipt or correct callback behavior. Security scanners can consume confirmation links, but a scanner is not proven here. Earlier credential attempts were rejected; a later manual browser sign-in was successful and independently verified. Do not keep describing current rider login as broken solely because of the earlier failures.
 
+A separate fresh organizer signup used the user's accessible Gmail inbox. The user followed the received confirmation link on an iPhone. Their screenshot showed the canonical testing site with Email confirmed, a signed-in Organizer identity and the organizer profile form. Supabase recorded confirmation and sign-in at 20:12:35 UTC on November 11, 2026; the testing account is Organizer and has no administrator membership. This completes the actual receipt and human callback check independently of the unresolved corporate mailbox placement.
+
 The shared default Site URL remains http://localhost:3000 during the production hold. The testing code supplies explicit redirects. Correct the production default as part of the approved production transition.
 
 ## Remaining checks
 
-1. Complete fresh organizer registration using an accessible test inbox, verify actual receipt, and have the user follow the confirmation link. Corporate server acceptance and the work account's confirmation flag are not substitutes for this check.
-2. Test password recovery and the returned password form. The user must privately enter and submit the new password. Neither existing test identity had requested recovery at the last inspection; no recovery completion is claimed.
-3. Check a physical phone when available. Concurrent distinct-account sessions were verified on separate testing origins in one browser; a separate physical device was not tested.
-4. Keep this release in testing until the critical email checks are resolved and the user explicitly approves production deployment. Earlier credential failures were resolved by manual rider, administrator and owner-organizer sign-ins; they are not current login blockers.
+1. Test password recovery and the returned password form. The user must privately enter and submit the new password. The new Gmail identity had not requested recovery at the last inspection; no recovery completion is claimed.
+2. Complete event and RSVP touch workflows on a physical phone when available. The iPhone confirmation and organizer account screen passed; concurrent distinct-account workflow tests used separate testing origins in Chromium.
+3. Keep this release in testing until password recovery is validated and the user explicitly approves production deployment. Earlier credential failures were resolved by manual rider, administrator and owner-organizer sign-ins; they are not current login blockers.
 
 ## Production hold and baseline
 
