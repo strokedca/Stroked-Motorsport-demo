@@ -1,7 +1,7 @@
 name: Test Stroked candidate
 on:
   push:
-    branches: [v5.5-testing, main]
+    branches: [v5.5-testing, payments-support-testing, main]
   pull_request:
 jobs:
   regression-tests:

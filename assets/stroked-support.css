@@ -1,0 +1,6 @@
+.stroked-support-button{display:inline-flex;align-items:center;width:auto;max-width:100%;min-height:32px;margin-top:12px;padding:6px 10px;font-size:12px;line-height:1.4;background:#96352e;border:1px solid #d87469;border-radius:7px;color:#fff}
+#strokedSupportDialog h2{margin:0;font-size:22px}
+#strokedSupportDialog p{line-height:1.55}
+#strokedSupportDialog .stroked-support-checkout{display:inline-block;text-decoration:none;background:#d2473d;color:#fff;border-radius:7px;padding:11px 15px;min-height:44px}
+#strokedSupportDialog .stroked-support-close{width:auto;flex-shrink:0}
+@media(pointer:coarse){.stroked-support-button{min-height:44px}}
