@@ -73,3 +73,10 @@ The confirmation template uses `{{ .ConfirmationURL }}`. The user reused the exi
 A real Stroked Events browser login was attempted using the secure credential prompt. The application returned `Invalid login credentials`; no successful real browser login or email verification is claimed. The credential values were not read or stored. Server-side workflow tests remain passed, with browser login/verification still pending.
 
 Reference: [Supabase custom SMTP requirements](https://supabase.com/docs/guides/auth/auth-smtp).
+
+
+## First real rider registration check — November 11, 2026
+
+The registration form returned its check-email message. Supabase Auth contains a new rider identity with a confirmation-sent timestamp and an email-confirmed timestamp about 22 seconds later. The user reports that the message has not appeared in the inbox. The reviewed Auth request logs contain successful responses and no surfaced SMTP error for this attempt. These server flags do not establish user receipt, manual verification, or correct callback behavior; delivery status in Resend still needs inspection. No confirmation was forced or bypassed by the agent.
+
+A subsequent secure browser sign-in attempt returned `Invalid login credentials`. Credential values were not read or stored. Browser login remains unresolved and real browser submission, approval and RSVP checks remain pending; earlier rollback-only server workflow tests are unchanged. The confirmation flag must not be presented as proof that the missing-email issue is fixed.
