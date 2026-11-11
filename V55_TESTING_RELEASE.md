@@ -2,7 +2,7 @@
 
 [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/) · [Draft pull request](https://github.com/strokedca/Stroked-Motorsport-demo/pull/1)
 
-The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Main and the V5.4 deployment remain unchanged. Browser administrator approval, human completion of the email callback, password recovery, and receipt outside the affected corporate inbox still require validation.
+The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Main and the V5.4 deployment remain unchanged. Administrator sign-in and approval have now passed. Browser change/cancellation review, human completion of the email callback, password recovery, and receipt outside the affected corporate inbox still require validation.
 
 ## Audit and implementation
 
@@ -37,6 +37,8 @@ Five local regression test groups pass after the organizer fixes, including real
 | Rider/organizer signup fields, mismatched passwords and explicit redirects | DOM checks passed, including native form validation for new versus existing passwords; actual rider signup reached Supabase Auth |
 | Real rider sign-in and session reload | Independently observed in Chromium after the user signed in; session persisted across reloads |
 | Logout | Browser displayed Signed out and removed signed-in controls |
+| Existing administrator sign-in and approval | Independently verified administrator dashboard; approved the other organizer's QA submission; it appeared once in the public testing calendar and did not expose the organizer's login email |
+| Newly approved QA event RSVP | A different account saved Going plus two additional people and the listing displayed 3 expected attendees |
 | Rider/organizer permissions | Browser blocked rider event submission and offered organizer setup; neither role received administrator tools |
 | Organizer setup and profile | Browser setup and profile save passed; updated organization and city immediately prefilled the event form without a manual refresh |
 | Organizer submission | One clearly labelled QA event saved with two categories, appeared as pending, survived reload and remained absent from public events |
@@ -49,7 +51,7 @@ Five local regression test groups pass after the organizer fixes, including real
 
 The DOM regressions now specifically cover the visible reason for blocked rider submission, immediate profile reuse, clearing the old permission error, and preserving the saved-profile result when listings cannot refresh. Phone-width Chromium testing does not substitute for testing a physical iPhone.
 
-The QA event is **V5.5 QA — Not a real event**, pending in the testing data. Its content explicitly says there is no gathering, ticket sale or requested attendance. It is intended for the remaining administrator approval/cancellation checks. The RSVP tests against the copied approved event were removed through the normal interface.
+The QA event is **V5.5 QA — Not a real event**, now approved in the testing data. Its content explicitly says there is no gathering, ticket sale or requested attendance. It is intended for the remaining owner change/cancellation checks. One QA RSVP remains on this event for those checks; the earlier RSVP tests against the copied original event were removed through the normal interface.
 
 ## Email and redirect status
 
@@ -65,8 +67,8 @@ The shared default Site URL remains http://localhost:3000 during the production 
 
 ## Remaining checks
 
-1. Sign in with the existing administrator account, review the pending QA event through the browser, and validate the public listing and organizer totals after approval. The secure administrator sign-in attempt returned Invalid login credentials; correct credentials or user-completed password recovery are required. No administrator session was established and no membership was changed.
-2. Complete browser change/cancellation review for the QA record while preserving the Cancelled listing.
+1. Keep the existing administrator session open and sign the owner organizer into a separate testing preview for concurrent, distinct-account checks. A secure organizer sign-in attempt returned Invalid login credentials; a manual sign-in is needed. No membership was changed. Earlier administrator credential rejection was resolved by successful manual sign-in and verified approval.
+2. Verify the owner's attendance dashboard and complete browser change/cancellation review for the QA record while preserving the Cancelled listing. The administrator remains signed in and ready to review those requests.
 3. Verify actual inbox receipt and human confirmation redirect with an accessible test inbox, then password recovery. A fresh organizer registration has automated coverage but has not yet been independently completed through a second real identity.
 4. Check a physical phone when available. A second tab used the same browser profile; no separate physical-device/session test is claimed.
 5. Keep this release in testing until the outstanding checks are resolved and the user explicitly approves production deployment.
