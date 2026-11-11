@@ -11,6 +11,7 @@ button:disabled{opacity:.6;cursor:wait}
 .account-body .actions{margin:14px 0}.account-body button{min-height:44px}
 .account-body .sv5Card{border:1px solid #526174;border-radius:10px;padding:15px;margin:12px 0;background:#172331;overflow-wrap:anywhere}
 .account-body .sv5Card h3{margin:0 0 10px}.account-body .sv5Card p{margin:8px 0}
+.sv55-event-information{margin:10px 0}.sv55-event-information summary{min-height:44px;padding:10px 0;cursor:pointer;font-weight:600}
 #sv5Message{min-height:24px;white-space:pre-line;color:#d2e8ff;scroll-margin-top:88px}
 .account-help{font-size:14px;color:#bbc9d9}.account-error{color:#ffb8ad!important}
 .release-note{background:#302a1e;border:1px solid #b18c42;padding:10px 12px;border-radius:8px}

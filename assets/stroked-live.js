@@ -138,13 +138,20 @@
   });
   el('sv5Post').onclick=()=>{panel.close();resetEventForm();el('eventFormStatus').textContent='';tab('add');const p=account?.profile||{};el('evClub').value=p.organization||'';el('evCity').value=p.city||'';if([...el('evProv').options].some(o=>o.value===p.region))el('evProv').value=p.region;showEventState();el('evName').focus();};
   function text(tag,value){const node=document.createElement(tag);node.textContent=String(value??'');return node;}
-  function card(row) {const c=document.createElement('article'),p=row.payload||{};c.className='sv5Card';c.dataset.eventId=row.id;c.append(text('h3',p.name||'Unnamed event'),text('p',[p.club,p.date,p.city,p.province].filter(Boolean).join(' · ')),text('p','Status: '+row.status+(row.review_note?' · '+row.review_note:'')),text('p',p.details||''));return c;}
+  function card(row, expand=false) {
+    const c=document.createElement('article'),p=row.payload||{};c.className='sv5Card';c.dataset.eventId=row.id;
+    c.append(text('h3',p.name||'Unnamed event'),text('p',[p.club,p.date,p.city,p.state,p.province].filter(Boolean).join(' · ')),text('p','Status: '+row.status+(row.review_note?' · '+row.review_note:'')));
+    if(p.status)c.append(text('p','Event status: '+p.status));
+    const fields=[['Categories',Array.isArray(p.categories)?p.categories.join(', '):''],['Start time',p.time],['Registration opens',p.registration],['Departure / KSU',p.ksu],['Rain date',p.rain],['Starting location',p.startLocation],['End location',p.endLocation],['Route / stops',p.stops],['Food / amenities',p.food],['Public organizer contact',p.organizerContact],['Sponsors / supporters',Array.isArray(p.sponsors)?p.sponsors.map(s=>[s?.name,s?.contribution,s?.link].filter(Boolean).join(' — ')).filter(Boolean).join('; '):'']].filter(([,value])=>value!=null&&String(value).trim());
+    if(fields.length){const info=document.createElement('details');info.className='sv55-event-information';info.open=expand;info.append(text('summary','Event information'));for(const [label,value] of fields){const line=text('p','');line.append(text('strong',label+': '),document.createTextNode(String(value)));info.append(line);}c.append(info);}
+    c.append(text('p',p.details||''));return c;
+  }
   function turnout(row){const c=core.totals(row.counts);return c?'RSVPs: '+c.going+' going, '+c.guests+' additional people, '+c.interested+' interested · '+c.attendees+' estimated attendees':'Attendance totals are unavailable.';}
   function renderMine(){const target=el('sv5Mine');target.replaceChildren();if(!myRows.length)target.append(text('p','No submissions yet.'));for(const row of myRows){const c=card(row),p=text('p',turnout(row));p.className='sv54-organizer-count';c.append(p);const b=text('button','Request change / cancellation');b.type='button';b.className='secondary';b.onclick=()=>openChange(row);c.append(b);target.append(c);}}
   function renderQueue(rows,requests){
     const q=el('sv5Queue'),r=el('sv55Requests');q.replaceChildren();r.replaceChildren();if(!rows.length)q.append(text('p','No event submissions.'));if(!requests.length)r.append(text('p','No requests awaiting review.'));
-    for(const row of rows){const c=card(row);if(row.status==='pending')addReview(c,row,false);q.append(c);}
-    for(const row of requests){const c=card({...row,status:row.action==='cancel'?'Cancellation requested':'Changes requested'});addReview(c,row,true);r.append(c);}
+    for(const row of rows){const c=card(row,row.status==='pending');if(row.status==='pending')addReview(c,row,false);q.append(c);}
+    for(const row of requests){const c=card({...row,status:row.action==='cancel'?'Cancellation requested':'Changes requested'},true);addReview(c,row,true);r.append(c);}
   }
   function addReview(c,row,request){for(const [decision,label] of [['approved','Approve'],['rejected','Reject']]){const b=text('button',label);b.type='button';if(decision==='rejected')b.className='secondary';b.onclick=async()=>{
     if(!confirm(label+' '+(request?'this request':'this event')+' in the testing release?'))return;

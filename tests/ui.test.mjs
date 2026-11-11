@@ -7,11 +7,13 @@ test('single page, rider/organizer registration, confirmation redirects and live
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
-  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false;
+  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,administrator=false,reviewRequests=[];
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
     if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{message:'Temporary listing outage'}};data=[row];}
-    if(name.endsWith('my_account'))data={account_type:accountType,is_admin:false,profile};
+    if(name.endsWith('my_account'))data={account_type:accountType,is_admin:administrator,profile};
+    if(name.endsWith('admin_events'))data=[{...row,status:'approved'}];
+    if(name.endsWith('admin_requests'))data=reviewRequests;
     if(name.endsWith('become_organizer')){accountType='organizer';data=true;}
     if(name.endsWith('save_profile')){profile={...args.p_profile};data=true;}
     if(name.endsWith('my_events'))data=[];
@@ -50,5 +52,9 @@ test('single page, rider/organizer registration, confirmation redirects and live
   organizerProfile.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/Organizer profile saved/);
   $('sv5Post').click();assert.equal($('evClub').value,'Freshly Saved Club','a saved profile prefills a new event without a manual refresh');assert.equal($('evCity').value,'Halifax');assert.equal($('evProv').value,'Nova Scotia');assert.equal($('eventFormStatus').textContent,'','a new organizer event does not show the earlier rider permission error');
   $('sv5Open').click();failPublicRead=true;organizerProfile.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/Organizer profile saved.*could not refresh/,'a failed listing refresh does not imply the profile save failed');assert.equal(organizerProfile.querySelector('button').disabled,false);
+  failPublicRead=false;administrator=true;reviewRequests=[{id:'abcdef01-abcd-4567-89ab-123456789abc',event_id:id,action:'edit',status:'pending',payload:{...row.payload,time:'10:15',registration:'09:45',ksu:'10:30',rain:date,startLocation:'<img src=x onerror=alert(1)>',endLocation:'QA finish',stops:'QA stop',food:'QA food',organizerContact:'public@example.test',sponsors:[{name:'QA supporter',contribution:'QA snacks',link:'https://example.test'}]}}];
+  $('sv5Refresh').click();await settle();const reviewCard=$('sv55Requests').querySelector('.sv5Card');assert.ok(reviewCard);assert.equal(reviewCard.querySelector('details').open,true,'proposed event information is expanded for review');
+  for(const value of ['Start time: 10:15','Registration opens: 09:45','Departure / KSU: 10:30','Starting location: <img src=x onerror=alert(1)>','End location: QA finish','Route / stops: QA stop','Food / amenities: QA food','Public organizer contact: public@example.test','QA supporter — QA snacks — https://example.test','Event status: Scheduled'])assert.ok(reviewCard.textContent.includes(value),'reviewers can inspect '+value);
+  assert.equal(reviewCard.querySelector('img'),null,'submitted venue markup is rendered as text');
   assert.deepEqual(errors,[]);win.happyDOM.abort();
 });
