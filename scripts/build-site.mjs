@@ -36,7 +36,7 @@ export async function buildSite({mode='testing',outDir=join(root,'dist')}={}){
     contents.set('assets/stroked-config.js',Buffer.from(config));
   }
   contents.set('_headers',Buffer.from('/*\n  Cache-Control: no-cache\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: same-origin\n'));
-  const manifest={version:'5.5.2',mode,rpcPrefix:mode==='production'?'stroked_live_v55_':'stroked_v55_',files:Object.fromEntries([...contents].map(([path,bytes])=>[path,createHash('sha256').update(bytes).digest('hex')]))};
+  const manifest={version:'5.5.3',mode,rpcPrefix:mode==='production'?'stroked_live_v55_':'stroked_v55_',files:Object.fromEntries([...contents].map(([path,bytes])=>[path,createHash('sha256').update(bytes).digest('hex')]))};
   contents.set('release-manifest.json',Buffer.from(JSON.stringify(manifest,null,2)+'\n'));
   // dist is generated output; historical clients, SQL, tests and credentials are never copied.
   await rm(output,{recursive:true,force:true});await mkdir(output,{recursive:true});

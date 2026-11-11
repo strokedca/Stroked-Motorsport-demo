@@ -1,20 +1,21 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile,mkdtemp,rm} from 'node:fs/promises';import {Window} from 'happy-dom';
 import {tmpdir} from 'node:os';import {join} from 'node:path';import {pathToFileURL} from 'node:url';import {buildSite} from '../scripts/build-site.mjs';
 const settle=()=>new Promise(resolve=>setTimeout(resolve,35));
-for(const mode of ['testing','production'])test('single page, accounts, redirects and live/demo RSVP routing ('+mode+')',async()=>{
+for(const mode of ['testing','production'])test('public cleanup, accounts, redirects and saved RSVP routing ('+mode+')',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'stroked-ui-')),base=pathToFileURL(dir+'/');
   const origin=mode==='production'?'https://stroked-motorsport-demo.pages.dev/':'https://v5-5-testing.stroked-motorsport-demo.pages.dev/';
   let win;try{
   await buildSite({mode,outDir:dir});
   win=new Window({url:origin,settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true,disableComputedStyleRendering:true}});
+  win.localStorage.setItem('stroked-demo-v2',JSON.stringify({events:[{id:'old-sample',name:'Stored fictional event',date:'2027-01-01',categories:['Motorcycles']}],businesses:[{name:'Stored demo advertiser'}],promotions:[{title:'Stored demo promotion',active:true}]}));
   const html=await readFile(new URL('index.html',base),'utf8');assert.equal((html.match(/<!doctype/gi)||[]).length,1);
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
-  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,administrator=false,reviewRequests=[];
+  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[];
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
-    if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=[row];}
+    if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=emptyEvents?[]:[row];}
     if(name.endsWith('my_account'))data={account_type:accountType,is_admin:administrator,profile};
     if(name.endsWith('admin_events'))data=[{...row,status:'approved'}];
     if(name.endsWith('admin_requests'))data=reviewRequests;
@@ -32,6 +33,9 @@ for(const mode of ['testing','production'])test('single page, accounts, redirect
   for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js'])sources.push(await readFile(new URL(path,base),'utf8'));
   win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
   await settle();assert.equal(clientCount,1);
+  assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);
+  assert.equal($('moreNavigation').hidden,true);assert.equal(win.document.querySelector('.ad-hero'),null);assert.equal($('promotionCards').closest('section').hidden,true);assert.doesNotMatch($('promotionCards').textContent,/Stored demo|Ronan/);
+  assert.equal($('eventForm').querySelectorAll('input[name="upgrade"]').length,0,'unavailable paid options cannot be selected');assert.match($('promotionInformation').textContent,/Pricing to be confirmed/);
   const ids=[...win.document.querySelectorAll('[id]')].map(n=>n.id);assert.equal(new Set(ids).size,ids.length,'all HTML IDs are unique');
   $('sv5Open').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/rider/);
   const f=$('sv5Auth');for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Password123!',confirm_password:'Different123!'}))f.elements.namedItem(key).value=value;
@@ -51,7 +55,7 @@ for(const mode of ['testing','production'])test('single page, accounts, redirect
   $('rsvpStatus').value='Interested';$('rsvpStatus').dispatchEvent(new win.Event('change'));$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.deepEqual(mine,{response:'interested',guests:0});
   row.payload.status='Cancelled';$('sv5Refresh').click();await settle();win.__testOpenEvent('live-'+id);await settle();assert.equal($('rsvpForm').querySelector('button[type="submit"]').hidden,true);assert.equal($('rsvpStatus').disabled,true);assert.equal($('rsvpGuests').disabled,true);assert.equal($('sv55RemoveRsvp').hidden,false);assert.match($('sv55RsvpStatus').textContent,/you can remove your saved response/);assert.doesNotMatch($('sv55RsvpStatus').textContent,/can update/);
   $('sv55RemoveRsvp').click();await settle();assert.equal(mine,null);assert.equal($('sv55RemoveRsvp').hidden,true);
-  row.payload.status='Scheduled';const before=calls.length;win.__testOpenEvent('s1');assert.equal($('rsvpStatus').disabled,false,'opening a sample event restores its local RSVP controls');$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(calls.length,before);assert.match($('sv55RsvpStatus').textContent,/browser only/);
+  row.payload.status='Scheduled';$('sv5Refresh').click();await settle();win.__testOpenEvent('live-'+id);await settle();assert.equal($('rsvpStatus').disabled,false,'a scheduled server event restores available RSVP controls');
   $('detailsDialog').close();$('sv5Open').click();$('sv55BecomeOrganizer').click();await settle();assert.equal($('sv55Organizer').hidden,false);assert.equal($('sv5Admin').hidden,true);
   const organizerProfile=$('sv53ProfileForm');for(const [key,value] of Object.entries({organization:'Freshly Saved Club',city:'Halifax',region:'Nova Scotia'}))organizerProfile.elements.namedItem(key).value=value;
   organizerProfile.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/Organizer profile saved/);
@@ -65,6 +69,7 @@ for(const mode of ['testing','production'])test('single page, accounts, redirect
   [...reviewCard.querySelectorAll('button')].find(b=>b.textContent==='Approve').click();await settle();
   assert.equal(confirmations.at(-1),'Approve this request'+(mode==='testing'?' in the testing release?':'?'));
   assert.ok(calls.every(c=>c.name.startsWith(mode==='production'?'stroked_live_v55_':'stroked_v55_')),'every RPC uses the correct environment');
+  emptyEvents=true;$('sv5Refresh').click();await settle();assert.match($('cards').textContent,/No events listed yet/);$('sv55EmptyPost').click();assert.equal($('add').classList.contains('hidden'),false,'the empty calendar links to the working event form');
   assert.deepEqual(errors,[]);
   }finally{win?.happyDOM.abort();await rm(dir,{recursive:true,force:true});}
 });
