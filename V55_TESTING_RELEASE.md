@@ -20,7 +20,7 @@ This candidate retains the calendar, search, filters, official image assets, eve
 
 The migration does not modify live application tables, existing functions, auth configuration or administrator membership. It creates no paid project or branch. Test writes remain in the separate schema. Auth registration still uses the existing Supabase project's identity/email service, so real signup tests must use an approved test email address.
 
-**Not installed:** automatic approval review rejected application of this migration because it persistently creates security-definer functions, grants access to those endpoints and copies data. Explicit user approval is required. Do not run the same change through another route to bypass that decision.
+**Installed after explicit user approval on November 11, 2026.** The migration succeeded through the Supabase migration tool. The public testing API returns HTTP 200. Anonymous execution is limited to the approved-event read endpoint; all account, submission, review and RSVP endpoints require authentication. The earlier automatic approval block was resolved by the user’s explicit approval.
 
 ## Validation completed
 
@@ -40,12 +40,12 @@ The migration does not modify live application tables, existing functions, auth 
 | Legacy public tables unchanged by the new workflow; migration rerun preserves test data | Passed local PostgreSQL |
 | Calendar/filter/branding and account controls render in Chromium | Checked in local browser preview |
 | Registration at 454 CSS-pixel viewport, no horizontal overflow, sticky Close and scrolling | Checked in Chromium with browser zoom; physical iPhone not tested |
-| Real Supabase registration, email delivery/verification, login and persistence across devices | Not yet run; requires approved migration and corrected redirect allowlist |
-| Actual Supabase submission, approval and RSVP writes | Not yet run; database setup is blocked |
+| Real Supabase registration, email delivery/verification, login and persistence across devices | Not yet run; requires Supabase dashboard access to inspect/correct redirect configuration, plus a real test identity |
+| Actual Supabase submission, approval and RSVP writes | Passed against the installed testing API in a rollback-only server transaction; synthetic verified identities were used, not real browser logins |
 
 ## Required next steps
 
-1. Obtain explicit approval to apply the exact testing migration. Apply it through the Supabase migration tool, then check grants/advisories and test the API using verified test identities. Do not alter live event data.
+1. Completed: the user approved the exact testing migration; installation, grant inspection, public HTTP read and rollback-only server workflow tests passed. The live event fingerprint remains unchanged, live RSVPs remain zero, and live administrator membership remains one. The rollback test script is `tests/supabase-integration.sql`; all synthetic users and test records were removed by rollback.
 2. Inspect Supabase Authentication URL Configuration. Set the correct production Site URL, preserve other legitimate redirect entries, and allow the exact testing origin/path and its auth/event query parameters. The branch origin is `https://v5-5-testing.stroked-motorsport-demo.pages.dev`. Confirmation must stay enabled. Do not whitelist arbitrary external hosts.
 3. Inspect the confirmation and recovery email templates. The supplied branded examples retain `{{ .ConfirmationURL }}` so the selected redirect remains embedded in Supabase's verification link.
 4. Test new rider and organizer registrations through the actual email service, then verification, login/logout, event submission, administrator approval, Going with guests, Interested, removal, reload and a second device/session. Test that a rider cannot submit or approve directly through the API.
@@ -57,7 +57,7 @@ The migration does not modify live application tables, existing functions, auth 
 
 After successful testing and explicit production approval, prepare a production migration against the current authoritative live tables, preserve new live events/RSVPs created during testing, and close bypasses through the legacy submission APIs as part of the same production transition. Do not replace live data with an old testing snapshot. Existing legacy endpoints currently allow any authenticated account to submit events; the testing migration deliberately leaves them unchanged.
 
-Live baseline observed on November 11, 2026: one V5 event, zero organizer profiles, two change requests, zero live RSVPs and one administrator. Event-record fingerprint: `3e10faeb0f0493ee84078c64061fb36b`. No production application data has been edited for this candidate.
+Live baseline observed on November 11, 2026: one V5 event, zero organizer profiles, two change requests, zero live RSVPs and one administrator. Event-record fingerprint: `3e10faeb0f0493ee84078c64061fb36b`. No production application data has been edited for this candidate. The same fingerprint and live counts were verified again after installation and the server workflow tests.
 
 The existing date model has no event timezone field; testing RSVP date cutoffs use America/Halifax. Validate timezone behavior before expanding timed RSVP cutoffs beyond the current Atlantic focus. Notifications, AI, payments and advertising applications retain their existing demonstration status.
 
