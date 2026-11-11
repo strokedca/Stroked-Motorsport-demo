@@ -1,6 +1,0 @@
-node_modules/
-.openai/
-test-results/
-*.log
-dist/
-supabase/.temp/
