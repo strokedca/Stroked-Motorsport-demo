@@ -65,7 +65,7 @@ The shared default Site URL remains http://localhost:3000 during the production 
 
 ## Remaining checks
 
-1. Sign in with the existing administrator account, review the pending QA event through the browser, and validate the public listing and organizer totals after approval. No new administrator membership is authorized or required.
+1. Sign in with the existing administrator account, review the pending QA event through the browser, and validate the public listing and organizer totals after approval. The secure administrator sign-in attempt returned Invalid login credentials; correct credentials or user-completed password recovery are required. No administrator session was established and no membership was changed.
 2. Complete browser change/cancellation review for the QA record while preserving the Cancelled listing.
 3. Verify actual inbox receipt and human confirmation redirect with an accessible test inbox, then password recovery. A fresh organizer registration has automated coverage but has not yet been independently completed through a second real identity.
 4. Check a physical phone when available. A second tab used the same browser profile; no separate physical-device/session test is claimed.
