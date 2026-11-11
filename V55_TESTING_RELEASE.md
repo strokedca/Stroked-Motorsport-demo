@@ -40,7 +40,7 @@ The migration does not modify live application tables, existing functions, auth 
 | Legacy public tables unchanged by the new workflow; migration rerun preserves test data | Passed local PostgreSQL |
 | Calendar/filter/branding and account controls render in Chromium | Checked in local browser preview |
 | Registration at 454 CSS-pixel viewport, no horizontal overflow, sticky Close and scrolling | Checked in Chromium with browser zoom; physical iPhone not tested |
-| Real Supabase registration, email delivery/verification, login and persistence across devices | Not yet run; requires Supabase dashboard access to inspect/correct redirect configuration, plus a real test identity |
+| Real Supabase registration, email delivery/verification, login and persistence across devices | Not yet run; requires an email delivery provider and a valid real test identity; testing redirects are configured |
 | Actual Supabase submission, approval and RSVP writes | Passed against the installed testing API in a rollback-only server transaction; synthetic verified identities were used, not real browser logins |
 
 ## Required next steps
@@ -62,3 +62,14 @@ Live baseline observed on November 11, 2026: one V5 event, zero organizer profil
 The existing date model has no event timezone field; testing RSVP date cutoffs use America/Halifax. Validate timezone behavior before expanding timed RSVP cutoffs beyond the current Atlantic focus. Notifications, AI, payments and advertising applications retain their existing demonstration status.
 
 Reference: [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls), [RLS and user metadata](https://supabase.com/docs/guides/database/postgres/row-level-security), [security-definer advisory](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable). RLS-without-policy notices are expected for deliberately private, RPC-only tables; function grants and internal identity checks must still be audited.
+
+
+## Dashboard verification update — November 11, 2026
+
+Supabase dashboard sign-in was completed and independently verified. The Authentication redirect allowlist now contains `https://v5-5-testing.stroked-motorsport-demo.pages.dev/**`; the dashboard confirmed the save. This permits confirmation/recovery redirects and shared-event query parameters on the specific testing origin. The shared default Site URL remains `http://localhost:3000` to avoid changing the live V5.4 authentication default during the production hold; correct it as part of the approved production transition.
+
+The confirmation template uses `{{ .ConfirmationURL }}`. Custom SMTP is disabled, and the dashboard states that default email templates are used. Supabase's default sender only delivers to project team addresses, so public rider/organizer confirmation and recovery emails need an email delivery provider. No provider account was created, no spending was authorized, and confirmations were not disabled. An existing provider/domain or a user decision on email setup is needed before public email verification can be certified.
+
+A real Stroked Events browser login was attempted using the secure credential prompt. The application returned `Invalid login credentials`; no successful real browser login or email verification is claimed. The credential values were not read or stored. Server-side workflow tests remain passed, with browser login/verification still pending.
+
+Reference: [Supabase custom SMTP requirements](https://supabase.com/docs/guides/auth/auth-smtp).
