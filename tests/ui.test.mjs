@@ -1,0 +1,43 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {Window} from 'happy-dom';
+const base=new URL('../',import.meta.url);
+const settle=()=>new Promise(resolve=>setTimeout(resolve,35));
+test('single page, rider/organizer registration, confirmation redirects and live/demo RSVP routing',async()=>{
+  const win=new Window({url:'https://v5-5-testing.stroked-motorsport-demo.pages.dev/',settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true,disableComputedStyleRendering:true}});
+  const html=await readFile(new URL('index.html',base),'utf8');assert.equal((html.match(/<!doctype/gi)||[]).length,1);
+  win.document.write(html);const $=id=>win.document.getElementById(id);
+  const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+  const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
+  const calls=[];let user=null,mine=null,registered,clientCount=0;
+  const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
+    calls.push({name,args});let data=null;
+    if(name.endsWith('public_events'))data=[row];
+    if(name.endsWith('my_account'))data={account_type:'rider',is_admin:false,profile:{}};
+    if(name.endsWith('my_events'))data=[];
+    if(name.endsWith('my_rsvp'))data=mine;
+    if(name.endsWith('save_rsvp')){mine=args.p_response==='not_going'?null:{response:args.p_response,guests:args.p_guests};row.counts={going:mine?.response==='going'?1:0,guests:mine?.response==='going'?mine.guests:0,interested:mine?.response==='interested'?1:0};data=true;}
+    return{data,error:null};
+  }};
+  const errors=[];win.console.error=(...args)=>errors.push(args.join(' '));win.alert=()=>{};
+  win.supabase={createClient:()=>{clientCount++;return sdk;}};
+  // One evaluation keeps classic-script global lexical bindings in this DOM simulator.
+  const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
+  for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js'])sources.push(await readFile(new URL(path,base),'utf8'));
+  win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
+  await settle();assert.equal(clientCount,1);
+  const ids=[...win.document.querySelectorAll('[id]')].map(n=>n.id);assert.equal(new Set(ids).size,ids.length,'all HTML IDs are unique');
+  $('sv5Open').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/rider/);
+  const f=$('sv5Auth');for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Password123!',confirm_password:'Different123!'}))f.elements.namedItem(key).value=value;
+  f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/do not match/);assert.equal(registered,undefined);
+  f.elements.namedItem('confirm_password').value='Password123!';f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(registered.options.data.account_type,'rider');assert.equal(registered.options.emailRedirectTo,'https://v5-5-testing.stroked-motorsport-demo.pages.dev/?auth=confirm');assert.match($('sv5Message').textContent,/Check your email/);
+  $('sv5Close').click();$('sv55OrganizerOpen').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/organizer/);
+  for(const [key,value] of Object.entries({password:'Password123!',confirm_password:'Password123!'}))f.elements.namedItem(key).value=value;
+  f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(registered.options.data.account_type,'organizer');
+  $('sv53AuthBack').click();$('sv53ShowLogin').click();f.elements.namedItem('password').value='Password123!';f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal($('sv55Organizer').hidden,true);assert.equal($('sv5Admin').hidden,true);assert.equal($('sv55BecomeOrganizer').hidden,false);
+  $('sv5Close').click();win.__testOpenEvent('live-'+id);await settle();$('rsvpStatus').value='Going';$('rsvpGuests').value='2';$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
+  assert.equal(calls.filter(c=>c.name.endsWith('save_rsvp')).length,1);assert.deepEqual(mine,{response:'going',guests:2});assert.match($('detailBody').querySelector('.stats').textContent,/3expected attendees/);assert.match($('sv55RsvpStatus').textContent,/RSVP saved/);
+  win.__testOpenEvent('live-'+id);await settle();assert.equal($('rsvpGuests').value,'2');
+  $('rsvpStatus').value='Interested';$('rsvpStatus').dispatchEvent(new win.Event('change'));$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.deepEqual(mine,{response:'interested',guests:0});
+  $('sv55RemoveRsvp').click();await settle();assert.equal(mine,null);assert.equal($('sv55RemoveRsvp').hidden,true);
+  const before=calls.length;win.__testOpenEvent('s1');$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(calls.length,before);assert.match($('sv55RsvpStatus').textContent,/browser only/);
+  assert.deepEqual(errors,[]);win.happyDOM.abort();
+});

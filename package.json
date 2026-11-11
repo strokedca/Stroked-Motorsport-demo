@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "happy-dom": "^21.0.4"
+  },
+  "name": "stroked-events-v55-testing",
+  "private": true,
+  "version": "5.5.2",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs tests/*.test.mjs"
+  }
+}
