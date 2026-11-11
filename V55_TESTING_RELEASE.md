@@ -2,7 +2,7 @@
 
 [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/) · [Draft pull request](https://github.com/strokedca/Stroked-Motorsport-demo/pull/1)
 
-The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Main and the V5.4 deployment remain unchanged. Administrator sign-in and approval have now passed. Browser change/cancellation review, human completion of the email callback, password recovery, and receipt outside the affected corporate inbox still require validation.
+The V5.5 candidate is deployed for testing. **It is not ready for production promotion.** Core account, event approval, change/cancellation and RSVP browser workflows have now passed with separate organizer and administrator identities. Human confirmation-email receipt/callback, a fresh organizer signup, and password recovery still require validation. Main and the V5.4 deployment remain unchanged.
 
 ## Audit and implementation
 
@@ -18,6 +18,9 @@ The candidate retains the calendar, search, filters, approved branding, event de
 - Events and change requests remain private until approved. Cancellation retains a visible Cancelled listing. Duplicate reviews and stale changes are rejected.
 - Account dialogs support a sticky Close control, focus handling, 16-pixel inputs, responsive fields and phone safe areas.
 - Real browser testing uncovered an organizer profile cache issue and stale permission text. Commit c77b0a10d47498216bb4320ac224183cd979d857 refreshes the saved account/profile before prefilling an event, clears old event-form messages, and shows submission-blocking reasons inside the account dialog. Profile-save success remains explicit if a later refresh fails.
+- Administrator review cards now show the submitted schedule, categories, locations, route, food, public contact and supporter details. Pending events and requests expand that information automatically; submitted markup remains plain text. Event status is shown separately from approval status.
+- Cancelled or past live events use read-only RSVP fields, hide new saves and explain that an existing response can be removed. Removal remains available, and opening a sample event restores its local controls.
+- The unlinked index.html.html backup still called live submission/review APIs. It was removed from the current testing branch's runnable files; GitHub history retains it. Production and historical deployments were not changed by this cleanup.
 
 ## Testing isolation
 
@@ -39,19 +42,22 @@ Five local regression test groups pass after the organizer fixes, including real
 | Logout | Browser displayed Signed out and removed signed-in controls |
 | Existing administrator sign-in and approval | Independently verified administrator dashboard; approved the other organizer's QA submission; it appeared once in the public testing calendar and did not expose the organizer's login email |
 | Newly approved QA event RSVP | A different account saved Going plus two additional people and the listing displayed 3 expected attendees |
+| Organizer attendance dashboard | A separate signed-in owner session displayed 1 Going + 2 additional people = 3 attendees, then zero after response removal |
+| Organizer change request and review | Public time stayed 10:00 while a 10:15 start / 10:30 departure request was pending; administrator approval published the new values and preserved the RSVP |
+| Cancellation and cleanup | Owner requested cancellation, administrator approved it, the public Cancelled listing remained, new-save controls were unavailable, and existing RSVP removal returned all counts to zero |
 | Rider/organizer permissions | Browser blocked rider event submission and offered organizer setup; neither role received administrator tools |
 | Organizer setup and profile | Browser setup and profile save passed; updated organization and city immediately prefilled the event form without a manual refresh |
 | Organizer submission | One clearly labelled QA event saved with two categories, appeared as pending, survived reload and remained absent from public events |
 | RSVP persistence | Browser Going with two additional people saved one database row; repeated save, full reload and another tab retained the same response |
 | Attendance totals | Going plus two additional people displayed 3 expected attendees; Going plus one displayed 2 |
 | Interested and removal | Interested saved zero guests and displayed 0 attendees / 1 interested; removal restored zero rows and zero totals |
-| Mobile organizer account | At a 454 CSS-pixel viewport using native browser zoom, the dialog fit without horizontal overflow, scrolled, and kept Close visible |
+| Mobile organizer account and administrator review | At a 454 CSS-pixel viewport using native browser zoom, the dialogs fit without horizontal overflow, scrolled, and kept Close visible; review disclosures have a 44-pixel target |
 | Actual Supabase workflow and permissions | Previously passed rollback-only server tests for anonymous/unverified denial, ownership, submission, approval, duplicate review, RSVPs, changes and cancellation; all synthetic fixtures rolled back |
 | Live V5.4 preservation | Live event fingerprint and counts remain unchanged after the browser tests |
 
-The DOM regressions now specifically cover the visible reason for blocked rider submission, immediate profile reuse, clearing the old permission error, and preserving the saved-profile result when listings cannot refresh. Phone-width Chromium testing does not substitute for testing a physical iPhone.
+The DOM regressions specifically cover the visible reason for blocked rider submission, immediate profile reuse, clearing the old permission error, preserving the saved-profile result when listings cannot refresh, complete proposed information with escaped markup, read-only cancelled-event RSVPs and restoring local sample controls. Phone-width Chromium testing does not substitute for testing a physical iPhone.
 
-The QA event is **V5.5 QA — Not a real event**, now approved in the testing data. Its content explicitly says there is no gathering, ticket sale or requested attendance. It is intended for the remaining owner change/cancellation checks. One QA RSVP remains on this event for those checks; the earlier RSVP tests against the copied original event were removed through the normal interface.
+The QA event is **V5.5 QA — Not a real event**, now retained as Cancelled in the testing data. Its owner change and cancellation requests are approved. Both the original copied-event RSVP tests and the QA-event response were removed through the normal interface; testing RSVPs are zero and no QA request remains pending. The record explicitly says there is no real gathering.
 
 ## Email and redirect status
 
@@ -67,17 +73,18 @@ The shared default Site URL remains http://localhost:3000 during the production 
 
 ## Remaining checks
 
-1. Keep the existing administrator session open and sign the owner organizer into a separate testing preview for concurrent, distinct-account checks. A secure organizer sign-in attempt returned Invalid login credentials; a manual sign-in is needed. No membership was changed. Earlier administrator credential rejection was resolved by successful manual sign-in and verified approval.
-2. Verify the owner's attendance dashboard and complete browser change/cancellation review for the QA record while preserving the Cancelled listing. The administrator remains signed in and ready to review those requests.
-3. Verify actual inbox receipt and human confirmation redirect with an accessible test inbox, then password recovery. A fresh organizer registration has automated coverage but has not yet been independently completed through a second real identity.
-4. Check a physical phone when available. A second tab used the same browser profile; no separate physical-device/session test is claimed.
-5. Keep this release in testing until the outstanding checks are resolved and the user explicitly approves production deployment.
+1. Complete fresh organizer registration using an accessible test inbox, verify actual receipt, and have the user follow the confirmation link. Corporate server acceptance and the work account's confirmation flag are not substitutes for this check.
+2. Test password recovery and the returned password form. The user must privately enter and submit the new password. Neither existing test identity had requested recovery at the last inspection; no recovery completion is claimed.
+3. Check a physical phone when available. Concurrent distinct-account sessions were verified on separate testing origins in one browser; a separate physical device was not tested.
+4. Keep this release in testing until the critical email checks are resolved and the user explicitly approves production deployment. Earlier credential failures were resolved by manual rider, administrator and owner-organizer sign-ins; they are not current login blockers.
 
 ## Production hold and baseline
 
 Main remains at **9fe05fc5556130e5421fe0487b91333335c0afef**. The candidate has testing enabled and points to the isolated testing RPCs; it must not be merged in that state.
 
 Live baseline after the latest browser tests: one event, zero organizer profiles, two change requests, zero RSVPs and one administrator. The live event-record fingerprint remains **3e10faeb0f0493ee84078c64061fb36b**.
+
+An existing baseline event contains pasted HTML in its details. It is rendered as text, and its content was not rewritten during testing. Review that description with the authoritative live data during the production transition.
 
 After successful testing and explicit production approval, prepare a production migration against the current authoritative live tables. Preserve events and RSVPs created during testing; never replace live data with the copied testing snapshot. Close bypasses through legacy APIs during that transition: the unchanged legacy submission endpoints currently permit any authenticated account to submit.
 
