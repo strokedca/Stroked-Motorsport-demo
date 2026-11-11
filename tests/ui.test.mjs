@@ -7,11 +7,13 @@ test('single page, rider/organizer registration, confirmation redirects and live
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
-  const calls=[];let user=null,mine=null,registered,clientCount=0;
+  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false;
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
-    if(name.endsWith('public_events'))data=[row];
-    if(name.endsWith('my_account'))data={account_type:'rider',is_admin:false,profile:{}};
+    if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{message:'Temporary listing outage'}};data=[row];}
+    if(name.endsWith('my_account'))data={account_type:accountType,is_admin:false,profile};
+    if(name.endsWith('become_organizer')){accountType='organizer';data=true;}
+    if(name.endsWith('save_profile')){profile={...args.p_profile};data=true;}
     if(name.endsWith('my_events'))data=[];
     if(name.endsWith('my_rsvp'))data=mine;
     if(name.endsWith('save_rsvp')){mine=args.p_response==='not_going'?null:{response:args.p_response,guests:args.p_guests};row.counts={going:mine?.response==='going'?1:0,guests:mine?.response==='going'?mine.guests:0,interested:mine?.response==='interested'?1:0};data=true;}
@@ -33,11 +35,19 @@ test('single page, rider/organizer registration, confirmation redirects and live
   for(const [key,value] of Object.entries({password:'Password123!',confirm_password:'Password123!'}))f.elements.namedItem(key).value=value;
   f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(registered.options.data.account_type,'organizer');
   $('sv53AuthBack').click();$('sv53ShowLogin').click();f.elements.namedItem('password').value='Password123!';f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal($('sv55Organizer').hidden,true);assert.equal($('sv5Admin').hidden,true);assert.equal($('sv55BecomeOrganizer').hidden,false);
+  $('sv5Close').click();for(const [key,value] of Object.entries({name:'Rider permission check',club:'Test Club',city:'Charlottetown',date}))$('eventForm').elements.namedItem(key).value=value;
+  $('eventForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
+  assert.equal($('sv5Panel').open,true);assert.match($('sv5Message').textContent,/Set up an organizer account before submitting/,'the blocking reason is visible inside the account dialog');assert.equal(calls.some(c=>c.name.endsWith('_submit')),false,'a rider does not submit an event');
   $('sv5Close').click();win.__testOpenEvent('live-'+id);await settle();$('rsvpStatus').value='Going';$('rsvpGuests').value='2';$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
   assert.equal(calls.filter(c=>c.name.endsWith('save_rsvp')).length,1);assert.deepEqual(mine,{response:'going',guests:2});assert.match($('detailBody').querySelector('.stats').textContent,/3expected attendees/);assert.match($('sv55RsvpStatus').textContent,/RSVP saved/);
   win.__testOpenEvent('live-'+id);await settle();assert.equal($('rsvpGuests').value,'2');
   $('rsvpStatus').value='Interested';$('rsvpStatus').dispatchEvent(new win.Event('change'));$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.deepEqual(mine,{response:'interested',guests:0});
   $('sv55RemoveRsvp').click();await settle();assert.equal(mine,null);assert.equal($('sv55RemoveRsvp').hidden,true);
   const before=calls.length;win.__testOpenEvent('s1');$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(calls.length,before);assert.match($('sv55RsvpStatus').textContent,/browser only/);
+  $('detailsDialog').close();$('sv5Open').click();$('sv55BecomeOrganizer').click();await settle();assert.equal($('sv55Organizer').hidden,false);assert.equal($('sv5Admin').hidden,true);
+  const organizerProfile=$('sv53ProfileForm');for(const [key,value] of Object.entries({organization:'Freshly Saved Club',city:'Halifax',region:'Nova Scotia'}))organizerProfile.elements.namedItem(key).value=value;
+  organizerProfile.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/Organizer profile saved/);
+  $('sv5Post').click();assert.equal($('evClub').value,'Freshly Saved Club','a saved profile prefills a new event without a manual refresh');assert.equal($('evCity').value,'Halifax');assert.equal($('evProv').value,'Nova Scotia');assert.equal($('eventFormStatus').textContent,'','a new organizer event does not show the earlier rider permission error');
+  $('sv5Open').click();failPublicRead=true;organizerProfile.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/Organizer profile saved.*could not refresh/,'a failed listing refresh does not imply the profile save failed');assert.equal(organizerProfile.querySelector('button').disabled,false);
   assert.deepEqual(errors,[]);win.happyDOM.abort();
 });
