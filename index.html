@@ -3312,4 +3312,42 @@ window.addEventListener('pageshow',()=>setTimeout(refreshCounts,900));
 </script>
 <!-- END STROKED V5.4 -->
 
+
+<script>
+(function () {
+  const rider = document.getElementById("sv5Open");
+  const panel = document.getElementById("sv5Panel");
+  const close = document.getElementById("sv5Close");
+
+  if (!rider || !panel) return;
+
+  function openAccount(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    panel.hidden = false;
+  }
+
+  rider.textContent = "Rider Login / Register";
+  rider.addEventListener("click", openAccount, true);
+
+  const organizer = document.createElement("button");
+  organizer.type = "button";
+  organizer.textContent = "Organizer Login / Register";
+  organizer.style.cssText =
+    "position:fixed;right:12px;bottom:70px;" +
+    "z-index:9000;background:#45566c;color:white;" +
+    "border:0;border-radius:9px;padding:13px 16px;" +
+    "font-weight:700;cursor:pointer";
+
+  organizer.addEventListener("click", openAccount);
+  document.body.appendChild(organizer);
+
+  if (close) {
+    close.addEventListener("click", function (event) {
+      event.stopImmediatePropagation();
+      panel.hidden = true;
+    }, true);
+  }
+})();
+</script>
 </body></html>
