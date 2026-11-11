@@ -43,7 +43,7 @@
   const authLinkError = hash.get('error_description') || initialUrl.searchParams.get('error_description');
   recovery = initialUrl.searchParams.get('auth') === 'recovery' || hash.get('type') === 'recovery';
   const message = (text, error = false) => {el('sv5Message').textContent=text;el('sv5Message').classList.toggle('account-error',error);};
-  const failure = e => e?.code==='PGRST202'?'The testing account and event services still need to be enabled.':String(e?.message || e || 'Please try again.').slice(0,400);
+  const failure = e => e?.code==='PGRST202'?(config.testing?'The testing account and event services still need to be enabled.':'Account services are temporarily unavailable. Please try again later.'):String(e?.message || e || 'Please try again.').slice(0,400);
   function openAccount(type = 'rider') {
     requestedType = type;
     el('sv55WelcomeHeading').textContent = type === 'organizer' ? 'Welcome, organizers' : 'Welcome, riders';
@@ -154,7 +154,7 @@
     for(const row of requests){const c=card({...row,status:row.action==='cancel'?'Cancellation requested':'Changes requested'},true);addReview(c,row,true);r.append(c);}
   }
   function addReview(c,row,request){for(const [decision,label] of [['approved','Approve'],['rejected','Reject']]){const b=text('button',label);b.type='button';if(decision==='rejected')b.className='secondary';b.onclick=async()=>{
-    if(!confirm(label+' '+(request?'this request':'this event')+' in the testing release?'))return;
+    if(!confirm(label+' '+(request?'this request':'this event')+(config.testing?' in the testing release?':'?')))return;
     const note=decision==='rejected'?(prompt('Reason (optional):')||''):'';busy(c,true);
     try{const result=await rpc(request?'review_request':'review',{p_id:row.id,p_decision:decision,p_note:note});if(result!==true)throw Error('Already reviewed. Refresh to see the latest decision.');try{await Promise.all([refreshAccount(),refreshPublic()]);message('Review saved: '+decision+'.');}catch{message('Review saved: '+decision+'. The dashboard could not refresh; try Refresh.');}}catch(e){message(failure(e),true);}finally{busy(c,false);}
   };c.append(b);}}

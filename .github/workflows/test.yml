@@ -1,7 +1,7 @@
 name: Test Stroked candidate
 on:
   push:
-    branches: [v5.5-testing]
+    branches: [v5.5-testing, main]
   pull_request:
 jobs:
   regression-tests:
@@ -14,3 +14,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm test
+      - run: npm run build:production
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v55-production-candidate
+          path: dist/

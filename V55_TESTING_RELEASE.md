@@ -2,7 +2,7 @@
 
 [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/) · [Draft pull request](https://github.com/strokedca/Stroked-Motorsport-demo/pull/1)
 
-The consolidated V5.5 testing release is complete and deployed for review. **Production promotion remains on hold.** Registration, email verification, login, organizer submission, administrator approval, change/cancellation and RSVP workflows have passed. Password recovery and a fresh login with the changed password also passed. Main and the V5.4 deployment remain unchanged. Production migration and configuration still require preparation before an approved deployment.
+The consolidated V5.5 testing release is complete and deployed for review. **Production promotion remains on hold.** Registration, email verification, login, organizer submission, administrator approval, change/cancellation and RSVP workflows have passed. Password recovery and a fresh login with the changed password also passed. The production build and migration are now prepared and locally verified; hosting settings and the final public domain still require Cloudflare access verification. Main and the V5.4 deployment remain unchanged. See [production deployment preparation](PRODUCTION_DEPLOYMENT.md).
 
 ## Audit and implementation
 
@@ -32,7 +32,7 @@ Testing reuses the project's Auth identities and email service. The new browser 
 
 ## Validation completed
 
-All five local regression test groups pass on the final release code, including real PostgreSQL execution through PGlite and a DOM simulation. Cloudflare Pages deployment checks also pass.
+All eight local tests pass, including real PostgreSQL execution through PGlite, production data preservation and DOM simulations in both build modes. The previously published testing candidate's Cloudflare Pages checks passed; production preparation does not authorize a production deployment.
 
 | Check | Current evidence |
 | --- | --- |
@@ -55,6 +55,7 @@ All five local regression test groups pass on the final release code, including 
 | Interested and removal | Interested saved zero guests and displayed 0 attendees / 1 interested; removal restored zero rows and zero totals |
 | Mobile organizer account and administrator review | At a 454 CSS-pixel viewport using native browser zoom, the dialogs fit without horizontal overflow, scrolled, and kept Close visible; review disclosures have a 44-pixel target |
 | Actual Supabase workflow and permissions | Previously passed rollback-only server tests for anonymous/unverified denial, ownership, submission, approval, duplicate review, RSVPs, changes and cancellation; all synthetic fixtures rolled back |
+| Production migration and build | Local PostgreSQL tests preserve authoritative live records and an event created after the test snapshot, enforce new and legacy API permissions, reject copied testing administrators and permit safe reapplication. Both production and testing DOM flows pass; the production bundle contains current runtime assets and a checksum manifest |
 | Live V5.4 preservation | Live event fingerprint and counts remain unchanged after the browser tests |
 
 The DOM regressions specifically cover the visible reason for blocked rider submission, immediate profile reuse, clearing the old permission error, preserving the saved-profile result when listings cannot refresh, complete proposed information with escaped markup, read-only cancelled-event RSVPs and restoring local sample controls. The user also supplied a physical iPhone screenshot of the successful email callback and organizer account form. Complete event and RSVP touch workflows on a physical phone have not been independently observed.
@@ -81,7 +82,7 @@ The shared default Site URL remains http://localhost:3000 during the production 
 
 1. The requested core account and event workflow checks are complete. Full event and RSVP touch workflows on a physical phone remain useful acceptance checks. The iPhone confirmation and organizer account screen passed; concurrent distinct-account workflow tests used separate testing origins in Chromium.
 2. Work-mailbox inbox placement remains unresolved despite mail-server acceptance. Gmail receipt, confirmation and recovery passed. Corporate message tracing requires access outside this website.
-3. Keep the consolidated release in testing for the user's review. Production deployment requires explicit approval and preparation against the current authoritative live data, as described below.
+3. Keep the consolidated release in testing for the user's review. The production package and migration are prepared, but Cloudflare access is required to verify hosting/domain settings. Production deployment still requires explicit approval and the coordinated steps in PRODUCTION_DEPLOYMENT.md.
 
 ## Production hold and baseline
 
@@ -91,7 +92,7 @@ Live baseline after the latest browser tests: one event, zero organizer profiles
 
 An existing baseline event contains pasted HTML in its details. It is rendered as text, and its content was not rewritten during testing. Review that description with the authoritative live data during the production transition.
 
-After successful testing and explicit production approval, prepare a production migration against the current authoritative live tables. Preserve events and RSVPs created during testing; never replace live data with the copied testing snapshot. Close bypasses through legacy APIs during that transition: the unchanged legacy submission endpoints currently permit any authenticated account to submit.
+The prepared migration 20261111205005_v55_production.sql uses the authoritative live tables directly and preserves existing records. It has not been applied to the hosted project. Its new production endpoints and compatible legacy wrappers enforce the tested checks; unused pre-V5 write APIs lose browser execution permission. Until approved execution, the installed legacy APIs remain unchanged. Never replace live data with the copied testing snapshot.
 
 The existing date model has no event timezone field. Testing RSVP cutoffs use America/Halifax; validate broader timezone behavior before extending timed cutoffs across regions. Notifications, AI, payments and advertising applications retain their existing demonstration status.
 

@@ -1,8 +1,12 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {Window} from 'happy-dom';
-const base=new URL('../',import.meta.url);
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFile,mkdtemp,rm} from 'node:fs/promises';import {Window} from 'happy-dom';
+import {tmpdir} from 'node:os';import {join} from 'node:path';import {pathToFileURL} from 'node:url';import {buildSite} from '../scripts/build-site.mjs';
 const settle=()=>new Promise(resolve=>setTimeout(resolve,35));
-test('single page, rider/organizer registration, confirmation redirects and live/demo RSVP routing',async()=>{
-  const win=new Window({url:'https://v5-5-testing.stroked-motorsport-demo.pages.dev/',settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true,disableComputedStyleRendering:true}});
+for(const mode of ['testing','production'])test('single page, accounts, redirects and live/demo RSVP routing ('+mode+')',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'stroked-ui-')),base=pathToFileURL(dir+'/');
+  const origin=mode==='production'?'https://stroked-motorsport-demo.pages.dev/':'https://v5-5-testing.stroked-motorsport-demo.pages.dev/';
+  let win;try{
+  await buildSite({mode,outDir:dir});
+  win=new Window({url:origin,settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true,disableComputedStyleRendering:true}});
   const html=await readFile(new URL('index.html',base),'utf8');assert.equal((html.match(/<!doctype/gi)||[]).length,1);
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
@@ -10,7 +14,7 @@ test('single page, rider/organizer registration, confirmation redirects and live
   const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,administrator=false,reviewRequests=[];
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
-    if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{message:'Temporary listing outage'}};data=[row];}
+    if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=[row];}
     if(name.endsWith('my_account'))data={account_type:accountType,is_admin:administrator,profile};
     if(name.endsWith('admin_events'))data=[{...row,status:'approved'}];
     if(name.endsWith('admin_requests'))data=reviewRequests;
@@ -21,7 +25,7 @@ test('single page, rider/organizer registration, confirmation redirects and live
     if(name.endsWith('save_rsvp')){mine=args.p_response==='not_going'?null:{response:args.p_response,guests:args.p_guests};row.counts={going:mine?.response==='going'?1:0,guests:mine?.response==='going'?mine.guests:0,interested:mine?.response==='interested'?1:0};data=true;}
     return{data,error:null};
   }};
-  const errors=[];win.console.error=(...args)=>errors.push(args.join(' '));win.alert=()=>{};
+  const errors=[],confirmations=[];win.console.error=(...args)=>errors.push(args.join(' '));win.alert=()=>{};win.confirm=text=>{confirmations.push(text);return false;};
   win.supabase={createClient:()=>{clientCount++;return sdk;}};
   // One evaluation keeps classic-script global lexical bindings in this DOM simulator.
   const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
@@ -33,7 +37,7 @@ test('single page, rider/organizer registration, confirmation redirects and live
   const f=$('sv5Auth');for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Password123!',confirm_password:'Different123!'}))f.elements.namedItem(key).value=value;
   f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/do not match/);assert.equal(registered,undefined);
   f.elements.namedItem('password').value='short7!';assert.equal(f.elements.namedItem('password').checkValidity(),false,'new passwords still require eight characters');f.elements.namedItem('password').value='Password123!';
-  f.elements.namedItem('confirm_password').value='Password123!';f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(registered.options.data.account_type,'rider');assert.equal(registered.options.emailRedirectTo,'https://v5-5-testing.stroked-motorsport-demo.pages.dev/?auth=confirm');assert.match($('sv5Message').textContent,/Check your email/);
+  f.elements.namedItem('confirm_password').value='Password123!';f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(registered.options.data.account_type,'rider');assert.equal(registered.options.emailRedirectTo,origin+'?auth=confirm');assert.match($('sv5Message').textContent,/Check your email/);
   $('sv5Close').click();$('sv55OrganizerOpen').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/organizer/);
   for(const [key,value] of Object.entries({password:'Password123!',confirm_password:'Password123!'}))f.elements.namedItem(key).value=value;
   f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(registered.options.data.account_type,'organizer');
@@ -53,9 +57,14 @@ test('single page, rider/organizer registration, confirmation redirects and live
   organizerProfile.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/Organizer profile saved/);
   $('sv5Post').click();assert.equal($('evClub').value,'Freshly Saved Club','a saved profile prefills a new event without a manual refresh');assert.equal($('evCity').value,'Halifax');assert.equal($('evProv').value,'Nova Scotia');assert.equal($('eventFormStatus').textContent,'','a new organizer event does not show the earlier rider permission error');
   $('sv5Open').click();failPublicRead=true;organizerProfile.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/Organizer profile saved.*could not refresh/,'a failed listing refresh does not imply the profile save failed');assert.equal(organizerProfile.querySelector('button').disabled,false);
+  $('sv5Refresh').click();await settle();assert.match($('sv5Message').textContent,mode==='production'?/Account services are temporarily unavailable/:/testing account and event services/);
   failPublicRead=false;administrator=true;reviewRequests=[{id:'abcdef01-abcd-4567-89ab-123456789abc',event_id:id,action:'edit',status:'pending',payload:{...row.payload,time:'10:15',registration:'09:45',ksu:'10:30',rain:date,startLocation:'<img src=x onerror=alert(1)>',endLocation:'QA finish',stops:'QA stop',food:'QA food',organizerContact:'public@example.test',sponsors:[{name:'QA supporter',contribution:'QA snacks',link:'https://example.test'}]}}];
   $('sv5Refresh').click();await settle();const reviewCard=$('sv55Requests').querySelector('.sv5Card');assert.ok(reviewCard);assert.equal(reviewCard.querySelector('details').open,true,'proposed event information is expanded for review');
   for(const value of ['Start time: 10:15','Registration opens: 09:45','Departure / KSU: 10:30','Starting location: <img src=x onerror=alert(1)>','End location: QA finish','Route / stops: QA stop','Food / amenities: QA food','Public organizer contact: public@example.test','QA supporter — QA snacks — https://example.test','Event status: Scheduled'])assert.ok(reviewCard.textContent.includes(value),'reviewers can inspect '+value);
   assert.equal(reviewCard.querySelector('img'),null,'submitted venue markup is rendered as text');
-  assert.deepEqual(errors,[]);win.happyDOM.abort();
+  [...reviewCard.querySelectorAll('button')].find(b=>b.textContent==='Approve').click();await settle();
+  assert.equal(confirmations.at(-1),'Approve this request'+(mode==='testing'?' in the testing release?':'?'));
+  assert.ok(calls.every(c=>c.name.startsWith(mode==='production'?'stroked_live_v55_':'stroked_v55_')),'every RPC uses the correct environment');
+  assert.deepEqual(errors,[]);
+  }finally{win?.happyDOM.abort();await rm(dir,{recursive:true,force:true});}
 });
