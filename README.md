@@ -2,6 +2,7 @@
 
 V5.5 is consolidated on `v5.5-testing`. Main and live V5.4 remain on hold until explicit production deployment approval.
 
+- [Public website](https://stroked.ca) — existing visitor address; V5.5 publication remains on hold
 - [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/)
 - [Audit and completed testing](V55_TESTING_RELEASE.md)
 - [Production deployment preparation](PRODUCTION_DEPLOYMENT.md)

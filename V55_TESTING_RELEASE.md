@@ -2,6 +2,8 @@
 
 [Testing website](https://v5-5-testing.stroked-motorsport-demo.pages.dev/) · [Draft pull request](https://github.com/strokedca/Stroked-Motorsport-demo/pull/1)
 
+The existing public visitor address is [stroked.ca](https://stroked.ca), connected in the earlier deployment setup. V5.5 will retain that address after approved publication. The current Cloudflare domain/hosting settings still need dashboard verification.
+
 The consolidated V5.5 testing release is complete and deployed for review. **Production promotion remains on hold.** Registration, email verification, login, organizer submission, administrator approval, change/cancellation and RSVP workflows have passed. Password recovery and a fresh login with the changed password also passed. The production build and migration are now prepared and locally verified; hosting settings and the final public domain still require Cloudflare access verification. Main and the V5.4 deployment remain unchanged. See [production deployment preparation](PRODUCTION_DEPLOYMENT.md).
 
 ## Audit and implementation

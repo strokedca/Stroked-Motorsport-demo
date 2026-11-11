@@ -2,7 +2,9 @@
 
 The code, production build and database transition are prepared and locally tested. They have **not** been applied to production. Main remains at `9fe05fc5556130e5421fe0487b91333335c0afef`.
 
-Cloudflare dashboard access must be restored to confirm the current production branch, public/custom domains and build settings. The automated sign-in request returned an API 403; no bot-detection cause is established. The final public address has not been confirmed, and no domain or DNS setting has been changed.
+The existing public Events address is [stroked.ca](https://stroked.ca), recorded as connected in the earlier deployment setup. Keep that visitor address for V5.5. The Cloudflare project origin is stroked-motorsport-demo.pages.dev; the separate v5-5-testing origin remains for testing. The Family Calendar stays separate.
+
+Cloudflare dashboard access must be restored to verify the current production branch, connected/canonical domains and build settings. The automated sign-in request returned an API 403; no bot-detection cause is established. Current domain status could not be independently rechecked, and no domain or DNS setting has been changed.
 
 ## Prepared files and validation
 
@@ -19,7 +21,7 @@ Cloudflare dashboard access must be restored to confirm the current production b
 
 Execute these steps only after explicit production approval.
 
-1. Restore authorized Cloudflare access and record the existing production deployment, branch, build command, output directory and all active domains. Confirm which existing domain visitors should use. Check for legacy GitHub Pages publication from main as well. Do not repoint an unrelated domain.
+1. Restore authorized Cloudflare access and record the existing production deployment, branch, build command, output directory and all active domains. Keep stroked.ca as the visitor address and verify its current canonical redirect/connection. Check for legacy GitHub Pages publication from main as well. Do not repoint an unrelated domain.
 2. Re-read the current main head and live record counts/fingerprints. Export a private backup of the application tables and current database function/permission definitions. The Auth password store is outside this migration.
 3. Stage a production source commit from the consolidated candidate. Build `dist/` in production mode and place its runtime files at the repository root in that staged commit, including production `index.html` and `assets/stroked-config.js`. Keep migration/test sources in Git. This also gives an existing root-based GitHub Pages deployment the correct production configuration. Run the eight tests and production build against that staged source before moving main.
 4. Pause automatic Cloudflare production publication while coordinating the release. Configure the project to build with `npm run build` and publish `dist`, using the repository root and production branch `main`. Keep preview branches in testing mode. These settings are planned, not yet verified in the dashboard.
