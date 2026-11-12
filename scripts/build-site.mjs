@@ -4,7 +4,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-export const siteFiles=Object.freeze(['index.html','events-logo-1.png','clothing-apparel-logo.png','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js','assets/stroked-live.css','assets/stroked-payments-config.js','assets/stroked-support.js','assets/stroked-support.css','assets/stroked-promotions.js','assets/stroked-promotions.css','assets/stroked-information.js','assets/stroked-information.css','assets/stroked-sales-pitch.js']);
+export const siteFiles=Object.freeze(['index.html','events-logo-1.png','clothing-apparel-logo.png','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js','assets/stroked-live.css','assets/stroked-payments-config.js','assets/stroked-support.js','assets/stroked-support.css','assets/stroked-promotions.js','assets/stroked-promotions.css','assets/stroked-information.js','assets/stroked-information.css','assets/stroked-sales-pitch.js','assets/stroked-pricing.js','assets/stroked-pricing.css']);
 
 export function resolveBuildMode(branch=process.env.CF_PAGES_BRANCH,requested=process.env.STROKED_BUILD_MODE){
   const mode=requested||(branch==='main'?'production':'testing');
@@ -35,8 +35,9 @@ export async function buildSite({mode='testing',outDir=join(root,'dist')}={}){
     config=replaceOnce(config,/testing: (?:true|false)/,'testing: '+(mode==='testing'));
     contents.set('assets/stroked-config.js',Buffer.from(config));
   }
-  contents.set('_headers',Buffer.from('/*\n  Cache-Control: no-cache\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: same-origin\n'));
-  const manifest={version:'5.5.4',mode,rpcPrefix:mode==='production'?'stroked_live_v55_':'stroked_v55_',files:Object.fromEntries([...contents].map(([path,bytes])=>[path,createHash('sha256').update(bytes).digest('hex')]))};
+  const csp="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.stripe.com https://*.link.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://*.link.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.link.com; frame-src https://*.stripe.com https://*.link.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self' https://*.stripe.com https://*.link.com";
+  contents.set('_headers',Buffer.from('/*\n  Cache-Control: no-cache\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: same-origin\n  Content-Security-Policy: '+csp+'\n'));
+  const manifest={version:'5.5.5',mode,rpcPrefix:mode==='production'?'stroked_live_v55_':'stroked_v55_',files:Object.fromEntries([...contents].map(([path,bytes])=>[path,createHash('sha256').update(bytes).digest('hex')]))};
   contents.set('release-manifest.json',Buffer.from(JSON.stringify(manifest,null,2)+'\n'));
   // dist is generated output; historical clients, SQL, tests and credentials are never copied.
   await rm(output,{recursive:true,force:true});await mkdir(output,{recursive:true});

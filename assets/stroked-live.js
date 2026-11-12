@@ -76,9 +76,11 @@
   const db=window.supabase.createClient(config.url,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});
   async function rpc(name,args={}) {const {data,error}=await db.rpc(config.rpcPrefix+name,args);if(error)throw error;return data;}
   const promotionTools=window.StrokedPromotions?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
+  const pricingTools=window.StrokedPricing?.mount({rpc,config,openAccount,getAccount:()=>account,getMyEvents:()=>myRows,promotions:promotionTools});
   function updateAccountView() {
     const signed=Boolean(user), organizer=Boolean(account?.account_type==='organizer'||account?.is_admin);
     promotionTools?.setAccount(account,signed);
+    pricingTools?.setAccount(account,signed);
     if(el('strokedAdminHelp'))el('strokedAdminHelp').hidden=!account?.is_admin;
     el('sv53Welcome').hidden=signed||recovery;form.hidden=signed||recovery||form.hidden;
     el('sv5SignedIn').hidden=!signed||recovery;el('sv55Recovery').hidden=!signed||!recovery;
@@ -98,6 +100,7 @@
       account=own;myRows=Array.isArray(rows)?rows:[];updateAccountView();
       for(const [k,v] of Object.entries(own?.profile||{})){const input=el('sv53ProfileForm').elements.namedItem(k);if(input)input.value=v||'';}
       renderMine();
+      await pricingTools?.refresh();
       if(account?.is_admin){const [queue,requests]=await Promise.all([rpc('admin_events'),rpc('admin_requests')]);if(epoch!==authEpoch)return;renderQueue(queue||[],requests||[]);await promotionTools?.refreshAdmin();}
     } catch(e){if(epoch===authEpoch){message('Account details could not load: '+failure(e),true);throw e;}}
   }

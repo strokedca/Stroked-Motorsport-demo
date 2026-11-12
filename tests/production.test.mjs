@@ -24,7 +24,9 @@ test('production upload contains the current app and routes to live services wit
     assert.equal(sandbox.window.STROKED_CONFIG.rpcPrefix,'stroked_live_v55_');
     const html=await readFile(join(dir,'index.html'),'utf8');
     assert.doesNotMatch(html,/Version 5\.5 — Testing Release|VERSION 5\.5 • TESTING RELEASE|Version 5\.5 testing •/);
-    assert.match(html,/Pricing to be confirmed/,'unapproved paid options do not advertise invented prices');
+    assert.match(html,/data-stroked-offers="event"/,'approved event prices use the shared catalog');
+    assert.match(html,/data-stroked-offers="business"/,'advertisers have their own duration packages');
+    assert.match(html,/No GST\/HST is currently added/,'the confirmed unregistered tax setup is explicit');
     const files=(await readdir(dir,{recursive:true})).filter(p=>!['assets'].includes(p)).sort();
     assert.deepEqual(files.filter(p=>p.endsWith('.html')),['index.html'],'only the current client is runnable');
     assert.ok(files.every(p=>!/[.]sql$|[.]zip$|backup|fixture|package[-.]|test[.]/i.test(p)),'private build inputs and old clients are excluded');

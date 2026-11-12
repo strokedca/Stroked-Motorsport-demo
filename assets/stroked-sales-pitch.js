@@ -8,9 +8,9 @@ We cover these event categories:
 - Snowmobiles
 - Motocross / Dirt track
 
-Basic event listings and RSVPs are free. We’re also developing optional Featured Event, Enhanced Event Page and Sponsor Spotlight packages for organizers and businesses that want a more prominent presence.
+Basic event listings and RSVPs are free. We also offer optional Featured Event, Enhanced Event Page and Sponsor Spotlight packages for organizers and businesses that want a more prominent presence.
 
-Event promotion prices are based on duration, with 2-, 4- and 6-week campaigns. Business advertising can be quoted for 1, 3 or 6 calendar months.
+Event promotion prices are based on duration, with 2-, 4- and 6-week campaigns. Business advertising starts at CA$25 for one calendar month, with 1-, 3- and 6-month options. Event upgrades start at CA$10 for two weeks. No GST/HST is currently added.
 
 I’m inviting local businesses to discuss advertising and sponsorship as the site grows. We’ll agree on the placement, what’s included, how long it runs and the price before anything is booked.
 

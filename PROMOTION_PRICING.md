@@ -1,10 +1,10 @@
 # Stroked promotion pricing proposal
 
-Status: recommendations for owner review, not approved checkout prices. Public copy now explains duration pricing; no Stripe product, price or payment setting is changed by this proposal.
+Status: approved by the owner on 2026-11-12. These one-time CAD prices are configured in Stripe and in the app catalog. The owner confirms no GST/HST registration and no current tax collection.
 
 ## Event upgrades
 
-Use fixed campaigns of 2, 4 or 6 weeks (14, 28 or 42 days). Agree on the start and end dates before booking. Suggested launch prices in CAD, before any applicable tax:
+Use fixed campaigns of 2, 4 or 6 weeks (14, 28 or 42 days). Agree on the start and end dates before booking. Approved launch prices in CAD, with no GST/HST currently added:
 
 | Optional upgrade | Scope | 2 weeks | 4 weeks | 6 weeks |
 | --- | --- | ---: | ---: | ---: |
@@ -16,14 +16,14 @@ Each row is an independent optional upgrade. Basic event listings, standard even
 
 ## Business advertising
 
-Use 1, 3 or 6 calendar months for ongoing business advertising. A calendar month is distinct from a four-week event campaign. Set explicit start and end dates on the booking. Suggested launch prices in CAD, before any applicable tax:
+Use 1, 3 or 6 calendar months for ongoing business advertising. A calendar month is distinct from a four-week event campaign. Set explicit start and end dates on the booking. Approved launch prices in CAD, with no GST/HST currently added:
 
 | Advertising option | Proposed scope | 1 month | 3 months | 6 months |
 | --- | --- | ---: | ---: | ---: |
 | Business promotion card | Advertiser-supplied logo/photo, description and website link on the promotion board | $25 | $65 | $120 |
 | Featured business promotion | Business card with priority placement on the promotion board | $50 | $135 | $250 |
 
-Short business campaigns tied to a particular event can be quoted for 2, 4 or 6 weeks instead. Launch with fixed-term bookings, without automatic renewal. These proposed rates cover the agreed website placement and supplied artwork; additional design, social posts or email promotion need a separate agreed scope. Business-specific labels and paid fulfillment must be finalized before opening checkout for these products.
+Short business campaigns tied to a particular event can be quoted for 2, 4 or 6 weeks instead. Launch with fixed-term bookings, without automatic renewal. These proposed rates cover the agreed website placement and supplied artwork; additional design, social posts or email promotion need a separate agreed scope. Business advertisements are reviewed and published by the administrator using the Stripe-paid booking queue.
 
 ## Research checked on 2026-11-12
 
@@ -36,4 +36,4 @@ These are individual benchmarks, not a calculated market average. Audience sizes
 
 ## Payment prerequisites
 
-Public pricing in the site remains duration-based quotations. Obtain the owner's final prices and GST/HST registration status, finish the appropriate tax configuration, connect signature-verified Stripe payment events, and test checkout before collecting payments. Do not substitute historical demonstration prices.
+The owner approved the prices and confirmed no GST/HST registration. Automatic tax is disabled for these links. Signed payment events update private bookings; a return URL never grants publication. Administrators publish the full duration only after Stripe confirms payment. Preview/testing data remains separate and cannot use the live checkout configuration.

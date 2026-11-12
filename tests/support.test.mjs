@@ -19,7 +19,7 @@ function openPage({testing=false,config}={}){
 const ready=(paymentLink,environment='live')=>({paymentLink,environment,taxConfirmed:true,webhookVerified:true});
 
 test('support opens an honest unavailable state without a configured payment link',()=>{
-  const win=openPage();try{
+  const win=openPage({config:{environment:'unconfigured',paymentLink:'',taxConfirmed:false,webhookVerified:false}});try{
     const $=id=>win.document.getElementById(id);
     assert.equal(win.document.querySelector('header p').textContent,'Find the ride. Share the event. Plan the turnout.');
     $('strokedSupportButton').click();assert.equal($('strokedSupportDialog').open,true);

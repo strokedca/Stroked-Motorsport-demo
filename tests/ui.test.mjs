@@ -30,12 +30,12 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.supabase={createClient:()=>{clientCount++;return sdk;}};
   // One evaluation keeps classic-script global lexical bindings in this DOM simulator.
   const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
-  for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-live.js'])sources.push(await readFile(new URL(path,base),'utf8'));
+  for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-pricing.js','assets/stroked-live.js'])sources.push(await readFile(new URL(path,base),'utf8'));
   win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
   await settle();assert.equal(clientCount,1);
   assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);
   assert.equal($('moreNavigation').hidden,true);assert.equal(win.document.querySelector('.ad-hero'),null);assert.equal($('promotionCards').closest('section').hidden,true);assert.doesNotMatch($('promotionCards').textContent,/Stored demo|Ronan/);
-  assert.equal($('eventForm').querySelectorAll('input[name="upgrade"]').length,0,'unavailable paid options cannot be selected');assert.match($('promotionInformation').textContent,/Pricing to be confirmed/);
+  assert.equal($('eventForm').querySelectorAll('input[name="upgrade"]').length,0,'legacy demonstration upgrade checkboxes stay removed');assert.match($('promotionInformation').textContent,/Prices are one-time CAD payments/);
   const ids=[...win.document.querySelectorAll('[id]')].map(n=>n.id);assert.equal(new Set(ids).size,ids.length,'all HTML IDs are unique');
   $('sv5Open').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/rider/);
   const f=$('sv5Auth');for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Password123!',confirm_password:'Different123!'}))f.elements.namedItem(key).value=value;

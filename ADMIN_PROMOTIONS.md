@@ -28,3 +28,9 @@ The existing events, profiles, pending changes, RSVPs, administrator membership 
 ## Validation
 
 Fifteen automated checks passed, covering current account/RSVP workflows, free promotion publishing, database and storage authorization, linked event upgrades, date visibility, safe rendering and help-button navigation. Browser checks covered the three admin choices, saving without checkout, the copyable sales pitch and the Information dialog. Hosted RPC checks passed inside a rolled-back transaction; no sample promotion was committed. Existing live event records retained their previous fingerprint.
+
+## Paid bookings and poster files
+
+Paid bookings appear separately under **Promotion payments & bookings**. Select **Prepare paid promotion** only after Stripe confirms payment, add the approved artwork and check the full campaign dates. Publishing that booking records its placement without taking another payment. The existing **Add promotion** workflow remains free for the site owner.
+
+Poster uploads accept **JPEG, PNG or WebP up to 5 MB**. Convert a PDF poster to an image before selecting it. Download chat attachments to the computer first, then use the file chooser.
