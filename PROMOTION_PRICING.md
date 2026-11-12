@@ -1,10 +1,10 @@
 # Stroked promotion pricing proposal
 
-Status: approved by the owner on 2026-11-12. These one-time CAD prices are configured in Stripe and in the app catalog. The owner confirms no GST/HST registration and no current tax collection.
+Status: PAUSED by the owner on 2026-11-12. The following amounts are retained as historical drafts for discussion; they are not currently offered for sale. Public advertising and event upgrade offers are hidden and their Stripe Payment Links are inactive. Donation and free administrator community promotions remain available.
 
 ## Event upgrades
 
-Use fixed campaigns of 2, 4 or 6 weeks (14, 28 or 42 days). Agree on the start and end dates before booking. Approved launch prices in CAD, with no GST/HST currently added:
+Use fixed campaigns of 2, 4 or 6 weeks (14, 28 or 42 days). Agree on the start and end dates before booking. Paused draft prices in CAD:
 
 | Optional upgrade | Scope | 2 weeks | 4 weeks | 6 weeks |
 | --- | --- | ---: | ---: | ---: |
@@ -16,7 +16,7 @@ Each row is an independent optional upgrade. Basic event listings, standard even
 
 ## Business advertising
 
-Use 1, 3 or 6 calendar months for ongoing business advertising. A calendar month is distinct from a four-week event campaign. Set explicit start and end dates on the booking. Approved launch prices in CAD, with no GST/HST currently added:
+Use 1, 3 or 6 calendar months for ongoing business advertising. A calendar month is distinct from a four-week event campaign. Set explicit start and end dates on the booking. Paused draft prices in CAD:
 
 | Advertising option | Proposed scope | 1 month | 3 months | 6 months |
 | --- | --- | ---: | ---: | ---: |

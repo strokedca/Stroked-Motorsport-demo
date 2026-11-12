@@ -1,5 +1,7 @@
 # Stroked payments
 
+**Current status: advertising and event upgrade sales are paused at the owner's request.** Public offers are hidden, new promotion bookings are disabled server-side, and the fifteen advertising/upgrade Payment Links are inactive. The Donation checkout, existing payment records and free administrator promotions remain available. The prices described below are historical pending review.
+
 The owner approved the duration prices and confirmed on 2026-11-12 that Stroked has no GST/HST registration and does not currently collect GST/HST. These payments add no tax. Do not enable a 15% rate or Stripe Tax without a subsequent confirmed registration and appropriate configuration.
 
 ## Checkout and prices
