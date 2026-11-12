@@ -136,7 +136,7 @@
 .sv54-status{font-size:14px;min-height:22px;margin:8px 0;color:#d4e8fb}
 .sv54-live-rsvp{color:#c2f5d6}
 @media(max-width:650px){.sv54-filter-row{grid-template-columns:1fr}#detailsDialog{width:97%;max-height:90dvh;padding:14px}#eventExtraActions button{flex:1 1 45%}}
-</style><style>#moreNavigation,#legacySponsorDemo,.promo-board,#categorySponsorZone,#demoSponsorDirectory,.support-logo,.support-logo-label,.event-sponsor-row label:has(.support-logo){display:none!important}.promotion-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}.promotion-options h4{margin-top:0}.promotion-options p{line-height:1.5}</style><link rel="stylesheet" href="assets/stroked-pricing.css?v=5.5.5-advertising-paused"></head><body data-stroked-advertising="paused">
+</style><style>#moreNavigation,#legacySponsorDemo,.promo-board,#categorySponsorZone,#demoSponsorDirectory,.support-logo,.support-logo-label,.event-sponsor-row label:has(.support-logo){display:none!important}.promotion-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}.promotion-options h4{margin-top:0}.promotion-options p{line-height:1.5}</style><link rel="stylesheet" href="assets/stroked-pricing.css?v=5.5.5-advertising-paused"><link rel="stylesheet" href="assets/stroked-pages.css?v=info-pages"></head><body data-stroked-advertising="paused">
 <header><img class="brand-logo" src="events-logo-1.png" alt="Stroked Motorsports Events official red white and black logo"><h1 class="hidden">Stroked Motorsports Events</h1><p>Find the ride. Share the event. Plan the turnout.</p><button id="strokedSupportButton" type="button" class="stroked-support-button" aria-haspopup="dialog" aria-controls="strokedSupportDialog">Donation</button><button id="strokedInfoButton" type="button" class="stroked-information-button" aria-haspopup="dialog" aria-controls="strokedInformationDialog">Information</button></header>
 <main><nav class="main-nav" aria-label="Main navigation">
   <button id="tabBrowse" type="button" onclick="tab('browse')">Explore events</button>
@@ -150,6 +150,7 @@
     <button id="tabManage" type="button" class="secondary" onclick="tab('manage')">Organizer demo</button>
     <button id="tabAssistant" type="button" class="secondary" onclick="tab('assistant')">Ask Stroked</button>
   </div></details>
+<details class="site-pages-menu"><summary>About &amp; Help</summary><div><a href="/about.html">About Stroked</a><a href="/how-it-works.html">How It Works</a><a href="/motorsports.html">What We Cover</a><a href="/clothing-apparel.html">Clothing & Apparel</a><a href="/contact.html">Contact & Help</a></div></details>
 </nav>
 
 <section id="browse"><div class="notice compact-demo-note"><strong>Stroked Motorsports Events</strong> is a free event calendar for motorcycles, ATVs / off-road, classic cars, snowmobiles and motocross / dirt track. Browse organizer-submitted events, check the details and sign in to save your RSVP.</div>
@@ -249,7 +250,7 @@
 <section id="strokedAdminHelp" hidden><h3>Administrator tools — free site promotions</h3><p>After signing in to your administrator account, choose Add promotion. Link an approved event or create a separate local or charity announcement. Choose Featured Event, Enhanced Event Page and Sponsor Spotlight in any combination. Add photos, a sponsor and dates as needed, then publish at no charge.</p><p>You can edit, hide or republish your promotions. A copyable sales pitch is included in the same admin section.</p></section>
 <div class="actions"><button type="button" data-open-tab="tabBrowse">Explore events</button><button type="button" data-open-tab="tabAdd">Post an event</button><button type="button" id="strokedInformationAccount" class="secondary">Sign in / My account</button><button type="button" data-open-tab="tabSponsor" class="secondary" hidden>Advertise</button></div></dialog>
 <dialog id="strokedSupportDialog" aria-labelledby="strokedSupportHeading" aria-describedby="strokedSupportDescription"><div class="line"><h2 id="strokedSupportHeading">Donation to Stroked Events</h2><button id="strokedSupportClose" type="button" class="secondary stroked-support-close">Close</button></div><p id="strokedSupportDescription">Your voluntary donation helps cover hosting, email and site upkeep. It is site support (a tip for the free event-listing service), with no charitable tax receipt. It does not purchase advertising, event upgrades or additional access.</p><p>One-time donation in Canadian dollars. No subscription.</p><p id="strokedSupportStatus" role="status">Donations are being prepared. Please check back soon.</p><a id="strokedSupportCheckout" class="stroked-support-checkout" target="_blank" rel="noopener noreferrer" hidden>Choose an amount securely</a></dialog>
-<footer><p><a href="mailto:Strokedca@gmail.com">Contact Stroked: Strokedca@gmail.com</a> · <a href="#contactStroked" onclick="tab('browse')">Contact Us</a></p>Stroked Motorsports Events • Event submissions require approval • Basic listings and RSVPs are free</footer>
+<footer><nav class="site-pages-footer" aria-label="Information pages"><a href="/about.html">About Stroked</a><a href="/how-it-works.html">How It Works</a><a href="/motorsports.html">What We Cover</a><a href="/clothing-apparel.html">Clothing & Apparel</a><a href="/contact.html">Contact & Help</a></nav><p><a href="mailto:Strokedca@gmail.com">Contact Stroked: Strokedca@gmail.com</a> · <a href="#contactStroked" onclick="tab('browse')">Contact Us</a></p>Stroked Motorsports Events • Event submissions require approval • Basic listings and RSVPs are free</footer>
 <script>
 'use strict';
 const KEY='stroked-demo-v2', LEGACY='stroked-demo-v1';
@@ -647,4 +648,4 @@ if(v47RequestedEvent&&state.events.some(e=>e.id===v47RequestedEvent))setTimeout(
 <script src="assets/stroked-support.js?v=5.5.5-advertising-paused"></script>
 <script src="assets/stroked-information.js?v=5.5.5-advertising-paused"></script>
 
-</body></html>
+<script src="assets/stroked-pages-nav.js?v=info-pages"></script></body></html>

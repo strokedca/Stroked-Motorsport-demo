@@ -4,7 +4,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
-export const siteFiles=Object.freeze(['index.html','events-logo-1.png','clothing-apparel-logo.png','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js','assets/stroked-live.css','assets/stroked-payments-config.js','assets/stroked-support.js','assets/stroked-support.css','assets/stroked-promotions.js','assets/stroked-promotions.css','assets/stroked-information.js','assets/stroked-information.css','assets/stroked-sales-pitch.js','assets/stroked-pricing.js','assets/stroked-pricing.css']);
+export const siteFiles=Object.freeze(['index.html','events-logo-1.png','clothing-apparel-logo.png','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js','assets/stroked-live.css','assets/stroked-payments-config.js','assets/stroked-support.js','assets/stroked-support.css','assets/stroked-promotions.js','assets/stroked-promotions.css','assets/stroked-information.js','assets/stroked-information.css','assets/stroked-sales-pitch.js','assets/stroked-pricing.js','assets/stroked-pricing.css','assets/stroked-pages.css','assets/stroked-pages-nav.js','assets/stroked-tour.js','about.html','how-it-works.html','motorsports.html','clothing-apparel.html','contact.html']);
 
 export function resolveBuildMode(branch=process.env.CF_PAGES_BRANCH,requested=process.env.STROKED_BUILD_MODE){
   const mode=requested||(branch==='main'?'production':'testing');
