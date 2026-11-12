@@ -35,7 +35,7 @@ test('production upload contains the current app and routes to live services wit
     assert.match(html,/data-stroked-offers="business"/,'advertisers have their own duration packages');
     assert.match(html,/No GST\/HST is currently added/,'the confirmed unregistered tax setup is explicit');
     const files=(await readdir(dir,{recursive:true})).filter(p=>!['assets'].includes(p)).sort();
-    assert.deepEqual(files.filter(p=>p.endsWith('.html')),['index.html'],'only the current client is runnable');
+    assert.deepEqual(files.filter(p=>p.endsWith('.html')),['about.html','clothing-apparel.html','contact.html','how-it-works.html','index.html','motorsports.html'],'only the published public pages are runnable');
     assert.ok(files.every(p=>!/[.]sql$|[.]zip$|backup|fixture|package[-.]|test[.]/i.test(p)),'private build inputs and old clients are excluded');
     const document=new Window({settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true,disableComputedStyleRendering:true}});
     document.document.write(html);

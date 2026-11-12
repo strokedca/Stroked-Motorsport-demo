@@ -1,0 +1,1 @@
+(()=>{'use strict';const run=()=>{if(location.hash==='#post-event')document.getElementById('tabAdd')?.click()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();window.addEventListener('hashchange',run)})();
