@@ -18,6 +18,15 @@ function openPage({testing=false,config}={}){
 }
 const ready=(paymentLink,environment='live')=>({paymentLink,environment,taxConfirmed:true,webhookVerified:true});
 
+test('configured production Donation opens checkout while a preview refuses the live configuration',()=>{
+  for(const testing of [false,true]){const win=openPage({testing});try{
+    const link=win.document.getElementById('strokedSupportCheckout');
+    assert.equal(link.hidden,testing);
+    if(!testing)assert.match(link.href,/^https:\/\/buy[.]stripe[.]com\/[A-Za-z0-9_]+$/);
+    assert.doesNotMatch(win.document.getElementById('strokedSupportStatus').textContent,/payment received|thank you for your payment/i);
+  }finally{win.happyDOM.abort();}}
+});
+
 test('support opens an honest unavailable state without a configured payment link',()=>{
   const win=openPage({config:{environment:'unconfigured',paymentLink:'',taxConfirmed:false,webhookVerified:false}});try{
     const $=id=>win.document.getElementById(id);
