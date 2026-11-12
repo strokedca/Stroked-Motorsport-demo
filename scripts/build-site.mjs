@@ -28,14 +28,17 @@ export async function buildSite({mode='testing',outDir=join(root,'dist')}={}){
     let html=contents.get('index.html').toString('utf8');
     html=replaceOnce(html,/<title>Stroked Motorsports Events<\/title>/,'<title>Stroked Motorsports Events'+(mode==='testing'?' — Testing Release':'')+'</title>');
     html=replaceOnce(html,/<header>/,'<header>'+(mode==='testing'?'<span class="tag">TESTING RELEASE</span>':''));
+    html=replaceOnce(html,/<meta name="robots" content="index, follow">/,'<meta name="robots" content="'+(mode==='testing'?'noindex, nofollow':'index, follow')+'">');
     contents.set('index.html',Buffer.from(html));
     let config=contents.get('assets/stroked-config.js').toString('utf8');
     config=replaceOnce(config,/rpcPrefix: '(?:stroked_v55_|stroked_live_v55_)'/,"rpcPrefix: '"+(mode==='production'?'stroked_live_v55_':'stroked_v55_')+"'");
     config=replaceOnce(config,/testing: (?:true|false)/,'testing: '+(mode==='testing'));
     contents.set('assets/stroked-config.js',Buffer.from(config));
   }
+  contents.set('robots.txt',mode==='production'?await readFile(join(root,'robots.txt')):Buffer.from('User-agent: *\nDisallow: /\n'));
+  if(mode==='production')contents.set('sitemap.xml',await readFile(join(root,'sitemap.xml')));
   const csp="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.stripe.com https://*.link.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://*.link.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.link.com; frame-src https://*.stripe.com https://*.link.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self' https://*.stripe.com https://*.link.com";
-  contents.set('_headers',Buffer.from('/*\n  Cache-Control: no-cache\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: same-origin\n  Content-Security-Policy: '+csp+'\n'));
+  contents.set('_headers',Buffer.from('/*\n  Cache-Control: no-cache\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: same-origin\n  Content-Security-Policy: '+csp+'\n'+(mode==='testing'?'  X-Robots-Tag: noindex, nofollow\n':'')));
   const manifest={version:'5.5.5',mode,rpcPrefix:mode==='production'?'stroked_live_v55_':'stroked_v55_',files:Object.fromEntries([...contents].map(([path,bytes])=>[path,createHash('sha256').update(bytes).digest('hex')]))};
   contents.set('release-manifest.json',Buffer.from(JSON.stringify(manifest,null,2)+'\n'));
   // dist is generated output; historical clients, SQL, tests and credentials are never copied.
