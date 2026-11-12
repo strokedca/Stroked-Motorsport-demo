@@ -23,7 +23,8 @@ test('production upload contains the current app and routes to live services wit
     assert.equal(sandbox.window.STROKED_CONFIG.testing,false);
     assert.equal(sandbox.window.STROKED_CONFIG.rpcPrefix,'stroked_live_v55_');
     const html=await readFile(join(dir,'index.html'),'utf8');
-    assert.doesNotMatch(html,/Version 5\.5 — Testing Release|VERSION 5\.5 • TESTING RELEASE|Version 5\.5 testing •/);
+    assert.doesNotMatch(html,/Version 5\.5|VERSION 5\.5|TESTING RELEASE|Testing Release/);
+    assert.match(html,/<title>Stroked Motorsports Events<\/title>/);
     assert.match(html,/data-stroked-offers="event"/,'approved event prices use the shared catalog');
     assert.match(html,/data-stroked-offers="business"/,'advertisers have their own duration packages');
     assert.match(html,/No GST\/HST is currently added/,'the confirmed unregistered tax setup is explicit');
@@ -42,6 +43,7 @@ test('production upload contains the current app and routes to live services wit
     const preview={window:{}};runInNewContext(await readFile(join(dir,'assets/stroked-config.js'),'utf8'),preview);
     assert.equal(preview.window.STROKED_CONFIG.testing,true);
     assert.equal(preview.window.STROKED_CONFIG.rpcPrefix,'stroked_v55_');
+    assert.match(await readFile(join(dir,'index.html'),'utf8'),/<span class="tag">TESTING RELEASE<\/span>/);
     assert.equal(await readFile(new URL('../assets/stroked-config.js',import.meta.url),'utf8'),sourceConfig);
   }finally{await rm(dir,{recursive:true,force:true});}
 });

@@ -26,9 +26,8 @@ export async function buildSite({mode='testing',outDir=join(root,'dist')}={}){
   for(const path of siteFiles)contents.set(path,await readFile(join(root,path)));
   {
     let html=contents.get('index.html').toString('utf8');
-    html=replaceOnce(html,/<title>Stroked Motorsports Events — Version 5\.5(?: — Testing Release)?<\/title>/,'<title>Stroked Motorsports Events — Version 5.5'+(mode==='testing'?' — Testing Release':'')+'</title>');
-    html=replaceOnce(html,/<span class="tag">VERSION 5\.5(?: • TESTING RELEASE)?<\/span>/,'<span class="tag">VERSION 5.5'+(mode==='testing'?' • TESTING RELEASE':'')+'</span>');
-    html=replaceOnce(html,/Stroked Motorsports Events • Version 5\.5(?: testing)? •/,'Stroked Motorsports Events • Version 5.5'+(mode==='testing'?' testing':'')+' •');
+    html=replaceOnce(html,/<title>Stroked Motorsports Events<\/title>/,'<title>Stroked Motorsports Events'+(mode==='testing'?' — Testing Release':'')+'</title>');
+    html=replaceOnce(html,/<header>/,'<header>'+(mode==='testing'?'<span class="tag">TESTING RELEASE</span>':''));
     contents.set('index.html',Buffer.from(html));
     let config=contents.get('assets/stroked-config.js').toString('utf8');
     config=replaceOnce(config,/rpcPrefix: '(?:stroked_v55_|stroked_live_v55_)'/,"rpcPrefix: '"+(mode==='production'?'stroked_live_v55_':'stroked_v55_')+"'");

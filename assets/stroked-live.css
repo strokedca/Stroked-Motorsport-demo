@@ -14,6 +14,9 @@ button:disabled{opacity:.6;cursor:wait}
 .sv55-event-information{margin:10px 0}.sv55-event-information summary{min-height:44px;padding:10px 0;cursor:pointer;font-weight:600}
 #sv5Message{min-height:24px;white-space:pre-line;color:#d2e8ff;scroll-margin-top:88px}
 .account-help{font-size:14px;color:#bbc9d9}.account-error{color:#ffb8ad!important}
+.signup-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin:12px 0 22px}
+.signup-stats>div{padding:14px;border:1px solid #526174;border-radius:8px;background:#172331}
+.signup-stats dt{font-size:14px;color:#bbc9d9}.signup-stats dd{margin:6px 0 0;font-size:28px;font-weight:700;color:#fff}
 .release-note{background:#302a1e;border:1px solid #b18c42;padding:10px 12px;border-radius:8px}
 .sv54-organizer-count{padding:9px;background:#20364a;border-radius:8px}
 #sv55RsvpStatus{white-space:pre-line;min-height:24px;color:#d2e8ff}

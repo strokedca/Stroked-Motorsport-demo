@@ -12,12 +12,13 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
-  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[];
+  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
     if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=emptyEvents?[]:[row];}
     if(name.endsWith('my_account'))data={account_type:accountType,is_admin:administrator,profile};
     if(name.endsWith('admin_events'))data=[{...row,status:'approved'}];
+    if(name.endsWith('admin_signup_stats')){if(signupFailure)return{data:null,error:{message:'Unavailable'}};data={total:5,email_confirmed:4,awaiting_confirmation:1,riders:3,organizers:2,new_last_7_days:2};}
     if(name.endsWith('admin_requests'))data=reviewRequests;
     if(name.endsWith('become_organizer')){accountType='organizer';data=true;}
     if(name.endsWith('save_profile')){profile={...args.p_profile};data=true;}
@@ -34,6 +35,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
   await settle();assert.equal(clientCount,1);
   assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);
+  assert.equal($('sv56SignupCounts').children.length,0);assert.ok(!calls.some(c=>c.name.endsWith('admin_signup_stats')),'signed-out visitors do not request signup totals');
   assert.equal($('moreNavigation').hidden,true);assert.equal(win.document.querySelector('.ad-hero'),null);assert.equal($('promotionCards').closest('section').hidden,true);assert.doesNotMatch($('promotionCards').textContent,/Stored demo|Ronan/);
   assert.equal($('eventForm').querySelectorAll('input[name="upgrade"]').length,0,'legacy demonstration upgrade checkboxes stay removed');assert.match($('promotionInformation').textContent,/Prices are one-time CAD payments/);
   const ids=[...win.document.querySelectorAll('[id]')].map(n=>n.id);assert.equal(new Set(ids).size,ids.length,'all HTML IDs are unique');
@@ -64,12 +66,15 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   $('sv5Refresh').click();await settle();assert.match($('sv5Message').textContent,mode==='production'?/Account services are temporarily unavailable/:/testing account and event services/);
   failPublicRead=false;administrator=true;reviewRequests=[{id:'abcdef01-abcd-4567-89ab-123456789abc',event_id:id,action:'edit',status:'pending',payload:{...row.payload,time:'10:15',registration:'09:45',ksu:'10:30',rain:date,startLocation:'<img src=x onerror=alert(1)>',endLocation:'QA finish',stops:'QA stop',food:'QA food',organizerContact:'public@example.test',sponsors:[{name:'QA supporter',contribution:'QA snacks',link:'https://example.test'}]}}];
   $('sv5Refresh').click();await settle();const reviewCard=$('sv55Requests').querySelector('.sv5Card');assert.ok(reviewCard);assert.equal(reviewCard.querySelector('details').open,true,'proposed event information is expanded for review');
+  assert.equal($('sv56SignupCounts').querySelectorAll('dd').length,6);assert.equal($('sv56SignupCounts').querySelector('dd').textContent,'5');assert.match($('sv56SignupStatus').textContent,/Updated just now/);
   for(const value of ['Start time: 10:15','Registration opens: 09:45','Departure / KSU: 10:30','Starting location: <img src=x onerror=alert(1)>','End location: QA finish','Route / stops: QA stop','Food / amenities: QA food','Public organizer contact: public@example.test','QA supporter — QA snacks — https://example.test','Event status: Scheduled'])assert.ok(reviewCard.textContent.includes(value),'reviewers can inspect '+value);
   assert.equal(reviewCard.querySelector('img'),null,'submitted venue markup is rendered as text');
   [...reviewCard.querySelectorAll('button')].find(b=>b.textContent==='Approve').click();await settle();
   assert.equal(confirmations.at(-1),'Approve this request'+(mode==='testing'?' in the testing release?':'?'));
   assert.ok(calls.every(c=>c.name.startsWith(mode==='production'?'stroked_live_v55_':'stroked_v55_')),'every RPC uses the correct environment');
   emptyEvents=true;$('sv5Refresh').click();await settle();assert.match($('cards').textContent,/No events listed yet/);$('sv55EmptyPost').click();assert.equal($('add').classList.contains('hidden'),false,'the empty calendar links to the working event form');
+  signupFailure=true;$('sv5Refresh').click();await settle();assert.equal($('sv56SignupCounts').children.length,0);assert.match($('sv56SignupStatus').textContent,/could not load/,'a failed count does not display a misleading zero');
+  signupFailure=false;administrator=false;$('sv5Refresh').click();await settle();assert.equal($('sv5Admin').hidden,true);assert.equal($('sv56SignupCounts').children.length,0,'admin totals clear when the account loses administrator access');
   assert.deepEqual(errors,[]);
   }finally{win?.happyDOM.abort();await rm(dir,{recursive:true,force:true});}
 });

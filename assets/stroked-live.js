@@ -30,7 +30,7 @@
             <h3>My events</h3><p class="account-help">Submissions and changes appear publicly after administrator approval.</p><div id="sv5Mine"></div>
             <section id="sv53ChangePanel" class="sv5Card" hidden><h3>Request event changes</h3><form id="sv53ChangeForm"><input name="event_id" type="hidden"><label>Event name<input name="name" maxlength="90" minlength="3" required></label><label>Organizing club<input name="club" maxlength="80" minlength="2" required></label><div class="grid"><label>Date<input name="date" type="date" required></label><label>Start time<input name="time" type="time"></label></div><label>Starting location<input name="startLocation" maxlength="180"></label><label>Departure / KSU<input name="ksu" type="time"></label><label>Details<textarea name="details" maxlength="600" rows="4"></textarea></label><label>Request type<select name="request_type"><option value="edit">Request changes</option><option value="cancel">Request cancellation</option></select></label><div class="actions"><button type="submit">Submit request for approval</button><button id="sv53CancelChange" type="button" class="secondary">Close request</button></div></form></section>
           </section>
-          <section id="sv5Admin" hidden><h3>Administrator approval dashboard</h3><div id="sv5Queue"></div><h3>Change and cancellation requests</h3><div id="sv55Requests"></div></section>
+          <section id="sv5Admin" hidden><section aria-labelledby="sv56SignupHeading"><h3 id="sv56SignupHeading">Site signups</h3><p class="account-help">Counts registered accounts, including administrator and test accounts. Visitors without accounts are not included. Each account is counted once.</p><p id="sv56SignupStatus" role="status" aria-live="polite"></p><dl id="sv56SignupCounts" class="signup-stats"></dl></section><h3>Administrator approval dashboard</h3><div id="sv5Queue"></div><h3>Change and cancellation requests</h3><div id="sv55Requests"></div></section>
         </div>
       </div>
     </dialog>`;
@@ -88,7 +88,19 @@
     el('sv5Post').hidden=!organizer;el('sv55BecomeOrganizer').hidden=!signed||organizer||!account;
     el('sv5Open').textContent=signed?'My account':'Rider Login / Register';el('sv55OrganizerOpen').hidden=signed;
     el('sv5Identity').textContent=signed?'Signed in: '+user.email+(account?' · '+(account.is_admin?'Administrator':organizer?'Organizer':'Rider'):''):'Not signed in';
+    if(!account?.is_admin){el('sv56SignupCounts').replaceChildren();el('sv56SignupStatus').textContent='';}
     if(!signed){el('sv53ProfileForm').reset();el('sv5Mine').replaceChildren();el('sv5Queue').replaceChildren();el('sv55Requests').replaceChildren();myRows=[];}
+  }
+  async function refreshSignupStats(epoch) {
+    const target=el('sv56SignupCounts'),status=el('sv56SignupStatus');
+    target.replaceChildren();status.textContent='Loading signup totals…';
+    try {
+      const stats=await rpc('admin_signup_stats');if(epoch!==authEpoch||!account?.is_admin)return;
+      const metrics=[['total','Registered accounts'],['email_confirmed','Email confirmed'],['awaiting_confirmation','Awaiting confirmation'],['riders','Rider accounts'],['organizers','Organizer accounts'],['new_last_7_days','New in the last 7 days']];
+      if(!stats||metrics.some(([key])=>!Number.isSafeInteger(stats[key])||stats[key]<0))throw Error('Invalid signup totals');
+      for(const [key,label] of metrics){const item=document.createElement('div');item.append(text('dt',label),text('dd',stats[key].toLocaleString()));target.append(item);}
+      status.textContent='Updated just now. Choose Refresh to update these totals.';
+    }catch{if(epoch===authEpoch&&account?.is_admin){target.replaceChildren();status.textContent='Signup totals could not load. Choose Refresh to try again.';}}
   }
   async function refreshAccount() {
     const epoch=++authEpoch;
@@ -98,6 +110,7 @@
     try {
       const [own,rows]=await Promise.all([rpc('my_account'),rpc('my_events')]);if(epoch!==authEpoch)return;
       account=own;myRows=Array.isArray(rows)?rows:[];updateAccountView();
+      if(account?.is_admin)await refreshSignupStats(epoch);if(epoch!==authEpoch)return;
       for(const [k,v] of Object.entries(own?.profile||{})){const input=el('sv53ProfileForm').elements.namedItem(k);if(input)input.value=v||'';}
       renderMine();
       await pricingTools?.refresh();
