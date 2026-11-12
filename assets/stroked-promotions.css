@@ -1,0 +1,18 @@
+.sv56-upgrade-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.sv56-upgrade{display:grid;gap:8px;background:#1d2632;border:1px solid #526174;border-radius:9px;padding:13px;margin:0;color:#f3f5f8}
+.sv56-upgrade:has(input:checked){border-color:#dc8879;background:#30242b}
+.sv56-upgrade input,.sv56-inline input{width:18px;height:18px;accent-color:#d2473d;vertical-align:middle}
+.sv56-upgrade small{line-height:1.45}.sv56-free{font-size:12px;color:#bddfc9}
+.sv56-inline{display:flex;gap:9px;align-items:center;min-height:44px}.sv56-inline input{flex-shrink:0}
+#sv56PromotionAdmin{scroll-margin-top:95px}#sv56PromotionStatus{min-height:24px}
+.sv56-media-preview{display:flex;gap:8px;flex-wrap:wrap}.sv56-media-preview img{width:85px;height:75px;object-fit:cover;border-radius:6px}
+.sv56-promotion-board{margin:22px 0}.sv56-public-promotions{display:grid;gap:15px}
+.sv56-public-promotion{background:#1d2632;border:1px solid #526174;border-radius:11px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr)}
+.sv56-featured-promotion,.card.sv56-featured-event{border-color:#df8170;background:linear-gradient(125deg,#30232b,#1d2632)}
+.sv56-promotion-cover{display:block;max-width:100%;width:100%;max-height:420px;object-fit:contain;background:#111720}
+.sv56-promotion-body{padding:18px;min-width:0}.sv56-promotion-body h3{margin:7px 0;font-size:23px}.sv56-promotion-body p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.sv56-kind,.sv56-featured-flag{display:inline-block;color:#ffd4bc;font-size:12px}.sv56-featured-flag{padding:4px 8px;background:#71372f;border-radius:5px;margin-bottom:8px}
+.sv56-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}.sv56-gallery img{width:100%;height:130px;object-fit:cover;border-radius:6px}
+.sv56-sponsor{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid #9a746a;border-radius:8px;padding:12px;margin:14px 0}.sv56-sponsor small{width:100%;color:#ffbba8}.sv56-sponsor img{width:66px;height:66px;object-fit:contain}.sv56-sponsor a{overflow-wrap:anywhere}
+.sv56-event-promotion{border-top:1px solid #526174;padding-top:12px;margin-top:16px}.sv56-event-promotion p{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:650px){.sv56-upgrade-options{grid-template-columns:1fr}.sv56-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.sv56-gallery img{height:120px}.account-dock button{font-size:13px}}

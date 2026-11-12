@@ -30,7 +30,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.supabase={createClient:()=>{clientCount++;return sdk;}};
   // One evaluation keeps classic-script global lexical bindings in this DOM simulator.
   const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
-  for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js'])sources.push(await readFile(new URL(path,base),'utf8'));
+  for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-live.js'])sources.push(await readFile(new URL(path,base),'utf8'));
   win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
   await settle();assert.equal(clientCount,1);
   assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);

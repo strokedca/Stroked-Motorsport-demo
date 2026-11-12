@@ -1,0 +1,14 @@
+.stroked-information-button{display:inline-flex;align-items:center;width:auto;max-width:100%;min-height:32px;margin:12px 0 0 8px;padding:6px 10px;font-size:12px;line-height:1.4;background:#303b4b;border:1px solid #617085;border-radius:7px;color:#fff}
+#strokedInformationDialog{width:min(760px,95vw);max-width:760px;padding:20px}
+#strokedInformationDialog h2{font-size:23px;margin:0}
+#strokedInformationDialog h3{font-size:17px;margin:14px 0 6px}
+#strokedInformationDialog details{border-top:1px solid #465365;padding:4px 0}
+#strokedInformationDialog summary{font-weight:600;min-height:44px;display:list-item;padding:11px 0;cursor:pointer}
+#strokedInformationDialog p,#strokedInformationDialog li{line-height:1.55}
+#strokedInformationDialog ol{padding-left:23px}
+#strokedInformationDialog .actions{margin-top:16px}
+#strokedAdminHelp{border-left:3px solid #db7767;padding-left:12px;margin-top:15px}
+.sv56-sales-pitch{border:1px solid #526174;border-radius:9px;padding:12px;margin:16px 0}
+.sv56-sales-pitch summary{min-height:44px;padding:10px 0;font-weight:600;cursor:pointer}
+.sv56-sales-pitch textarea{min-height:200px}
+@media(pointer:coarse){.stroked-information-button{min-height:44px}}
