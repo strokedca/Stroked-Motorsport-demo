@@ -125,6 +125,28 @@
 .clothing-launch-logo{display:block;width:min(100%,560px);height:auto;object-fit:contain;margin:8px auto 16px;background:#000;border-radius:10px}
 .clothing-coming-soon{font-weight:900;font-size:clamp(32px,6vw,56px);letter-spacing:.075em;line-height:1.15;color:#fff;margin:16px 0 12px}
 .clothing-launch-subtitle{font-size:clamp(17px,2.5vw,22px);margin:0 0 12px}
+
+/* Compact Home Screen instructions beside the site creation date. */
+.calendar-utilities{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px;min-height:44px}
+.calendar-utilities .site-created{margin:0;font-size:13px;line-height:1.45}
+.home-screen-help{position:relative;flex:none}
+.home-screen-help>summary{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:9px 11px;border:1px solid #506074;border-radius:8px;background:#1d2632;color:#f3f5f8;font-size:13px;font-weight:600;cursor:pointer;list-style:none}
+.home-screen-help>summary::-webkit-details-marker{display:none}
+.home-screen-help>summary::marker{content:''}
+.home-screen-help>summary:hover,.home-screen-help[open]>summary{border-color:#ffaca6}
+.home-screen-help>summary:focus-visible{outline:3px solid #ffac7c;outline-offset:3px}
+.home-screen-icon{width:18px;height:18px;flex:none}
+.home-screen-caret{font-size:11px;line-height:1}
+.home-screen-help[open] .home-screen-caret{transform:rotate(180deg)}
+.home-screen-panel{position:absolute;right:0;top:calc(100% + 8px);z-index:30;width:min(360px,calc(100vw - 32px));max-height:min(70vh,560px);overflow-y:auto;overscroll-behavior:contain;padding:16px;border:1px solid #647183;border-radius:12px;background:#1d2632;color:#f3f5f8;box-shadow:0 12px 32px #0008;font-size:13px;line-height:1.5}
+.home-screen-panel h3{font-size:16px;margin:0 0 12px}
+.home-screen-panel h4{font-size:14px;margin:14px 0 6px;color:#ffccc5}
+.home-screen-panel ol{margin:0;padding-left:20px}
+.home-screen-panel li+li{margin-top:6px}
+.home-screen-panel .home-screen-tip{margin:14px 0 0;padding-top:12px;border-top:1px solid #455166;color:#c4cfdd}
+.home-screen-panel .home-screen-guides{margin:10px 0 0;font-size:12px}
+@media(max-width:480px){.home-screen-label{display:none}.home-screen-help>summary{padding:9px 10px}}
+
 </style><style>
 .sv54-filter-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0 6px;padding:14px;border:1px solid #425267;border-radius:12px;background:#1b2634}
 .sv54-note{font-size:13px;margin:8px 0 16px}
@@ -154,7 +176,32 @@
 </nav>
 
 <section id="browse"><div class="notice compact-demo-note"><strong>Stroked Motorsports Events</strong> is a free event calendar for motorcycles, ATVs / off-road, classic cars, snowmobiles and motocross / dirt track. Browse organizer-submitted events, check the details and sign in to save your RSVP.</div>
+<div class="calendar-utilities">
 <p class="muted site-created">Site created <time datetime="2026-11-01">November 1, 2026</time>.</p>
+<details class="home-screen-help" id="homeScreenHelp">
+  <summary aria-label="Add Stroked to your phone Home Screen" title="Add to phone">
+    <svg class="home-screen-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><rect x="6" y="2.5" width="12" height="19" rx="2.5"></rect><path d="M10 18.5h4"></path></svg>
+    <span class="home-screen-label">Add to phone</span><span class="home-screen-caret" aria-hidden="true">▾</span>
+  </summary>
+  <div class="home-screen-panel">
+    <h3>Keep Stroked one tap away</h3>
+    <h4>iPhone · Safari</h4>
+    <ol>
+      <li>Open <strong>stroked.ca</strong> in <strong>Safari</strong>.</li>
+      <li>Tap <strong>Share</strong> (the square with an upward arrow), then <strong>Add to Home Screen</strong>.</li>
+      <li>Name it <strong>Stroked Events</strong>. Turn on <strong>Open as Web App</strong> if shown, then tap <strong>Add</strong>.</li>
+    </ol>
+    <h4>Android · Chrome</h4>
+    <ol>
+      <li>Open <strong>stroked.ca</strong> in <strong>Chrome</strong>.</li>
+      <li>Tap the <strong>⋮</strong> menu, then <strong>Install and create shortcut</strong> → <strong>Create shortcut</strong>. Some versions show <strong>Add to Home screen</strong> instead.</li>
+      <li>Name it <strong>Stroked Events</strong>, tap <strong>Add</strong> and confirm if asked.</li>
+    </ol>
+    <p class="home-screen-tip">Opened this in Facebook or Messenger? Use its menu to open the site in Safari (iPhone) or Chrome (Android) first.</p>
+    <p class="home-screen-guides"><a href="https://support.apple.com/guide/iphone/iph42ab2f3a7/ios" target="_blank" rel="noopener noreferrer">Apple guide</a> · <a href="https://support.google.com/chrome/answer/15085120?co=GENIE.Platform%3DAndroid&amp;hl=en" target="_blank" rel="noopener noreferrer">Android guide</a></p>
+  </div>
+</details>
+</div>
 
 <h2>Event calendar</h2><div class="controls"><div><label for="filterCat">Event category</label><select id="filterCat" onchange="render()"><option value="">All motorsports</option><option>Motorcycles</option><option>ATVs / Off-road</option><option>Classic cars</option><option>Snowmobiles</option><option>Motocross / Dirt track</option></select></div><div><label for="filterYear">Event year</label><select id="filterYear" onchange="changeEventYear()"><option value="">All years</option></select></div><div><label id="provinceFilterLabel">Province / territory</label><details id="provincePicker" class="province-picker"><summary id="provinceSummary" aria-labelledby="provinceFilterLabel provinceSummary">All Canada — select regions</summary><div class="province-options"><p class="province-help">Choose any number of provinces or territories.</p><button type="button" class="secondary" onclick="showAllCanada()">All Canada (clear selection)</button><div class="province-checkboxes"><label class="check"><input type="checkbox" name="filterProvince" value="PEI" onchange="changeProvinceSelection()"><span>PEI</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Nova Scotia" onchange="changeProvinceSelection()"><span>Nova Scotia</span></label><label class="check"><input type="checkbox" name="filterProvince" value="New Brunswick" onchange="changeProvinceSelection()"><span>New Brunswick</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Newfoundland and Labrador" onchange="changeProvinceSelection()"><span>Newfoundland and Labrador</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Quebec" onchange="changeProvinceSelection()"><span>Quebec</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Ontario" onchange="changeProvinceSelection()"><span>Ontario</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Manitoba" onchange="changeProvinceSelection()"><span>Manitoba</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Saskatchewan" onchange="changeProvinceSelection()"><span>Saskatchewan</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Alberta" onchange="changeProvinceSelection()"><span>Alberta</span></label><label class="check"><input type="checkbox" name="filterProvince" value="British Columbia" onchange="changeProvinceSelection()"><span>British Columbia</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Yukon" onchange="changeProvinceSelection()"><span>Yukon</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Northwest Territories" onchange="changeProvinceSelection()"><span>Northwest Territories</span></label><label class="check"><input type="checkbox" name="filterProvince" value="Nunavut" onchange="changeProvinceSelection()"><span>Nunavut</span></label></div></div></details></div><div><label for="search">Search</label><input id="search" placeholder="Event, city or club" oninput="render()"></div><div><label for="filterDateRange">Date range</label><select id="filterDateRange" onchange="changeDateRange()"><option value="full">Full year (Jan 1 – Dec 31)</option><option value="next30">Next 30 days</option><option value="custom">Custom dates</option></select></div><div id="customStartWrap" hidden=""><label for="filterDateStart">From</label><input type="date" id="filterDateStart" onchange="render()"></div><div id="customEndWrap" hidden=""><label for="filterDateEnd">To</label><input type="date" id="filterDateEnd" onchange="render()"></div></div><div class="search-actions"><button type="button" class="secondary" onclick="resetEventSearch()">Clear filters</button><span class="muted" id="filterStatus" aria-live="polite"></span></div>
 <div class="sv54-filter-row" hidden style="display:none" aria-hidden="true"><div><label for="sv54Country">Country</label><select id="sv54Country"><option value="all">Canada and United States</option><option value="ca">Canada</option><option value="us">United States</option></select></div><div><label for="sv54State">U.S. state</label><select id="sv54State"><option value="">All states</option></select></div><div><label for="sv54When">Quick date search</label><select id="sv54When"><option value="">Use date range above</option><option value="weekend">This weekend</option><option value="month">This month</option><option value="upcoming">All upcoming events</option></select></div></div><p class="muted sv54-note">Organizer submissions and changes are reviewed before publication.</p>
