@@ -16,4 +16,4 @@ I’m inviting local businesses to discuss advertising and sponsorship as the si
 
 If your business serves riders or supports community events, I’d like to talk about an option that fits your goals and budget.
 
-Take a look at stroked.ca, or contact me at Strokedca@gmail.com.`;
+Take a look at stroked.ca, or contact me at info@stroked.ca.`;
