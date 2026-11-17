@@ -44,3 +44,17 @@ test('linked free upgrades feature the event and add its gallery and sponsor pre
     tools.decorateEventDetail(event);assert.equal(detail.querySelectorAll('.sv56-event-promotion').length,1,'reopening a linked event does not duplicate upgrade content');
   }finally{win.happyDOM.abort();}
 });
+
+test('category placements save, reload, and restrict sponsor results and event pages',async()=>{
+ const s=setup(),{win,tools,calls}=s;try{
+  const select=win.document.createElement('select');select.id='filterCat';select.innerHTML='<option value="">All</option><option>Motorcycles</option><option>Snowmobiles</option>';win.document.getElementById('browse').prepend(select);
+  s.setAdmin(true);const form=win.document.getElementById('sv56PromotionForm'),f=n=>form.elements.namedItem(n);
+  f('title').value='Snow dealer';f('spotlight').checked=true;f('sponsor_name').value='Sled shop';f('all_categories').checked=false;f('all_categories').dispatchEvent(new win.Event('change'));
+  form.dispatchEvent(new win.Event('submit',{cancelable:true}));await settle();assert.equal(calls.some(c=>c.name==='save_promotion'),false);
+  form.querySelector('[value="Snowmobiles"]').checked=true;form.dispatchEvent(new win.Event('submit',{cancelable:true}));await settle();assert.deepEqual(Array.from(calls.find(c=>c.name==='save_promotion').args.p_payload.categories),['Snowmobiles']);
+  const board=win.document.getElementById('sv56PromotionBoard');assert.equal(board.hidden,true);select.value='Motorcycles';tools.renderPublic();assert.equal(board.hidden,true);select.value='Snowmobiles';tools.renderPublic();assert.equal(board.hidden,false);
+  tools.decorateEventDetail({id:'live-other',categories:['Snowmobiles']});assert.match(win.document.getElementById('detailBody').textContent,/Sled shop/);tools.decorateEventDetail({id:'live-other',categories:['Motorcycles']});assert.doesNotMatch(win.document.getElementById('detailBody').textContent,/Sled shop/);
+  tools.decorateEventDetail({id:'live-other',categories:['Snowmobiles']});assert.match(win.document.getElementById('detailBody').textContent,/Sled shop/);
+  await tools.refreshAdmin();win.document.getElementById('sv56PromotionList').querySelector('button').click();assert.equal(f('all_categories').checked,false);assert.equal(form.querySelector('[value="Snowmobiles"]').checked,true);
+ }finally{win.happyDOM.abort();}
+});

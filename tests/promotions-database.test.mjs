@@ -22,6 +22,7 @@ test('free administrator promotions persist, isolate environments and enforce se
       grant usage on schema storage to authenticated;
       grant insert on storage.objects to authenticated;`);
     await pg.exec(sql);
+    await pg.exec(await readFile(new URL('../supabase/migrations/20261117233000_promotion_categories.sql',import.meta.url),'utf8'));
     const day=(await pg.query("select (now() at time zone 'America/Halifax')::date::text as day")).rows[0].day;
     const payload={kind:'Charity event',title:'Community charity ride',tagline:'Local fundraiser',description:'A promotion with no checkout.',link:'https://example.test/ride',event_id:'',featured:true,enhanced:true,spotlight:true,sponsor_name:'Community supporter',sponsor_link:'https://example.test',start_date:day,end_date:'',active:true,photos:[]};
     assert.deepEqual(await call(null,'production','public_promotions'),[]);
@@ -29,8 +30,10 @@ test('free administrator promotions persist, isolate environments and enforce se
     await assert.rejects(()=>call(2,'production','save_promotion',[payload,null]),/Administrator only/,'editable account metadata never grants admin rights');
     await assert.rejects(()=>call(3,'production','save_promotion',[payload,null]),/Administrator only/,'a testing admin cannot publish to production');
     await assert.rejects(()=>call(4,'production','save_promotion',[payload,null]),/Administrator only/,'an unconfirmed administrator cannot publish');
+    await assert.rejects(()=>call(1,'production','save_promotion',[{...payload,categories:['Unknown']},null]),/valid promotion categories/);
+    payload.categories=['Snowmobiles'];
     const id=await call(1,'production','save_promotion',[payload,null]);
-    let visible=await call(null,'production','public_promotions');assert.equal(visible.length,1);assert.equal(visible[0].id,id);assert.equal(visible[0].payload.spotlight,true);assert.equal(JSON.stringify(visible).includes(uid(1)),false);
+    let visible=await call(null,'production','public_promotions');assert.equal(visible.length,1);assert.deepEqual(visible[0].payload.categories,['Snowmobiles']);assert.equal(visible[0].id,id);assert.equal(visible[0].payload.spotlight,true);assert.equal(JSON.stringify(visible).includes(uid(1)),false);
     assert.deepEqual(await call(null,'testing','public_promotions'),[],'public calendars stay separate');
     await call(1,'production','save_promotion',[{...payload,active:false},id]);assert.deepEqual(await call(null,'production','public_promotions'),[]);
     assert.equal((await call(1,'production','admin_promotions'))[0].payload.active,false,'hiding preserves the saved promotion');
@@ -52,7 +55,8 @@ test('free administrator promotions persist, isolate environments and enforce se
     const future='2099-01-01';await call(1,'production','save_promotion',[{...payload,title:'Scheduled promotion',start_date:future},null]);assert.equal((await call(null,'production','public_promotions')).length,1,'future promotions stay unpublished until their start');
     await call(1,'production','save_promotion',[{...payload,title:'Expired promotion',start_date:'2000-01-01',end_date:'2000-01-02'},null]);assert.equal((await call(null,'production','public_promotions')).length,1,'expired promotions disappear');
     await pg.exec('reset role');const before=(await pg.query('select id,payload from stroked_promotions.promotions order by id')).rows;
-    await pg.exec(sql);assert.deepEqual((await pg.query('select id,payload from stroked_promotions.promotions order by id')).rows,before,'reapplying the migration preserves promotions');
+    await pg.exec(sql);
+    await pg.exec(await readFile(new URL('../supabase/migrations/20261117233000_promotion_categories.sql',import.meta.url),'utf8'));assert.deepEqual((await pg.query('select id,payload from stroked_promotions.promotions order by id')).rows,before,'reapplying the migration preserves promotions');
     const wrappers=(await pg.query("select p.prosecdef from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('stroked_live_v55_public_promotions','stroked_live_v55_admin_promotions','stroked_live_v55_save_promotion','stroked_v55_public_promotions','stroked_v55_admin_promotions','stroked_v55_save_promotion')")).rows;assert.equal(wrappers.length,6);assert.ok(wrappers.every(p=>!p.prosecdef));
   }finally{await pg.close();}
 });
