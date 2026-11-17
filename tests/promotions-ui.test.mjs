@@ -7,7 +7,7 @@ const source=await readFile(new URL('../assets/stroked-promotions.js',import.met
 const settle=()=>new Promise(resolve=>setTimeout(resolve,15));
 function setup({initialRows=[],events=[]}={}){
   const win=new Window({url:'https://stroked.ca/'});
-  win.document.write('<div class="account-dock"></div><div id="sv5Admin"></div><section id="browse"><h2>Event calendar</h2><div id="cards"></div></section><dialog id="detailsDialog"><div id="detailBody"></div></dialog>');
+  win.document.write('<div class="account-dock"></div><div id="sv5Admin"></div><section id="browse"><h2>Event calendar</h2><div id="cards"></div><details id="calendarViewDetails"></details></section><dialog id="detailsDialog"><div id="detailBody"></div></dialog>');
   win.HTMLElement.prototype.scrollIntoView=()=>{};win.openEvent=()=>{};win.eval(source);
   let admin=true,rows=[...initialRows];const calls=[];const day=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Halifax',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const rpc=async(name,args)=>{calls.push({name,args});if(name==='save_promotion'){const id=args.p_id||'40000000-0000-4000-8000-000000000001';const row={id,payload:{...args.p_payload}};rows=rows.filter(x=>x.id!==id).concat(row);return id;}return name==='admin_promotions'?rows:rows.filter(r=>r.payload.active&&r.payload.start_date<=day&&(!r.payload.end_date||r.payload.end_date>=day));};

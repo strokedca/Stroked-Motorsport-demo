@@ -16,3 +16,7 @@
 .sv56-sponsor{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid #9a746a;border-radius:8px;padding:12px;margin:14px 0}.sv56-sponsor small{width:100%;color:#ffbba8}.sv56-sponsor img{width:66px;height:66px;object-fit:contain}.sv56-sponsor a{overflow-wrap:anywhere}
 .sv56-event-promotion{border-top:1px solid #526174;padding-top:12px;margin-top:16px}.sv56-event-promotion p{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:650px){.sv56-upgrade-options{grid-template-columns:1fr}.sv56-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.sv56-gallery img{height:120px}.account-dock button{font-size:13px}}
+
+/* Compact promotion cards follow the main event results. */
+.sv56-public-promotions{grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));align-items:start}.sv56-promotion-cover{height:155px;max-height:155px}.sv56-promotion-body{padding:14px}.sv56-promotion-body h3{font-size:20px}.sv56-promotion-board h2{font-size:22px}.sv56-promotion-board .sv56-gallery img{height:75px}
+@media(max-width:650px){.sv56-promotion-cover{height:135px;max-height:135px}}

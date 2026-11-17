@@ -33,7 +33,7 @@ window.StrokedPromotions = Object.freeze({
 
     const board=document.createElement('section');board.id='sv56PromotionBoard';board.className='sv56-promotion-board';board.hidden=true;board.setAttribute('aria-label','Event board promotions');
     board.innerHTML='<h2>Event Board Promotions</h2><div id="sv56PublicPromotions" class="sv56-public-promotions"></div>';
-    $('browse').querySelector('h2').before(board);
+    $('calendarViewDetails').after(board);
     const form=$('sv56PromotionForm'), field=name=>form.elements.namedItem(name);
     const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Halifax',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
