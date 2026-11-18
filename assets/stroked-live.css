@@ -35,3 +35,5 @@ button:disabled{opacity:.6;cursor:wait}
 #sv58OrganizerTools,#sv58MyBookings{margin:16px 0;border-top:1px solid #526174;padding-top:12px}
 #sv58OrganizerTools>summary,#sv58MyBookings>summary{cursor:pointer;font-weight:700;padding:12px 0}
 @media(max-width:650px){.admin-section-nav{top:61px;gap:5px}.admin-section-nav button{font-size:12px;flex:1 1 43%;padding:7px}}
+
+.stroked-authenticator-qr{display:block;width:200px;height:200px;max-width:100%;padding:10px;background:#fff;margin:12px 0}#strokedAccountSecurity input[readonly]{font-family:monospace;letter-spacing:.03em}#strokedAccountSecurity form{margin-top:12px}

@@ -90,7 +90,9 @@
   const pricingTools=window.StrokedPricing?.mount({rpc,config,openAccount,getAccount:()=>account,getMyEvents:()=>myRows,promotions:promotionTools});
   const engagement=window.StrokedEngagement?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
   const announcements=window.StrokedAnnouncements?.mount({rpc,config});
+  const security=window.StrokedSecurity?.mount({db,rpc,config,onVerified:refreshAccount,getAccount:()=>account});
   function updateAccountView() {
+    security?.setIdentity(user?.id||null);
     const signed=Boolean(user), organizer=Boolean(account?.account_type==='organizer'||account?.is_admin);
     promotionTools?.setAccount(account,signed);engagement?.setAccount(account,signed);announcements?.setAccount(account,signed);
     pricingTools?.setAccount(account,signed);
@@ -224,7 +226,7 @@
     if(!user)return;
     try {
       const [own,rows]=await Promise.all([rpc('my_account'),rpc('my_events')]);if(epoch!==authEpoch)return;
-      account=own;myRows=Array.isArray(rows)?rows:[];updateAccountView();
+      account=own;myRows=Array.isArray(rows)?rows:[];updateAccountView();await security?.refresh();if(epoch!==authEpoch)return;
       if(account?.is_admin)await refreshSignupStats(epoch);if(epoch!==authEpoch)return;
       for(const [k,v] of Object.entries(own?.profile||{})){const input=el('sv53ProfileForm').elements.namedItem(k);if(input)input.value=v||'';}
       renderMine();await engagement?.refresh();await announcements?.refresh();
@@ -316,7 +318,7 @@
   const demoManage=renderManage;renderManage=function(){const all=state.events;state.events=all.filter(e=>!e.strokedLive);try{demoManage();}finally{state.events=all;}};
   const demoReset=resetDemo;resetDemo=function(){const live=state.events.filter(e=>e.strokedLive);demoReset();for(const event of live)if(!state.events.some(e=>e.id===event.id))state.events.push(event);render();};
   const demoRender=render;let deepLinkOpened=false;
-  render=function(){demoRender();promotionTools?.renderPublic();if(!state.events.length&&countsReady){const box=text('div','');box.className='panel';box.append(text('h3','No events listed yet'),text('p','Be the first to share a ride or motorsports event. Basic listings and RSVPs are free.'));const post=text('button','Post an event');post.id='sv55EmptyPost';post.type='button';post.onclick=()=>el('tabAdd').click();box.append(post);el('cards').replaceChildren(box);}el('cards').querySelectorAll('article.card').forEach(c=>{const button=c.querySelector('button[onclick^="openEvent"]'),id=button?.getAttribute('onclick')?.match(/openEvent\('([^']+)'\)/)?.[1],event=state.events.find(e=>e.id===id);if(!event?.strokedLive)return;button.textContent='View approved event';const badge=text('small',config.testing?'Approved event · Testing data':'Approved organizer event');badge.className='sv54-flag';c.prepend(badge);});engagement?.decorateCards();const id=initialUrl.searchParams.get('event');if(!deepLinkOpened&&id&&state.events.some(e=>e.id===id)){deepLinkOpened=true;queueMicrotask(()=>openEvent(id));}};
+  render=function(){demoRender();promotionTools?.renderPublic();if(!state.events.length&&countsReady){const box=text('div','');box.className='panel';box.append(text('h3','No events listed yet'),text('p','Be the first to share a ride or motorsports event. Basic listings and RSVPs are free.'));const post=text('button','Post an event');post.id='sv55EmptyPost';post.type='button';post.onclick=()=>el('tabAdd').click();box.append(post);el('cards').replaceChildren(box);}el('cards').querySelectorAll('article.card').forEach(c=>{const button=c.querySelector('button[data-stroked-click^="openEvent"]'),id=button?.getAttribute('data-stroked-click')?.match(/openEvent\('([^']+)'\)/)?.[1],event=state.events.find(e=>e.id===id);if(!event?.strokedLive)return;button.textContent='View approved event';const badge=text('small',config.testing?'Approved event · Testing data':'Approved organizer event');badge.className='sv54-flag';c.prepend(badge);});engagement?.decorateCards();const id=initialUrl.searchParams.get('event');if(!deepLinkOpened&&id&&state.events.some(e=>e.id===id)){deepLinkOpened=true;queueMicrotask(()=>openEvent(id));}};
   async function refreshPublic(){
     if(publicPromise)return publicPromise;
     publicPromise=(async()=>{try{const rows=await rpc('public_events');totals=new Map((rows||[]).map(r=>[r.id,core.totals(r.counts)]));state.events=state.events.filter(e=>!e.strokedLive).concat((rows||[]).filter(r=>core.uuid.test(r.id)).map(r=>normalize({...r.payload,id:'live-'+r.id,strokedLive:true,publicOrganizer:r.organizer||null,rsvps:[],sponsors:r.payload?.sponsors||[],changes:[],upgrades:[]})));countsReady=true;await promotionTools?.refreshPublic();publicStatus.textContent=config.testing?'Testing release: approved events and RSVPs use separate testing data.':'';render();updateLiveStats();}catch(e){countsReady=false;totals=new Map();publicStatus.textContent=config.testing?'Testing release: account and event services are not ready. The sample events below are still available.':'Approved events are temporarily unavailable. Please reload to try again.';render();updateLiveStats();message('Calendar connection: '+failure(e),true);throw e;}finally{publicPromise=null;}})();return publicPromise;

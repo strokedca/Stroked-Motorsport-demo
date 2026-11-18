@@ -9,7 +9,8 @@ async function setup(app=false) {
   win.alert=()=>{};
   const inline=[...win.document.querySelectorAll('script:not([src])')].map(s=>s.textContent).join('\n');
   const appSource=app?await readFile(new URL('../assets/stroked-app.js',import.meta.url),'utf8'):'';
-  win.eval(inline+'\n'+appSource+`\nwindow.navigationTest={move:moveMonth,today:todayDay,filtered:getFiltered,reset:resetEventSearch,all:showAllEventDates,range:changeDateRange,year:changeEventYear,open:openEvent,seed:rows=>{state.events=rows.map(normalize);render()}};`);
+  const actionSource=await readFile(new URL('../assets/stroked-actions.js',import.meta.url),'utf8');
+  win.eval(inline+'\n'+actionSource+'\n'+appSource+`\nwindow.navigationTest={move:moveMonth,today:todayDay,filtered:getFiltered,reset:resetEventSearch,all:showAllEventDates,range:changeDateRange,year:changeEventYear,open:openEvent,seed:rows=>{state.events=rows.map(normalize);render()}};`);
   return {win,ui:win.navigationTest,$:id=>win.document.getElementById(id)};
 }
 

@@ -11,7 +11,7 @@ test('malicious event text is rendered as text and script destination links are 
   win.document.write(await read('../index.html'));
   win.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:null}}),getUser:async()=>({data:{user:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},rpc:async name=>({data:name.endsWith('public_events')?[row]:name.endsWith('notification_status')?false:[],error:null})})};
   const sources=[...win.document.querySelectorAll('script:not([src])')].map(s=>s.textContent);
-  for(const path of ['stroked-config','stroked-core','stroked-live'])sources.push(await read('../assets/'+path+'.js'));
+  for(const path of ['stroked-actions','stroked-config','stroked-core','stroked-live'])sources.push(await read('../assets/'+path+'.js'));
   win.eval(sources.join('\n')+'\nwindow.openForSecurityTest=id=>openEvent(id);');
   await new Promise(r=>setTimeout(r,70));
   win.openForSecurityTest('live-'+id);
