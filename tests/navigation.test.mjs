@@ -14,6 +14,18 @@ async function setup(app=false) {
   return {win,ui:win.navigationTest,$:id=>win.document.getElementById(id)};
 }
 
+test('desktop date selection retains the clicked calendar cell so a double-click can open its events',async()=>{
+  const {win,$}=await setup(true);
+  try{
+    win.document.querySelector('[data-destination="calendar"]').click();
+    const day=$('calendar').querySelector('.day-cell'),action=day.getAttribute('data-stroked-click');
+    day.click();assert.equal(day.isConnected,true,'selection must not replace the double-click target');
+    assert.equal($('calendar').querySelector('[data-stroked-click="'+action+'"]'),day);
+    day.dispatchEvent(new win.MouseEvent('dblclick',{bubbles:true}));
+    assert.equal($('dayEventsDialog').open,true);assert.match($('dayEventsCount').textContent,/matching/);
+  }finally{await win.happyDOM.abort();}
+});
+
 test('bottom Calendar opens a month, browses both directions and restores Explore filters',async()=>{
   const {win,$}=await setup(true);
   try{
