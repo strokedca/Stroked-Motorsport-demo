@@ -94,7 +94,14 @@
     const signed=Boolean(user), organizer=Boolean(account?.account_type==='organizer'||account?.is_admin);
     promotionTools?.setAccount(account,signed);engagement?.setAccount(account,signed);announcements?.setAccount(account,signed);
     pricingTools?.setAccount(account,signed);
-    if(el('strokedAdminHelp'))el('strokedAdminHelp').hidden=!account?.is_admin;
+    const adminHelp=el('strokedAdminHelp');
+    if(signed&&account?.is_admin===true){
+      if(!adminHelp){
+        const help=text('section','');help.id='strokedAdminHelp';
+        help.append(text('h3','Administrator tools — free site promotions'),text('p','Choose Add promotion to link an approved event or create a separate local or charity announcement. Choose Featured Event, Enhanced Event Page and Sponsor Spotlight in any combination. Add photos, a sponsor and dates as needed, then publish at no charge.'),text('p','You can edit, hide or republish your promotions. A copyable sales pitch is included in this administrator section.'));
+        el('sv58Promotions').prepend(help);
+      }
+    }else adminHelp?.remove();
     el('sv53Welcome').hidden=signed||recovery;form.hidden=signed||recovery||form.hidden;
     el('sv5SignedIn').hidden=!signed||recovery;el('sv55Recovery').hidden=!signed||!recovery;
     el('sv55Organizer').hidden=!organizer;el('sv5Admin').hidden=!account?.is_admin;

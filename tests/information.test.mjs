@@ -8,7 +8,7 @@ test('information explains actual actions and routes visitors to the working but
     $('strokedInfoButton').click();assert.equal($('strokedInformationDialog').open,true);
     const text=$('strokedInformationDialog').textContent;for(const phrase of ['Going','Interested','Save RSVP','Submit event for approval','Donation','Featured Event'])assert.ok(text.includes(phrase));
     assert.match(text,/verified payment and publication status/,'payment status comes from the account, not a return URL');
-    assert.equal($('strokedAdminHelp').hidden,true,'administrator instructions are hidden from ordinary visitors');
+    assert.equal($('strokedAdminHelp'),null,'administrator instructions are absent from the public Information popup');assert.doesNotMatch(text,/Administrator tools|free site promotions/);
     $('strokedInformationDialog').querySelector('[data-open-tab="tabAdd"]').click();assert.equal(posted,1);assert.equal($('strokedInformationDialog').open,false);
     $('strokedInfoButton').click();$('strokedInformationClose').click();assert.equal(win.document.activeElement,$('strokedInfoButton'));
   }finally{win.happyDOM.abort();}

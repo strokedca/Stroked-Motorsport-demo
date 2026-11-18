@@ -50,6 +50,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   assert.equal($('moreNavigation').hidden,true);assert.equal(win.document.querySelector('.ad-hero'),null);assert.equal($('promotionCards').closest('section').hidden,true);assert.doesNotMatch($('promotionCards').textContent,/Stored demo|Ronan/);
   assert.equal($('eventForm').querySelectorAll('input[name="upgrade"]').length,0,'legacy demonstration upgrade checkboxes stay removed');assert.match($('promotionInformation').textContent,/Prices are one-time CAD payments/);
   const ids=[...win.document.querySelectorAll('[id]')].map(n=>n.id);assert.equal(new Set(ids).size,ids.length,'all HTML IDs are unique');
+  assert.equal($('strokedAdminHelp'),null,'anonymous visitors receive no administrator help section');
   $('sv5Open').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/rider/);
   const f=$('sv5Auth');for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Password123!',confirm_password:'Different123!'}))f.elements.namedItem(key).value=value;
   f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/do not match/);assert.equal(registered,undefined);
@@ -85,6 +86,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   $('sv5Refresh').click();await settle();assert.match($('sv5Message').textContent,mode==='production'?/Account services are temporarily unavailable/:/testing account and event services/);
   failPublicRead=false;administrator=true;reviewRequests=[{id:'abcdef01-abcd-4567-89ab-123456789abc',event_id:id,action:'edit',status:'pending',payload:{...row.payload,time:'10:15',registration:'09:45',ksu:'10:30',rain:date,startLocation:'<img src=x onerror=alert(1)>',endLocation:'QA finish',stops:'QA stop',food:'QA food',organizerContact:'public@example.test',sponsors:[{name:'QA supporter',contribution:'QA snacks',link:'https://example.test'}]}}];
   $('sv5Refresh').click();await settle();const reviewCard=$('sv55Requests').querySelector('.sv5Card');assert.ok(reviewCard);assert.equal(reviewCard.querySelector('details').open,true,'proposed event information is expanded for review');
+  assert.equal($('strokedAdminHelp').parentElement.id,'sv58Promotions');assert.equal($('strokedInformationDialog').querySelector('#strokedAdminHelp'),null,'public help stays free of administrator instructions even for an administrator');
   assert.equal($('sv56SignupCounts').querySelectorAll('dd').length,6);assert.equal($('sv56SignupCounts').querySelector('dd').textContent,'5');assert.match($('sv56SignupStatus').textContent,/Updated just now/);
   for(const value of ['Start time: 10:15','Registration opens: 09:45','Departure / KSU: 10:30','Starting location: <img src=x onerror=alert(1)>','End location: QA finish','Route / stops: QA stop','Food / amenities: QA food','Public organizer contact: public@example.test','QA supporter — QA snacks — https://example.test','Event status: Scheduled'])assert.ok(reviewCard.textContent.includes(value),'reviewers can inspect '+value);
   assert.equal(reviewCard.querySelector('img'),null,'submitted venue markup is rendered as text');
@@ -123,6 +125,8 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   }
   signupFailure=true;$('sv5Refresh').click();await settle();assert.equal($('sv56SignupCounts').children.length,0);assert.match($('sv56SignupStatus').textContent,/could not load/,'a failed count does not display a misleading zero');
   signupFailure=false;administrator=false;$('sv5Refresh').click();await settle();assert.equal($('sv5Admin').hidden,true);assert.equal($('sv56SignupCounts').children.length,0,'admin totals clear when the account loses administrator access');
+  assert.equal($('strokedAdminHelp'),null,'administrator help is removed when administrator access is lost');
+  administrator=true;$('sv5Refresh').click();await settle();assert.ok($('strokedAdminHelp'));$('sv5Logout').click();await settle();assert.equal($('strokedAdminHelp'),null,'signing out removes administrator help');
   assert.deepEqual(errors,[]);
   }finally{win?.happyDOM.abort();await rm(dir,{recursive:true,force:true});}
 });
