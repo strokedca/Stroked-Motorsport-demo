@@ -28,13 +28,14 @@
           <section id="sv55Organizer" hidden><h3>My organizer profile</h3><p class="account-help">Only the public contact details you supply below appear on your approved events. Your login email stays private.</p>
             <form id="sv53ProfileForm" class="sv5Card"><label>Club / organization name<input name="organization" maxlength="100" required minlength="2"></label><div class="grid"><label>City / town<input name="city" maxlength="80"></label><label>Province / state<input name="region" maxlength="80"></label></div><label>Public contact email<input name="public_email" type="email" maxlength="160"></label><label>Website / Facebook URL<input name="website" type="url" maxlength="300" placeholder="https://"></label><button type="submit">Save organizer profile</button></form>
             <h3>My events</h3><p class="account-help">Submissions and changes appear publicly after administrator approval.</p><div id="sv5Mine"></div>
-            <section id="sv53ChangePanel" class="sv5Card" hidden><h3>Request event changes</h3><form id="sv53ChangeForm"><input name="event_id" type="hidden"><label>Event name<input name="name" maxlength="90" minlength="3" required></label><label>Organizing club<input name="club" maxlength="80" minlength="2" required></label><div class="grid"><label>Date<input name="date" type="date" required></label><label>Start time<input name="time" type="time"></label></div><label>Starting location<input name="startLocation" maxlength="180"></label><label>Departure / KSU<input name="ksu" type="time"></label><label>Details<textarea name="details" maxlength="600" rows="4"></textarea></label><label>Request type<select name="request_type"><option value="edit">Request changes</option><option value="cancel">Request cancellation</option></select></label><div class="actions"><button type="submit">Submit request for approval</button><button id="sv53CancelChange" type="button" class="secondary">Close request</button></div></form></section>
+            <section id="sv53ChangePanel" class="sv5Card" hidden><h3>Request event changes</h3><form id="sv53ChangeForm"><input name="event_id" type="hidden"><label>Event name<input name="name" maxlength="90" minlength="3" required></label><label>Organizing club<input name="club" maxlength="80" minlength="2" required></label><div class="grid"><label>Date<input name="date" type="date" required></label><label>Start time<input name="time" type="time"></label></div><div class="grid"><label>City / town<input name="city" maxlength="70" minlength="2" required></label><label>Province / territory<select name="province" required></select></label></div><label>Starting location<input name="startLocation" maxlength="180"></label><label>Departure / KSU<input name="ksu" type="time"></label><label>Details<textarea name="details" maxlength="600" rows="4"></textarea></label><label>Request type<select name="request_type"><option value="edit">Request changes</option><option value="cancel">Request cancellation</option></select></label><div class="actions"><button type="submit">Submit request for approval</button><button id="sv53CancelChange" type="button" class="secondary">Close request</button></div></form></section>
           </section>
           <section id="sv5Admin" hidden><section aria-labelledby="sv56SignupHeading"><h3 id="sv56SignupHeading">Site signups</h3><p class="account-help">Counts registered accounts, including administrator and test accounts. Visitors without accounts are not included. Each account is counted once.</p><p id="sv56SignupStatus" role="status" aria-live="polite"></p><dl id="sv56SignupCounts" class="signup-stats"></dl></section><h3>Administrator approval dashboard</h3><div id="sv5Queue"></div><h3>Change and cancellation requests</h3><div id="sv55Requests"></div></section>
         </div>
       </div>
     </dialog>`;
   const alertLabel=document.createElement('label');alertLabel.className='check';alertLabel.innerHTML='<input id="strokedEmailUpdates" type="checkbox" disabled><span>Email my RSVP confirmation and organizer updates for this event</span>';el('rsvpForm').querySelector('p').before(alertLabel);const alertHelp=document.createElement('small');alertHelp.id='strokedAlertHelp';alertHelp.textContent='Checking email alerts…';alertLabel.after(alertHelp);let alertsReady=false;if(!config.testing)Promise.resolve().then(async()=>{try{alertsReady=await rpc('notification_status')===true;}catch{}el('strokedEmailUpdates').disabled=!alertsReady;alertHelp.textContent=alertsReady?'Uses your account email. Clear this option and save to stop updates. Text alerts are not connected.':'Email delivery is awaiting sender setup. Your RSVP still saves normally. Text alerts are not connected.';});else alertHelp.textContent='Email alerts are disabled in testing.';
+  el('sv53ChangeForm').elements.namedItem('province').innerHTML=el('evProv').innerHTML;
   const panel = el('sv5Panel'), form = el('sv5Auth');
   let mode = 'login', requestedType = 'rider', user = null, account = null, myRows = [];
   let authEpoch = 0, detailEpoch = 0, refreshTimer, publicPromise, callbackHandled = false;
@@ -89,7 +90,7 @@
     el('sv5Post').hidden=!organizer;el('sv55BecomeOrganizer').hidden=!signed||organizer||!account;
     el('sv5Open').textContent=signed?'My account':'Rider Login / Register';el('sv55OrganizerOpen').hidden=signed;
     el('sv5Identity').textContent=signed?'Signed in: '+user.email+(account?' · '+(account.is_admin?'Administrator':organizer?'Organizer':'Rider'):''):'Not signed in';
-    if(!account?.is_admin){el('sv56SignupCounts').replaceChildren();el('sv56SignupStatus').textContent='';}
+    if(!account?.is_admin){el('sv56SignupCounts').replaceChildren();el('sv56SignupStatus').textContent='';el('sv57Reports')?.replaceChildren();}
     if(!signed){el('sv53ProfileForm').reset();el('sv5Mine').replaceChildren();el('sv5Queue').replaceChildren();el('sv55Requests').replaceChildren();myRows=[];}
   }
   async function refreshSignupStats(epoch) {
@@ -103,6 +104,40 @@
       status.textContent='Updated just now. Choose Refresh to update these totals.';
     }catch{if(epoch===authEpoch&&account?.is_admin){target.replaceChildren();status.textContent='Signup totals could not load. Choose Refresh to try again.';}}
   }
+  async function refreshReports(epoch=authEpoch) {
+    const target=el('sv57Reports');target.replaceChildren();
+    if(!account?.is_admin||config.testing)return;
+    try {
+      const rows=await rpc('admin_reports');if(epoch!==authEpoch||!account?.is_admin)return;
+      if(!rows?.length)target.append(text('p','No reports awaiting review.'));
+      for(const row of rows||[]){
+        const card=document.createElement('article');card.className='sv5Card';
+        card.append(text('h4',row.event_name),text('p',row.issue),text('small',new Date(row.created_at).toLocaleString()));
+        const view=text('button','View event');view.type='button';view.onclick=()=>{panel.close();openEvent('live-'+row.event_id);};
+        const resolve=text('button','Mark resolved');resolve.type='button';resolve.className='secondary';
+        resolve.onclick=async()=>{resolve.disabled=true;try{await rpc('resolve_report',{p_id:row.id});await refreshReports();message('Report marked resolved.');}catch(e){message(failure(e),true);}finally{resolve.disabled=false;}};
+        card.append(view,resolve);target.append(card);
+      }
+    }catch{if(epoch===authEpoch&&account?.is_admin)target.append(text('p','Reports could not load. Choose Refresh to try again.'));}
+  }
+  const reportsHeading=text('h3','Reported event information'),reportsContainer=document.createElement('div');reportsContainer.id='sv57Reports';
+  el('sv5Admin').append(reportsHeading,reportsContainer);
+  const demoReport=window.v47Report;
+  let sendingReport=false;
+  window.v47Report=async function(id){
+    const event=state.events.find(e=>e.id===id);if(!event)return;
+    if(!event.strokedLive||config.testing){demoReport(id);return;}
+    if(sendingReport)return;
+    const {data,error}=await db.auth.getUser();
+    if(error||!data?.user){if(el('detailsDialog').open)el('detailsDialog').close();openAccount('rider');choose('login');message('Sign in, then reopen the event to report incorrect information.');return;}
+    const issue=prompt('What information is incorrect? Describe the correction in 5 to 1000 characters. Do not include private information.');
+    if(issue===null)return;
+    if(issue.trim().length<5||issue.trim().length>1000){alert('Please describe the problem in 5 to 1000 characters.');return;}
+    sendingReport=true;
+    try{await rpc('report_event',{p_event_id:id.replace(/^live-/,''),p_issue:issue.trim()});alert('Report sent to Stroked for administrator review. Thank you.');if(account?.is_admin)await refreshReports();}
+    catch(e){alert('Report was not sent: '+failure(e));}
+    finally{sendingReport=false;}
+  };
   async function refreshAccount() {
     const epoch=++authEpoch;
     const {data,error}=await db.auth.getUser();if(epoch!==authEpoch)return;
@@ -115,7 +150,7 @@
       for(const [k,v] of Object.entries(own?.profile||{})){const input=el('sv53ProfileForm').elements.namedItem(k);if(input)input.value=v||'';}
       renderMine();
       await pricingTools?.refresh();
-      if(account?.is_admin){const [queue,requests]=await Promise.all([rpc('admin_events'),rpc('admin_requests')]);if(epoch!==authEpoch)return;renderQueue(queue||[],requests||[]);await promotionTools?.refreshAdmin();}
+      if(account?.is_admin){const [queue,requests]=await Promise.all([rpc('admin_events'),rpc('admin_requests')]);if(epoch!==authEpoch)return;renderQueue(queue||[],requests||[]);await promotionTools?.refreshAdmin();await refreshReports(epoch);}
     } catch(e){if(epoch===authEpoch){message('Account details could not load: '+failure(e),true);throw e;}}
   }
   form.addEventListener('submit',async event=>{
@@ -179,11 +214,11 @@
     const note=decision==='rejected'?(prompt('Reason (optional):')||''):'';busy(c,true);
     try{const result=await rpc(request?'review_request':'review',{p_id:row.id,p_decision:decision,p_note:note});if(result!==true)throw Error('Already reviewed. Refresh to see the latest decision.');try{await Promise.all([refreshAccount(),refreshPublic()]);message('Review saved: '+decision+'.');}catch{message('Review saved: '+decision+'. The dashboard could not refresh; try Refresh.');}}catch(e){message(failure(e),true);}finally{busy(c,false);}
   };c.append(b);}}
-  function openChange(row){const f=el('sv53ChangeForm');for(const key of ['name','club','date','time','startLocation','ksu','details'])f.elements.namedItem(key).value=row.payload?.[key]||'';f.elements.namedItem('event_id').value=row.id;f.elements.namedItem('request_type').value='edit';el('sv53ChangePanel').hidden=false;el('sv53ChangePanel').scrollIntoView({block:'start'});}
+  function openChange(row){const f=el('sv53ChangeForm');for(const key of ['name','club','city','province','date','time','startLocation','ksu','details'])f.elements.namedItem(key).value=row.payload?.[key]||'';f.elements.namedItem('event_id').value=row.id;f.elements.namedItem('request_type').value='edit';el('sv53ChangePanel').hidden=false;el('sv53ChangePanel').scrollIntoView({block:'start'});}
   el('sv53CancelChange').onclick=()=>el('sv53ChangePanel').hidden=true;
   el('sv53ChangeForm').addEventListener('submit',async e=>{
     e.preventDefault();const f=e.currentTarget;if(f.querySelector('button').disabled)return;const values=new FormData(f),row=myRows.find(r=>r.id===values.get('event_id'));if(!row){message('Refresh your account before requesting changes.',true);return;}
-    const payload={...row.payload};for(const k of ['name','club','date','time','startLocation','ksu','details'])payload[k]=String(values.get(k)||'').trim();busy(f,true);
+    const payload={...row.payload};for(const k of ['name','club','city','province','date','time','startLocation','ksu','details'])payload[k]=String(values.get(k)||'').trim();busy(f,true);
     try{await rpc('request_change',{p_event_id:row.id,p_payload:payload,p_action:values.get('request_type')});el('sv53ChangePanel').hidden=true;await refreshAccount();message('Request submitted. The public listing stays unchanged until approval.');}catch(err){message(failure(err),true);}finally{busy(f,false);}
   });
   const states=['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming','District of Columbia'];

@@ -7,12 +7,28 @@
  const modes=[['upcoming','Upcoming'],['weekend','This weekend'],['next30','Next 30 days'],['full','All dates']];
  for(const [value,label]of modes){const b=make('button',label);b.type='button';b.dataset.range=value;b.onclick=()=>{el('filterDateRange').value=value;changeDateRange();};quick.append(b);}el('advancedSearch').before(quick);
  const nav=make('nav');nav.className='app-bottom';nav.setAttribute('aria-label','App navigation');
- const paths={browse:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>',add:'<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>',clothing:'<path d="m8 3-6 4 3 5 3-2v11h8V10l3 2 3-5-6-4c-1 3-7 3-8 0Z"/>',account:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>'};
- for(const [key,label]of [['browse','Explore'],['add','Post event'],['clothing','Clothing'],['account','Account']]){const b=make('button');b.type='button';b.dataset.destination=key;b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+paths[key]+'</svg>';b.append(make('span',label));b.onclick=()=>key==='account'?el('sv5Open')?.click():tab(key);nav.append(b);}document.body.append(nav);
+ const paths={calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h2M14 15h2M8 18h2"/>',browse:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>',add:'<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>',clothing:'<path d="m8 3-6 4 3 5 3-2v11h8V10l3 2 3-5-6-4c-1 3-7 3-8 0Z"/>',account:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>'};
+ for(const [key,label]of [['browse','Explore'],['calendar','Calendar'],['add','Post event'],['clothing','Clothing'],['account','Account']]){const b=make('button');b.type='button';b.dataset.destination=key;b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+paths[key]+'</svg>';b.append(make('span',label));b.onclick=()=>key==='account'?el('sv5Open')?.click():tab(key);nav.append(b);}document.body.append(nav);
  // Keep all existing organizer and administrator actions inside the account panel.
  const welcome=el('sv53Welcome')?.querySelector('.actions');if(welcome&&el('sv55OrganizerOpen'))welcome.append(el('sv55OrganizerOpen'));
  const accountActions=el('sv5SignedIn')?.querySelector('.actions');if(accountActions)document.querySelectorAll('.account-dock button:not(#sv5Open)').forEach(b=>accountActions.append(b));
- const originalTab=tab;tab=function(t){originalTab(t);nav.querySelectorAll('button').forEach(b=>b.toggleAttribute('aria-current',false));nav.querySelector('[data-destination="'+t+'"]')?.setAttribute('aria-current','page');};
+ let previousCalendarFilters=null;
+ const originalTab=tab;tab=function(t){
+   if(t==='calendar'){
+     if(!previousCalendarFilters)previousCalendarFilters={range:el('filterDateRange').value,year:el('filterYear').value};
+     originalTab('browse');document.body.classList.add('app-calendar-mode');
+     el('filterDateRange').value='full';el('filterYear').value='';
+     el('calendarViewDetails').open=true;setView('month');
+     el('calendarTitle').setAttribute('tabindex','-1');el('calendarTitle').focus();
+     el('calendarViewDetails').scrollIntoView({block:'start'});
+   }else{
+     document.body.classList.remove('app-calendar-mode');
+     if(previousCalendarFilters){el('filterDateRange').value=previousCalendarFilters.range;el('filterYear').value=previousCalendarFilters.year;previousCalendarFilters=null;render();}
+     originalTab(t);
+   }
+   nav.querySelectorAll('button').forEach(b=>b.toggleAttribute('aria-current',false));nav.querySelector('[data-destination="'+t+'"]')?.setAttribute('aria-current','page');
+ };
+
  function decorate(){quick.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.range===el('filterDateRange').value)));for(const card of el('cards').querySelectorAll('article.card')){const action=card.querySelector('button[onclick^="openEvent"]');const id=action?.getAttribute('onclick')?.match(/openEvent\('([^']+)'\)/)?.[1];const event=state.events.find(e=>e.id===id);if(!event||card.querySelector('.app-date'))continue;const date=new Date(event.date+'T12:00:00');if(Number.isNaN(date.getTime()))continue;const badge=make('div');badge.className='app-date';badge.setAttribute('aria-label',date.toLocaleDateString('en-CA',{month:'long',day:'numeric',year:'numeric'}));badge.append(make('strong',String(date.getDate())),make('small',date.toLocaleDateString('en-CA',{month:'short'})));card.prepend(badge);}
  try{localStorage.setItem('stroked.discovery.preferences',JSON.stringify({category:el('filterCat').value,regions:Array.from(document.querySelectorAll('[name="filterProvince"]:checked'),n=>n.value)}));}catch{}}
  try{const pref=JSON.parse(localStorage.getItem('stroked.discovery.preferences')||'null');if(pref&&Array.from(el('filterCat').options).some(o=>o.value===pref.category)){el('filterCat').value=pref.category;document.querySelectorAll('[name="filterProvince"]').forEach(n=>n.checked=Array.isArray(pref.regions)&&pref.regions.includes(n.value));updateProvinceSummary();}}catch{}

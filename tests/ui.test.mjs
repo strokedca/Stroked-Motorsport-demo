@@ -12,7 +12,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
-  const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
+  let mineEvents=[];const reports=[];const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
     if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=emptyEvents?[]:[row];}
@@ -20,9 +20,13 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
     if(name.endsWith('admin_events'))data=[{...row,status:'approved'}];
     if(name.endsWith('admin_signup_stats')){if(signupFailure)return{data:null,error:{message:'Unavailable'}};data={total:5,email_confirmed:4,awaiting_confirmation:1,riders:3,organizers:2,new_last_7_days:2};}
     if(name.endsWith('admin_requests'))data=reviewRequests;
+    if(name.endsWith('report_event')){data='report-id';reports.push({id:data,event_id:id,event_name:row.payload.name,issue:args.p_issue,created_at:new Date().toISOString()});}
+    if(name.endsWith('admin_reports'))data=[...reports];
+    if(name.endsWith('resolve_report')){reports.length=0;data=true;}
+    if(name.endsWith('request_change'))data='request-id';
     if(name.endsWith('become_organizer')){accountType='organizer';data=true;}
     if(name.endsWith('save_profile')){profile={...args.p_profile};data=true;}
-    if(name.endsWith('my_events'))data=[];
+    if(name.endsWith('my_events'))data=mineEvents;
     if(name.endsWith('my_rsvp'))data=mine;
     if(name.endsWith('save_rsvp')){mine=args.p_response==='not_going'?null:{response:args.p_response,guests:args.p_guests};row.counts={going:mine?.response==='going'?1:0,guests:mine?.response==='going'?mine.guests:0,interested:mine?.response==='interested'?1:0};data=true;}
     return{data,error:null};
@@ -51,6 +55,10 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   $('sv5Close').click();for(const [key,value] of Object.entries({name:'Rider permission check',club:'Test Club',city:'Charlottetown',date}))$('eventForm').elements.namedItem(key).value=value;
   $('eventForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
   assert.equal($('sv5Panel').open,true);assert.match($('sv5Message').textContent,/Set up an organizer account before submitting/,'the blocking reason is visible inside the account dialog');assert.equal(calls.some(c=>c.name.endsWith('_submit')),false,'a rider does not submit an event');
+  if(mode==='production'){
+    const alerts=[];win.alert=message=>alerts.push(message);win.prompt=()=>'<img src=x> Wrong city';
+    await win.v47Report('live-'+id);assert.equal(calls.filter(c=>c.name.endsWith('report_event')).length,1);assert.match(alerts.at(-1),/Report sent/);
+  }
   $('sv5Close').click();win.__testOpenEvent('live-'+id);await settle();$('rsvpStatus').value='Going';$('rsvpGuests').value='2';$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
   assert.equal(calls.filter(c=>c.name.endsWith('save_rsvp')).length,1);assert.deepEqual(mine,{response:'going',guests:2});assert.match($('detailBody').querySelector('.stats').textContent,/3expected attendees/);assert.match($('sv55RsvpStatus').textContent,/RSVP saved/);
   win.__testOpenEvent('live-'+id);await settle();assert.equal($('rsvpGuests').value,'2');
@@ -73,6 +81,16 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   assert.equal(confirmations.at(-1),'Approve this request'+(mode==='testing'?' in the testing release?':'?'));
   assert.ok(calls.every(c=>c.name.startsWith(mode==='production'?'stroked_live_v55_':'stroked_v55_')),'every RPC uses the correct environment');
   emptyEvents=true;$('sv5Refresh').click();await settle();assert.match($('cards').textContent,/No events listed yet/);$('sv55EmptyPost').click();assert.equal($('add').classList.contains('hidden'),false,'the empty calendar links to the working event form');
+  if(mode==='production'){
+    assert.match($('sv57Reports').textContent,/Wrong city/);assert.equal($('sv57Reports').querySelector('img'),null);
+    [...$('sv57Reports').querySelectorAll('button')].find(b=>b.textContent==='Mark resolved').click();await settle();assert.match($('sv57Reports').textContent,/No reports awaiting review/);
+    mineEvents=[{...row,status:'approved'}];$('sv5Refresh').click();await settle();
+    $('sv5Mine').querySelector('button').click();
+    const changes=$('sv53ChangeForm');assert.equal(changes.elements.namedItem('city').value,'Charlottetown');
+    changes.elements.namedItem('city').value='Summerside';changes.elements.namedItem('province').value='PEI';
+    changes.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
+    const sent=calls.findLast(c=>c.name.endsWith('request_change'));assert.equal(sent.args.p_payload.city,'Summerside');assert.equal(sent.args.p_payload.province,'PEI');
+  }
   signupFailure=true;$('sv5Refresh').click();await settle();assert.equal($('sv56SignupCounts').children.length,0);assert.match($('sv56SignupStatus').textContent,/could not load/,'a failed count does not display a misleading zero');
   signupFailure=false;administrator=false;$('sv5Refresh').click();await settle();assert.equal($('sv5Admin').hidden,true);assert.equal($('sv56SignupCounts').children.length,0,'admin totals clear when the account loses administrator access');
   assert.deepEqual(errors,[]);

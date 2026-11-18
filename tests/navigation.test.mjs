@@ -3,14 +3,33 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {Window} from 'happy-dom';
 
-async function setup() {
+async function setup(app=false) {
   const win=new Window({url:'https://stroked.ca/',settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true}});
   win.document.write(await readFile(new URL('../index.html',import.meta.url),'utf8'));
   win.alert=()=>{};
   const inline=[...win.document.querySelectorAll('script:not([src])')].map(s=>s.textContent).join('\n');
-  win.eval(inline+`\nwindow.navigationTest={today:todayDay,filtered:getFiltered,reset:resetEventSearch,all:showAllEventDates,range:changeDateRange,year:changeEventYear,open:openEvent,seed:rows=>{state.events=rows.map(normalize);render()}};`);
+  const appSource=app?await readFile(new URL('../assets/stroked-app.js',import.meta.url),'utf8'):'';
+  win.eval(inline+'\n'+appSource+`\nwindow.navigationTest={move:moveMonth,today:todayDay,filtered:getFiltered,reset:resetEventSearch,all:showAllEventDates,range:changeDateRange,year:changeEventYear,open:openEvent,seed:rows=>{state.events=rows.map(normalize);render()}};`);
   return {win,ui:win.navigationTest,$:id=>win.document.getElementById(id)};
 }
+
+test('bottom Calendar opens a month, browses both directions and restores Explore filters',async()=>{
+  const {win,$}=await setup(true);
+  try{
+    const buttons=win.document.querySelectorAll('.app-bottom button');assert.equal(buttons.length,5);
+    const originalRange=$('filterDateRange').value;
+    win.document.querySelector('[data-destination="calendar"]').click();
+    assert.equal(win.document.body.classList.contains('app-calendar-mode'),true);
+    assert.equal($('calendarViewDetails').open,true);assert.equal($('filterDateRange').value,'full');
+    assert.equal($('calendar').querySelectorAll('.day-cell').length,42);
+    const first=$('calendarTitle').textContent;
+    win.navigationTest.move(1);assert.notEqual($('calendarTitle').textContent,first);
+    win.navigationTest.move(-1);assert.equal($('calendarTitle').textContent,first);
+    win.document.querySelector('[data-destination="browse"]').click();
+    assert.equal(win.document.body.classList.contains('app-calendar-mode'),false);assert.equal($('filterDateRange').value,originalRange);
+    assert.equal(win.document.querySelector('[data-destination="clothing"]').textContent,'Clothing');
+  }finally{win.happyDOM.abort();}
+});
 
 test('discovery excludes past events by default, preserves archives and restores upcoming on reset',async()=>{
   const {win,ui,$}=await setup();
