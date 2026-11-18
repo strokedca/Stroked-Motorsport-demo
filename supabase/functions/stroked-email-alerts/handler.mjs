@@ -1,4 +1,12 @@
 export function emailContent(job) {
+  if (job.kind === 'announcement' || job.kind === 'announcement_test') {
+    const test = job.kind === 'announcement_test';
+    const unsubscribe = job.unsubscribe_token ? 'https://stroked.ca/unsubscribe.html#token=' + job.unsubscribe_token : 'https://stroked.ca/?alerts=1';
+    return {subject: ((test ? '[TEST] ' : '') + job.payload.subject).replace(/[\r\n]/g, ' ').slice(0,180),
+      text: [test ? 'Administrator preview — sent only to your login email.' : '', job.payload.body,
+        'Stroked Motorsports Events · Born in PEI, built for Canada.', 'https://stroked.ca/ · info@stroked.ca',
+        test ? 'Manage announcement choices: https://stroked.ca/?alerts=1' : 'You subscribed to Stroked announcements. Unsubscribe: ' + unsubscribe].filter(Boolean).join('\n\n')};
+  }
   const event = job.payload.event || {};
   const link = 'https://stroked.ca/?event=live-' + job.event_id;
   const heading = ({confirmation:'Your RSVP is saved',event_update:'Event update',new_event:'New event for you',reminder:'Your event is tomorrow'})[job.kind] || 'Event update';
@@ -63,6 +71,7 @@ export async function handleAlerts(request, {rpc, getConfig, send}) {
   let sent = 0;
   for (const job of jobs) {
     try {
+      if (['announcement','announcement_test'].includes(job.kind) && !(await rpc('stroked_alert_announcement_can_send', {p_id:job.id}))) continue;
       const result = await send({...emailContent(job), to: [job.email], from: config.from}, 'stroked-alert-' + job.id, config.key);
       if (!result?.id) throw Error('Provider did not accept message');
       await rpc('stroked_alert_worker_ack', {p_id: job.id, p_provider_id: result.id, p_error: null});

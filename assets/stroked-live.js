@@ -38,7 +38,7 @@
             <section id="sv58Reports" hidden><h3>Reported event information</h3><div id="sv57Reports"></div></section>
             <section id="sv58Promotions" hidden></section><section id="sv58Payments" hidden></section>
             <section id="sv58Signups" hidden aria-labelledby="sv56SignupHeading"><h3 id="sv56SignupHeading">Site signups</h3><p class="account-help">Counts registered accounts, including administrator and test accounts. Visitors without accounts are not included. Each account is counted once.</p><p id="sv56SignupStatus" role="status" aria-live="polite"></p><dl id="sv56SignupCounts" class="signup-stats"></dl></section>
-            <section id="sv58Members" hidden><h3>Members</h3><p class="account-help">Private administrator view. Blocking stops account actions, including event submissions, RSVPs and reports. Public event browsing stays available.</p><label for="sv59MemberSearch">Find a member</label><input id="sv59MemberSearch" type="search" maxlength="160" placeholder="Name, email or organization"><label for="sv59MemberFilter">Account status</label><select id="sv59MemberFilter"><option value="all">All members</option><option value="active">Active</option><option value="blocked">Blocked</option><option value="unconfirmed">Email unconfirmed</option></select><button id="sv59FindMembers" type="button">Search members</button><p id="sv59MemberStatus" role="status"></p><div id="sv59MemberList"></div><div id="sv59MemberPages" class="actions"></div></section><section id="sv58Other" hidden><h3>Rejected listings</h3><div id="sv58OtherList"></div></section>
+            <section id="sv58Members" hidden><h3>Members</h3><p class="account-help">Private administrator view. Blocking stops account actions, including event submissions, RSVPs and reports. Public event browsing stays available.</p><label for="sv59MemberSearch">Find a member</label><input id="sv59MemberSearch" type="search" maxlength="160" placeholder="Name, email or organization"><label for="sv59MemberFilter">Account status</label><select id="sv59MemberFilter"><option value="all">All members</option><option value="active">Active</option><option value="blocked">Blocked</option><option value="unconfirmed">Email unconfirmed</option></select><button id="sv59FindMembers" type="button">Search members</button><p id="sv59MemberStatus" role="status"></p><div id="sv59MemberList"></div><div id="sv59MemberPages" class="actions"></div></section><section id="sv58Announcements" hidden></section><section id="sv58Other" hidden><h3>Rejected listings</h3><div id="sv58OtherList"></div></section>
           </section>
         </div>
       </div>
@@ -89,9 +89,10 @@
   const promotionTools=window.StrokedPromotions?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
   const pricingTools=window.StrokedPricing?.mount({rpc,config,openAccount,getAccount:()=>account,getMyEvents:()=>myRows,promotions:promotionTools});
   const engagement=window.StrokedEngagement?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
+  const announcements=window.StrokedAnnouncements?.mount({rpc,config});
   function updateAccountView() {
     const signed=Boolean(user), organizer=Boolean(account?.account_type==='organizer'||account?.is_admin);
-    promotionTools?.setAccount(account,signed);engagement?.setAccount(account,signed);
+    promotionTools?.setAccount(account,signed);engagement?.setAccount(account,signed);announcements?.setAccount(account,signed);
     pricingTools?.setAccount(account,signed);
     if(el('strokedAdminHelp'))el('strokedAdminHelp').hidden=!account?.is_admin;
     el('sv53Welcome').hidden=signed||recovery;form.hidden=signed||recovery||form.hidden;
@@ -133,7 +134,7 @@
       }
     }catch{if(epoch===authEpoch&&account?.is_admin)target.append(text('p','Reports could not load. Choose Refresh to try again.'));}
   }
-  const adminSections=[['Pending','Waiting for approval'],['Approved','Approved listings'],['Requests','Changes'],['Reports','Reports'],['Promotions','Promotions'],['Payments','Payments'],['Signups','Signups'],['Members','Members'],['Other','Rejected listings']];
+  const adminSections=[['Pending','Waiting for approval'],['Approved','Approved listings'],['Requests','Changes'],['Reports','Reports'],['Promotions','Promotions'],['Payments','Payments'],['Signups','Signups'],['Members','Members'],['Announcements','Email announcements'],['Other','Rejected listings']];
   let selectedAdminSection='Pending',approvedRows=[],approvedPage=0;
   function selectAdminSection(key){
     selectedAdminSection=key;
@@ -219,7 +220,7 @@
       account=own;myRows=Array.isArray(rows)?rows:[];updateAccountView();
       if(account?.is_admin)await refreshSignupStats(epoch);if(epoch!==authEpoch)return;
       for(const [k,v] of Object.entries(own?.profile||{})){const input=el('sv53ProfileForm').elements.namedItem(k);if(input)input.value=v||'';}
-      renderMine();await engagement?.refresh();
+      renderMine();await engagement?.refresh();await announcements?.refresh();
       await pricingTools?.refresh();
       if(account?.is_admin){const [queue,requests]=await Promise.all([rpc('admin_events'),rpc('admin_requests')]);if(epoch!==authEpoch)return;renderQueue(queue||[],requests||[]);await promotionTools?.refreshAdmin();await refreshReports(epoch);await refreshMembers(epoch);}
     } catch(e){if(epoch===authEpoch){message('Account details could not load: '+failure(e),true);throw e;}}
