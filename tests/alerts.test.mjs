@@ -4,7 +4,7 @@ test('email worker authenticates, refuses missing sender, retries errors and use
  const request=()=>new Request('https://example.test',{method:'POST',headers:{'x-stroked-alert-token':'test-token'}});
  assert.equal((await handleAlerts(request(),deps)).status,401);assert.equal(sends.length,0);authorized=true;assert.equal((await handleAlerts(request(),deps)).status,503);assert.equal(calls.some(x=>x.n.endsWith('claim')),false);configured=true;await handleAlerts(request(),deps);assert.equal(sends[0].key,'stroked-alert-job-1');assert.match(sends[0].body.text,/event=live-event-1/);assert.equal(calls.findLast(c=>c.n.endsWith('ack')).a.p_provider_id,'provider-1');fail=true;await handleAlerts(request(),deps);assert.match(calls.at(-1).a.p_error,/retry/);assert.equal(sends[1].key,sends[0].key);
 });
-test('message content contains status, location and opt-out directions without HTML execution',()=>{const c=emailContent({kind:'event_update',event_id:'abc',payload:{event:{name:'<script>\nRide',city:'Charlottetown',status:'Cancelled'}}});assert.doesNotMatch(c.subject,/\n/);assert.match(c.text,/Cancelled/);assert.match(c.text,/stop event emails/);});
+test('message content contains status, location and opt-out directions without HTML execution',()=>{const c=emailContent({kind:'event_update',event_id:'abc',payload:{event:{name:'<script>\nRide',city:'Charlottetown',status:'Cancelled'}}});assert.doesNotMatch(c.subject,/\n/);assert.match(c.text,/Cancelled/);assert.match(c.text,/stop RSVP emails/);});
 
 test('event email keeps ordinary letters and uses real paragraph breaks',()=>{
  const c=emailContent({kind:'confirmation',event_id:'test-id',payload:{event:{name:'Northern Riders\r\nFun Run'},response:'interested',guests:0}});
@@ -20,3 +20,5 @@ test('sender test requires worker authentication and cannot redirect email or cr
  authorized=true;assert.equal((await handleAlerts(request(),deps)).status,200);assert.deepEqual(sends[0].body.to,['owner@example.test']);assert.match(sends[0].body.text,/No RSVP or attendance was created/);assert.equal(calls.some(c=>c.n.endsWith('claim')),false);assert.equal(calls.at(-1).a.p_ready,true);
  fail=true;assert.equal((await handleAlerts(request(),deps)).status,502);assert.equal(calls.at(-1).a.p_ready,false);assert.equal(sends[0].key,sends[1].key);
 });
+
+test('discovery and reminder messages explain their purpose and link account email controls',()=>{for(const [kind,title]of [['new_event','New event for you'],['reminder','Your event is tomorrow']]){const result=emailContent({kind,event_id:'event-id',payload:{event:{name:'Test Ride',date:'2099-01-01'}}});assert.match(result.subject,new RegExp(title));assert.match(result.text,/https:\/\/stroked.ca\/\?alerts=1/);assert.doesNotMatch(result.text,/Your response:/);}});

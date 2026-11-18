@@ -13,8 +13,13 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
   let adminQueueRows=null;let mineEvents=[];const member={id:'other-member',first_name:'Test',last_name:'Rider',email:'test@example.test',confirmed:true,account_type:'rider',blocked:false};const reports=[];const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
+  let followed=[],emailSettings={};
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
+    if(name.endsWith('my_alert_settings'))data={events:followed,organizers:[],settings:emailSettings};
+    if(name.endsWith('set_follow')){followed=args.p_follow?[{id,name:row.payload.name,date,available:true}]:[];data=true;}
+    if(name.endsWith('unfollow')){followed=[];data=true;}
+    if(name.endsWith('save_alert_settings')){emailSettings=args.p_settings;data=true;}
     if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=emptyEvents?[]:[row];}
     if(name.endsWith('my_account'))data={account_type:accountType,is_admin:administrator,profile};
     if(name.endsWith('admin_events'))data=adminQueueRows||[{...row,status:'approved'}];
@@ -37,7 +42,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.supabase={createClient:()=>{clientCount++;return sdk;}};
   // One evaluation keeps classic-script global lexical bindings in this DOM simulator.
   const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
-  for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-pricing.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await readFile(new URL(path,base),'utf8'));
+  for(const path of ['assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-pricing.js','assets/stroked-engagement.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await readFile(new URL(path,base),'utf8'));
   win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
   await settle();assert.equal(clientCount,1);
   assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);
@@ -63,6 +68,10 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   }
   $('sv5Close').click();win.__testOpenEvent('live-'+id);await settle();$('rsvpStatus').value='Going';$('rsvpGuests').value='2';$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
   assert.equal(calls.filter(c=>c.name.endsWith('save_rsvp')).length,1);assert.deepEqual(mine,{response:'going',guests:2});assert.match($('detailBody').querySelector('.stats').textContent,/3expected attendees/);assert.match($('sv55RsvpStatus').textContent,/RSVP saved/);
+  if(mode==='production'){
+    const follow=[...$('eventExtraActions').querySelectorAll('button')].find(b=>b.textContent==='Follow event');follow.click();await settle();assert.equal(followed.length,1);assert.match($('strokedFollowedEvents').textContent,/Test Shared Ride/);assert.equal(follow.getAttribute('onclick'),null,'production follows cannot use local handlers');
+    const choices=$('strokedAlertSettings');choices.elements.namedItem('new_events').checked=true;choices.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(emailSettings.new_events,true);assert.match($('strokedFollowingStatus').textContent,/saved/);$('strokedFollowedEvents').querySelector('button.secondary').click();await settle();assert.equal(followed.length,0);assert.ok($('eventForm').querySelector('[name=event_cover_file]'));assert.ok($('sv53ChangeForm').querySelector('[name=event_gallery_files]'));
+  }
   win.__testOpenEvent('live-'+id);await settle();assert.equal($('rsvpGuests').value,'2');
   $('rsvpStatus').value='Interested';$('rsvpStatus').dispatchEvent(new win.Event('change'));$('rsvpForm').dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.deepEqual(mine,{response:'interested',guests:0});
   row.payload.status='Cancelled';$('sv5Refresh').click();await settle();win.__testOpenEvent('live-'+id);await settle();assert.equal($('rsvpForm').querySelector('button[type="submit"]').hidden,true);assert.equal($('rsvpStatus').disabled,true);assert.equal($('rsvpGuests').disabled,true);assert.equal($('sv55RemoveRsvp').hidden,false);assert.match($('sv55RsvpStatus').textContent,/you can remove your saved response/);assert.doesNotMatch($('sv55RsvpStatus').textContent,/can update/);
