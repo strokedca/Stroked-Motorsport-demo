@@ -12,7 +12,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
-  let adminQueueRows=null;let mineEvents=[];const reports=[];const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
+  let adminQueueRows=null;let mineEvents=[];const member={id:'other-member',first_name:'Test',last_name:'Rider',email:'test@example.test',confirmed:true,account_type:'rider',blocked:false};const reports=[];const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
     if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=emptyEvents?[]:[row];}
@@ -20,6 +20,8 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
     if(name.endsWith('admin_events'))data=adminQueueRows||[{...row,status:'approved'}];
     if(name.endsWith('admin_signup_stats')){if(signupFailure)return{data:null,error:{message:'Unavailable'}};data={total:5,email_confirmed:4,awaiting_confirmation:1,riders:3,organizers:2,new_last_7_days:2};}
     if(name.endsWith('admin_requests'))data=reviewRequests;
+    if(name.endsWith('admin_members'))data={members:[{...member}],total:1,registered_total:1};
+    if(name.endsWith('set_member_block')){member.blocked=args.p_blocked;member.block_reason=args.p_reason;data=true;}
     if(name.endsWith('report_event')){data='report-id';reports.push({id:data,event_id:id,event_name:row.payload.name,issue:args.p_issue,created_at:new Date().toISOString()});}
     if(name.endsWith('admin_reports'))data=[...reports];
     if(name.endsWith('resolve_report')){reports.length=0;data=true;}
@@ -92,7 +94,12 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
     $('sv5Refresh').click();await settle();assert.equal($('sv58Approved').hidden,false,'refresh keeps the selected admin section');
     $('sv58TabReports').click();assert.equal($('sv58Reports').hidden,false);assert.equal($('sv58Approved').hidden,true);
     $('sv56OpenPromotions').click();assert.equal($('sv58Promotions').hidden,false,'Add promotion opens its section before focusing the form');
-    $('sv58TabRequests').click();
+    $('sv58TabMembers').click();assert.equal($('sv58Members').hidden,false);assert.match($('sv59MemberList').textContent,/test@example.test/);
+    win.confirm=()=>true;win.prompt=()=> 'Repeated nuisance reports';
+    [...$('sv59MemberList').querySelectorAll('button')].find(b=>b.textContent==='Block member').click();await settle();assert.equal(member.blocked,true);assert.match($('sv59MemberList').textContent,/Blocked/);
+    [...$('sv59MemberList').querySelectorAll('button')].find(b=>b.textContent==='Unblock member').click();await settle();assert.equal(member.blocked,false);
+    $('sv59MemberSearch').value='test@example.test';$('sv59FindMembers').click();await settle();assert.equal(calls.findLast(c=>c.name.endsWith('admin_members')).args.p_search,'test@example.test');
+    win.confirm=text=>{confirmations.push(text);return false;};$('sv58TabRequests').click();
   }
   emptyEvents=true;$('sv5Refresh').click();await settle();assert.match($('cards').textContent,/No events listed yet/);$('sv55EmptyPost').click();assert.equal($('add').classList.contains('hidden'),false,'the empty calendar links to the working event form');
   if(mode==='production'){

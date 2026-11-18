@@ -38,7 +38,7 @@
             <section id="sv58Reports" hidden><h3>Reported event information</h3><div id="sv57Reports"></div></section>
             <section id="sv58Promotions" hidden></section><section id="sv58Payments" hidden></section>
             <section id="sv58Signups" hidden aria-labelledby="sv56SignupHeading"><h3 id="sv56SignupHeading">Site signups</h3><p class="account-help">Counts registered accounts, including administrator and test accounts. Visitors without accounts are not included. Each account is counted once.</p><p id="sv56SignupStatus" role="status" aria-live="polite"></p><dl id="sv56SignupCounts" class="signup-stats"></dl></section>
-            <section id="sv58Other" hidden><h3>Rejected listings</h3><div id="sv58OtherList"></div></section>
+            <section id="sv58Members" hidden><h3>Members</h3><p class="account-help">Private administrator view. Blocking stops account actions, including event submissions, RSVPs and reports. Public event browsing stays available.</p><label for="sv59MemberSearch">Find a member</label><input id="sv59MemberSearch" type="search" maxlength="160" placeholder="Name, email or organization"><label for="sv59MemberFilter">Account status</label><select id="sv59MemberFilter"><option value="all">All members</option><option value="active">Active</option><option value="blocked">Blocked</option><option value="unconfirmed">Email unconfirmed</option></select><button id="sv59FindMembers" type="button">Search members</button><p id="sv59MemberStatus" role="status"></p><div id="sv59MemberList"></div><div id="sv59MemberPages" class="actions"></div></section><section id="sv58Other" hidden><h3>Rejected listings</h3><div id="sv58OtherList"></div></section>
           </section>
         </div>
       </div>
@@ -102,7 +102,7 @@
     el('sv5Post').hidden=!organizer;el('sv55BecomeOrganizer').hidden=!signed||organizer||!account;
     el('sv5Open').textContent=signed?'My account':'Rider Login / Register';el('sv55OrganizerOpen').hidden=signed;
     el('sv5Identity').textContent=signed?'Signed in: '+user.email+(account?' · '+(account.is_admin?'Administrator':organizer?'Organizer':'Rider'):''):'Not signed in';
-    if(!account?.is_admin){el('sv56SignupCounts').replaceChildren();el('sv56SignupStatus').textContent='';el('sv57Reports')?.replaceChildren();}
+    if(!account?.is_admin){el('sv56SignupCounts').replaceChildren();el('sv56SignupStatus').textContent='';el('sv57Reports')?.replaceChildren();el('sv59MemberList')?.replaceChildren();el('sv59MemberStatus').textContent='';}
     if(!signed){el('sv53ProfileForm').reset();el('sv5Mine').replaceChildren();el('sv5Queue').replaceChildren();el('sv55Requests').replaceChildren();myRows=[];}
   }
   async function refreshSignupStats(epoch) {
@@ -132,7 +132,7 @@
       }
     }catch{if(epoch===authEpoch&&account?.is_admin)target.append(text('p','Reports could not load. Choose Refresh to try again.'));}
   }
-  const adminSections=[['Pending','Waiting for approval'],['Approved','Approved listings'],['Requests','Changes'],['Reports','Reports'],['Promotions','Promotions'],['Payments','Payments'],['Signups','Signups'],['Other','Rejected listings']];
+  const adminSections=[['Pending','Waiting for approval'],['Approved','Approved listings'],['Requests','Changes'],['Reports','Reports'],['Promotions','Promotions'],['Payments','Payments'],['Signups','Signups'],['Members','Members'],['Other','Rejected listings']];
   let selectedAdminSection='Pending',approvedRows=[],approvedPage=0;
   function selectAdminSection(key){
     selectedAdminSection=key;
@@ -156,6 +156,42 @@
     if(rows.length>10){for(const [label,step] of [['Previous',-1],['Next',1]]){const b=text('button',label);b.type='button';b.disabled=step<0?approvedPage===0:approvedPage===pages-1;b.onclick=()=>{approvedPage+=step;renderApproved();el('sv58ApprovedSearch').focus();};pager.append(b);}pager.append(text('span','Page '+(approvedPage+1)+' of '+pages));}
   }
   el('sv58ApprovedSearch').oninput=()=>{approvedPage=0;renderApproved();};
+  let memberOffset=0,memberGeneration=0;
+  async function refreshMembers(epoch=authEpoch){
+    if(!account?.is_admin||config.testing)return;
+    const generation=++memberGeneration,target=el('sv59MemberList'),pages=el('sv59MemberPages'),status=el('sv59MemberStatus');target.replaceChildren();pages.replaceChildren();status.textContent='Loading members…';
+    try{
+      const result=await rpc('admin_members',{p_search:el('sv59MemberSearch').value.trim(),p_filter:el('sv59MemberFilter').value,p_offset:memberOffset});
+      if(generation!==memberGeneration||epoch!==authEpoch||!account?.is_admin)return;
+      const members=Array.isArray(result?.members)?result.members:[];adminCount('Members',result?.registered_total||0);
+      status.textContent=(result?.total||0)+' matching members';
+      if(!members.length)target.append(text('p','No members match your search.'));
+      for(const member of members){
+        const card=document.createElement('article');card.className='sv5Card';
+        card.append(text('h4',[member.first_name,member.last_name].filter(Boolean).join(' ')||'Name not supplied'),text('p',member.email||'Email not supplied'),text('p',(member.is_admin?'Administrator':member.account_type==='organizer'?'Organizer':'Rider')+' · '+(member.blocked?'Blocked':'Active')+' · '+(member.confirmed?'Email confirmed':'Email unconfirmed')));
+        if(member.organization)card.append(text('p',member.organization));
+        if(member.created_at)card.append(text('small','Joined '+new Date(member.created_at).toLocaleDateString()));
+        if(member.blocked&&member.block_reason)card.append(text('p','Block reason: '+member.block_reason));
+        if(!member.is_admin&&member.id!==user?.id){
+          const button=text('button',member.blocked?'Unblock member':'Block member');button.type='button';button.className='secondary';
+          button.onclick=async()=>{
+            const verb=member.blocked?'Unblock':'Block',label=member.email||[member.first_name,member.last_name].filter(Boolean).join(' ')||'this member';
+            if(!confirm(verb+' '+label+'?'+(member.blocked?' Their account actions will be restored.':' They will no longer be able to submit events, RSVP or send reports.')))return;
+            const reason=member.blocked?'':prompt('Reason for blocking (optional, maximum 500 characters):');if(reason===null)return;
+            if(reason.length>500){alert('Keep the reason within 500 characters.');return;}
+            button.disabled=true;
+            try{await rpc('set_member_block',{p_user_id:member.id,p_blocked:!member.blocked,p_reason:reason});await refreshMembers();message(member.blocked?'Member unblocked.':'Member blocked.');}catch(e){message(failure(e),true);}finally{button.disabled=false;}
+          };card.append(button);
+        }else card.append(text('small','Administrator account — blocking unavailable.'));
+        target.append(card);
+      }
+      for(const [label,step] of [['Previous',-25],['Next',25]]){const b=text('button',label);b.type='button';b.disabled=step<0?memberOffset===0:memberOffset+25>=(result?.total||0);b.onclick=()=>{memberOffset=Math.max(0,memberOffset+step);void refreshMembers();};pages.append(b);}
+    }catch(e){if(generation===memberGeneration&&epoch===authEpoch&&account?.is_admin)status.textContent='Members could not load: '+failure(e);}
+  }
+  el('sv59FindMembers').onclick=()=>{memberOffset=0;void refreshMembers();};
+  el('sv59MemberFilter').onchange=()=>{memberOffset=0;void refreshMembers();};
+  el('sv59MemberSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();memberOffset=0;void refreshMembers();}};
+
   const demoReport=window.v47Report;
   let sendingReport=false;
   window.v47Report=async function(id){
@@ -184,7 +220,7 @@
       for(const [k,v] of Object.entries(own?.profile||{})){const input=el('sv53ProfileForm').elements.namedItem(k);if(input)input.value=v||'';}
       renderMine();
       await pricingTools?.refresh();
-      if(account?.is_admin){const [queue,requests]=await Promise.all([rpc('admin_events'),rpc('admin_requests')]);if(epoch!==authEpoch)return;renderQueue(queue||[],requests||[]);await promotionTools?.refreshAdmin();await refreshReports(epoch);}
+      if(account?.is_admin){const [queue,requests]=await Promise.all([rpc('admin_events'),rpc('admin_requests')]);if(epoch!==authEpoch)return;renderQueue(queue||[],requests||[]);await promotionTools?.refreshAdmin();await refreshReports(epoch);await refreshMembers(epoch);}
     } catch(e){if(epoch===authEpoch){message('Account details could not load: '+failure(e),true);throw e;}}
   }
   form.addEventListener('submit',async event=>{
