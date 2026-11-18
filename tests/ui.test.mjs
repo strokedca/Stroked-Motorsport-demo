@@ -12,12 +12,12 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.document.write(html);const $=id=>win.document.getElementById(id);
   const id='12345678-abcd-4567-89ab-123456789abc',date=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
   const row={id,payload:{name:'Test Shared Ride',club:'Test Club',city:'Charlottetown',province:'PEI',date,categories:['Motorcycles'],status:'Scheduled'},counts:{going:0,guests:0,interested:0},organizer:{organization:'Test Club'}};
-  let mineEvents=[];const reports=[];const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
+  let adminQueueRows=null;let mineEvents=[];const reports=[];const calls=[];let user=null,mine=null,registered,clientCount=0,accountType='rider',profile={},failPublicRead=false,emptyEvents=false,administrator=false,reviewRequests=[],signupFailure=false;
   const sdk={auth:{getSession:async()=>({data:{session:null},error:null}),getUser:async()=>({data:{user},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signUp:async input=>{registered=input;return{data:{session:null},error:null};},signInWithPassword:async()=>{user={id:'rider-test',email:'rider@example.test'};return{data:{session:{user}},error:null};},signOut:async()=>{user=null;return{error:null};},resend:async()=>({error:null}),resetPasswordForEmail:async()=>({error:null})},rpc:async(name,args)=>{
     calls.push({name,args});let data=null;
     if(name.endsWith('public_events')){if(failPublicRead)return{data:null,error:{code:'PGRST202',message:'Unconfigured database service'}};data=emptyEvents?[]:[row];}
     if(name.endsWith('my_account'))data={account_type:accountType,is_admin:administrator,profile};
-    if(name.endsWith('admin_events'))data=[{...row,status:'approved'}];
+    if(name.endsWith('admin_events'))data=adminQueueRows||[{...row,status:'approved'}];
     if(name.endsWith('admin_signup_stats')){if(signupFailure)return{data:null,error:{message:'Unavailable'}};data={total:5,email_confirmed:4,awaiting_confirmation:1,riders:3,organizers:2,new_last_7_days:2};}
     if(name.endsWith('admin_requests'))data=reviewRequests;
     if(name.endsWith('report_event')){data='report-id';reports.push({id:data,event_id:id,event_name:row.payload.name,issue:args.p_issue,created_at:new Date().toISOString()});}
@@ -80,6 +80,20 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   [...reviewCard.querySelectorAll('button')].find(b=>b.textContent==='Approve').click();await settle();
   assert.equal(confirmations.at(-1),'Approve this request'+(mode==='testing'?' in the testing release?':'?'));
   assert.ok(calls.every(c=>c.name.startsWith(mode==='production'?'stroked_live_v55_':'stroked_v55_')),'every RPC uses the correct environment');
+  if(mode==='production'){
+    adminQueueRows=[...Array.from({length:12},(_,i)=>({...row,id:'approved-'+i,payload:{...row.payload,name:'Approved ride '+i},status:'approved'})),{...row,id:'pending-event',payload:{...row.payload,name:'Needs approval'},status:'pending'},{...row,id:'rejected-event',payload:{...row.payload,name:'Rejected event'},status:'rejected'}];
+    $('sv5Refresh').click();await settle();
+    assert.equal($('sv5Queue').querySelectorAll('.sv5Card').length,1);assert.match($('sv5Queue').textContent,/Needs approval/);assert.doesNotMatch($('sv5Queue').textContent,/Approved ride/);
+    assert.match($('sv58TabPending').textContent,/\(1\)/);assert.match($('sv58TabApproved').textContent,/\(12\)/);
+    assert.equal($('sv58OrganizerTools').open,false);
+    $('sv58TabApproved').click();assert.equal($('sv58Approved').hidden,false);assert.equal($('sv58Pending').hidden,true);assert.equal($('sv58ApprovedList').querySelectorAll('.sv5Card').length,10);
+    [...$('sv58ApprovedPages').querySelectorAll('button')].find(b=>b.textContent==='Next').click();assert.equal($('sv58ApprovedList').querySelectorAll('.sv5Card').length,2);
+    $('sv58ApprovedSearch').value='Approved ride 11';$('sv58ApprovedSearch').dispatchEvent(new win.Event('input'));assert.equal($('sv58ApprovedList').querySelectorAll('.sv5Card').length,1);
+    $('sv5Refresh').click();await settle();assert.equal($('sv58Approved').hidden,false,'refresh keeps the selected admin section');
+    $('sv58TabReports').click();assert.equal($('sv58Reports').hidden,false);assert.equal($('sv58Approved').hidden,true);
+    $('sv56OpenPromotions').click();assert.equal($('sv58Promotions').hidden,false,'Add promotion opens its section before focusing the form');
+    $('sv58TabRequests').click();
+  }
   emptyEvents=true;$('sv5Refresh').click();await settle();assert.match($('cards').textContent,/No events listed yet/);$('sv55EmptyPost').click();assert.equal($('add').classList.contains('hidden'),false,'the empty calendar links to the working event form');
   if(mode==='production'){
     assert.match($('sv57Reports').textContent,/Wrong city/);assert.equal($('sv57Reports').querySelector('img'),null);

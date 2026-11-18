@@ -30,7 +30,16 @@
             <h3>My events</h3><p class="account-help">Submissions and changes appear publicly after administrator approval.</p><div id="sv5Mine"></div>
             <section id="sv53ChangePanel" class="sv5Card" hidden><h3>Request event changes</h3><form id="sv53ChangeForm"><input name="event_id" type="hidden"><label>Event name<input name="name" maxlength="90" minlength="3" required></label><label>Organizing club<input name="club" maxlength="80" minlength="2" required></label><div class="grid"><label>Date<input name="date" type="date" required></label><label>Start time<input name="time" type="time"></label></div><div class="grid"><label>City / town<input name="city" maxlength="70" minlength="2" required></label><label>Province / territory<select name="province" required></select></label></div><label>Starting location<input name="startLocation" maxlength="180"></label><label>Departure / KSU<input name="ksu" type="time"></label><label>Details<textarea name="details" maxlength="600" rows="4"></textarea></label><label>Request type<select name="request_type"><option value="edit">Request changes</option><option value="cancel">Request cancellation</option></select></label><div class="actions"><button type="submit">Submit request for approval</button><button id="sv53CancelChange" type="button" class="secondary">Close request</button></div></form></section>
           </section>
-          <section id="sv5Admin" hidden><section aria-labelledby="sv56SignupHeading"><h3 id="sv56SignupHeading">Site signups</h3><p class="account-help">Counts registered accounts, including administrator and test accounts. Visitors without accounts are not included. Each account is counted once.</p><p id="sv56SignupStatus" role="status" aria-live="polite"></p><dl id="sv56SignupCounts" class="signup-stats"></dl></section><h3>Administrator approval dashboard</h3><div id="sv5Queue"></div><h3>Change and cancellation requests</h3><div id="sv55Requests"></div></section>
+          <section id="sv5Admin" hidden><h3>Administration</h3>
+            <nav id="sv58AdminNav" class="admin-section-nav" aria-label="Administration sections"></nav>
+            <section id="sv58Pending"><h3>Waiting for approval</h3><div id="sv5Queue"></div></section>
+            <section id="sv58Approved" hidden><h3>Approved listings</h3><label for="sv58ApprovedSearch">Find an approved listing</label><input id="sv58ApprovedSearch" type="search" placeholder="Event, organizer, town or venue"><div id="sv58ApprovedList"></div><div id="sv58ApprovedPages" class="actions"></div></section>
+            <section id="sv58Requests" hidden><h3>Change and cancellation requests</h3><div id="sv55Requests"></div></section>
+            <section id="sv58Reports" hidden><h3>Reported event information</h3><div id="sv57Reports"></div></section>
+            <section id="sv58Promotions" hidden></section><section id="sv58Payments" hidden></section>
+            <section id="sv58Signups" hidden aria-labelledby="sv56SignupHeading"><h3 id="sv56SignupHeading">Site signups</h3><p class="account-help">Counts registered accounts, including administrator and test accounts. Visitors without accounts are not included. Each account is counted once.</p><p id="sv56SignupStatus" role="status" aria-live="polite"></p><dl id="sv56SignupCounts" class="signup-stats"></dl></section>
+            <section id="sv58Other" hidden><h3>Rejected listings</h3><div id="sv58OtherList"></div></section>
+          </section>
         </div>
       </div>
     </dialog>`;
@@ -87,6 +96,9 @@
     el('sv53Welcome').hidden=signed||recovery;form.hidden=signed||recovery||form.hidden;
     el('sv5SignedIn').hidden=!signed||recovery;el('sv55Recovery').hidden=!signed||!recovery;
     el('sv55Organizer').hidden=!organizer;el('sv5Admin').hidden=!account?.is_admin;
+    el('sv58OrganizerTools').hidden=!organizer;
+    if(el('sv58OrganizerTools').dataset.admin!==String(Boolean(account?.is_admin))){el('sv58OrganizerTools').open=!account?.is_admin;el('sv58OrganizerTools').dataset.admin=String(Boolean(account?.is_admin));if(el('sv58MyBookings'))el('sv58MyBookings').open=!account?.is_admin;}
+    if(!signed){selectAdminSection('Pending');approvedRows=[];el('sv58ApprovedList').replaceChildren();el('sv58OtherList').replaceChildren();}
     el('sv5Post').hidden=!organizer;el('sv55BecomeOrganizer').hidden=!signed||organizer||!account;
     el('sv5Open').textContent=signed?'My account':'Rider Login / Register';el('sv55OrganizerOpen').hidden=signed;
     el('sv5Identity').textContent=signed?'Signed in: '+user.email+(account?' · '+(account.is_admin?'Administrator':organizer?'Organizer':'Rider'):''):'Not signed in';
@@ -109,7 +121,7 @@
     if(!account?.is_admin||config.testing)return;
     try {
       const rows=await rpc('admin_reports');if(epoch!==authEpoch||!account?.is_admin)return;
-      if(!rows?.length)target.append(text('p','No reports awaiting review.'));
+      adminCount('Reports',rows?.length||0);if(!rows?.length)target.append(text('p','No reports awaiting review.'));
       for(const row of rows||[]){
         const card=document.createElement('article');card.className='sv5Card';
         card.append(text('h4',row.event_name),text('p',row.issue),text('small',new Date(row.created_at).toLocaleString()));
@@ -120,8 +132,30 @@
       }
     }catch{if(epoch===authEpoch&&account?.is_admin)target.append(text('p','Reports could not load. Choose Refresh to try again.'));}
   }
-  const reportsHeading=text('h3','Reported event information'),reportsContainer=document.createElement('div');reportsContainer.id='sv57Reports';
-  el('sv5Admin').append(reportsHeading,reportsContainer);
+  const adminSections=[['Pending','Waiting for approval'],['Approved','Approved listings'],['Requests','Changes'],['Reports','Reports'],['Promotions','Promotions'],['Payments','Payments'],['Signups','Signups'],['Other','Rejected listings']];
+  let selectedAdminSection='Pending',approvedRows=[],approvedPage=0;
+  function selectAdminSection(key){
+    selectedAdminSection=key;
+    for(const [id] of adminSections){el('sv58'+id).hidden=id!==key;el('sv58Tab'+id).setAttribute('aria-pressed',String(id===key));}
+  }
+  function adminCount(key,count){const b=el('sv58Tab'+key);b.textContent=b.dataset.label+' ('+count+')';}
+  for(const [key,label] of adminSections){const b=text('button',label);b.type='button';b.id='sv58Tab'+key;b.dataset.label=label;b.setAttribute('aria-controls','sv58'+key);b.onclick=()=>selectAdminSection(key);el('sv58AdminNav').append(b);}
+  selectAdminSection('Pending');
+  if(el('sv56PromotionAdmin'))el('sv58Promotions').append(el('sv56PromotionAdmin'));
+  if(el('strokedAdminBookings'))el('sv58Payments').append(el('strokedAdminBookings'));
+  el('sv5SignedIn').insertBefore(el('sv5Admin'),el('sv55Organizer'));
+  const organizerTools=document.createElement('details');organizerTools.id='sv58OrganizerTools';organizerTools.open=true;organizerTools.append(text('summary','My events & organizer profile'));el('sv55Organizer').before(organizerTools);organizerTools.append(el('sv55Organizer'));
+  const myBookings=el('strokedMyBookings');if(myBookings){const extra=document.createElement('details');extra.id='sv58MyBookings';extra.open=true;extra.append(text('summary','My promotion bookings'));myBookings.before(extra);extra.append(myBookings);}
+  document.addEventListener('stroked:open-admin-promotions',()=>{if(account?.is_admin)selectAdminSection('Promotions');});
+  function renderApproved(){
+    const query=el('sv58ApprovedSearch').value.trim().toLowerCase(),rows=approvedRows.filter(row=>[row.payload?.name,row.payload?.club,row.payload?.city,row.payload?.startLocation].some(value=>String(value||'').toLowerCase().includes(query)));
+    const pages=Math.max(1,Math.ceil(rows.length/10));approvedPage=Math.min(approvedPage,pages-1);
+    const target=el('sv58ApprovedList'),pager=el('sv58ApprovedPages');target.replaceChildren();pager.replaceChildren();
+    if(!rows.length)target.append(text('p','No approved listings match.'));
+    for(const row of rows.slice(approvedPage*10,approvedPage*10+10))target.append(card(row));
+    if(rows.length>10){for(const [label,step] of [['Previous',-1],['Next',1]]){const b=text('button',label);b.type='button';b.disabled=step<0?approvedPage===0:approvedPage===pages-1;b.onclick=()=>{approvedPage+=step;renderApproved();el('sv58ApprovedSearch').focus();};pager.append(b);}pager.append(text('span','Page '+(approvedPage+1)+' of '+pages));}
+  }
+  el('sv58ApprovedSearch').oninput=()=>{approvedPage=0;renderApproved();};
   const demoReport=window.v47Report;
   let sendingReport=false;
   window.v47Report=async function(id){
@@ -205,8 +239,11 @@
   function renderMine(){const target=el('sv5Mine');target.replaceChildren();if(!myRows.length)target.append(text('p','No submissions yet.'));for(const row of myRows){const c=card(row),p=text('p',turnout(row));p.className='sv54-organizer-count';c.append(p);const b=text('button','Request change / cancellation');b.type='button';b.className='secondary';b.onclick=()=>openChange(row);c.append(b);target.append(c);}}
   function renderQueue(rows,requests){
     promotionTools?.setEvents(rows);
-    const q=el('sv5Queue'),r=el('sv55Requests');q.replaceChildren();r.replaceChildren();if(!rows.length)q.append(text('p','No event submissions.'));if(!requests.length)r.append(text('p','No requests awaiting review.'));
-    for(const row of rows){const c=card(row,row.status==='pending');if(row.status==='pending')addReview(c,row,false);q.append(c);}
+    const q=el('sv5Queue'),r=el('sv55Requests'),other=el('sv58OtherList'),pending=rows.filter(row=>row.status==='pending'),rejected=rows.filter(row=>row.status==='rejected');
+    approvedRows=rows.filter(row=>row.status==='approved');adminCount('Pending',pending.length);adminCount('Approved',approvedRows.length);adminCount('Requests',requests.length);adminCount('Other',rejected.length);
+    q.replaceChildren();r.replaceChildren();other.replaceChildren();if(!pending.length)q.append(text('p','No listings waiting for approval.'));if(!requests.length)r.append(text('p','No requests awaiting review.'));if(!rejected.length)other.append(text('p','No rejected listings.'));
+    for(const row of pending){const c=card(row,true);addReview(c,row,false);q.append(c);}
+    for(const row of rejected)other.append(card(row));renderApproved();
     for(const row of requests){const c=card({...row,status:row.action==='cancel'?'Cancellation requested':'Changes requested'},true);addReview(c,row,true);r.append(c);}
   }
   function addReview(c,row,request){for(const [decision,label] of [['approved','Approve'],['rejected','Reject']]){const b=text('button',label);b.type='button';if(decision==='rejected')b.className='secondary';b.onclick=async()=>{

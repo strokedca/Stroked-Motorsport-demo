@@ -65,7 +65,7 @@ window.StrokedPromotions = Object.freeze({
       status('Stripe payment confirmed. Add the approved artwork and check the dates before publishing the full booked duration.');focusForm();
     }
 
-    function focusForm(){openAccount('organizer');section.scrollIntoView({block:'start'});field('title').focus();}
+    function focusForm(){document.dispatchEvent(new CustomEvent('stroked:open-admin-promotions'));openAccount('organizer');section.scrollIntoView({block:'start'});field('title').focus();}
     dockButton.onclick=()=>{if(administrator)focusForm();};
     function setEvents(rows){eventRows=(rows||[]).filter(r=>r.status==='approved');const select=field('event_id'),selected=select.value;select.replaceChildren();const empty=node('option','Separate announcement');empty.value='';select.append(empty);for(const row of eventRows){const o=node('option',row.payload?.name||'Approved event');o.value=row.id;select.append(o);}if(eventRows.some(r=>r.id===selected))select.value=selected;}
     field('event_id').addEventListener('change',()=>{const row=eventRows.find(r=>r.id===field('event_id').value);if(row&&!editingId){field('title').value=row.payload?.name||'';field('description').value=row.payload?.details||'';}});

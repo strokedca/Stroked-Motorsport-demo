@@ -28,3 +28,10 @@ button:disabled{opacity:.6;cursor:wait}
   .account-header h2{font-size:18px}.account-header button{flex-shrink:0}
   .more-options{left:0;right:auto;width:100%}
 }
+
+.admin-section-nav{position:sticky;top:65px;z-index:1;display:flex;flex-wrap:wrap;gap:7px;background:#111b28;padding:10px 0;border-bottom:1px solid #526174}
+.admin-section-nav button{font-size:13px;background:#263343;border:1px solid #526174;padding:8px 12px}
+.admin-section-nav button[aria-pressed=true]{background:#ce4439;color:white;border-color:#ee766a}
+#sv58OrganizerTools,#sv58MyBookings{margin:16px 0;border-top:1px solid #526174;padding-top:12px}
+#sv58OrganizerTools>summary,#sv58MyBookings>summary{cursor:pointer;font-weight:700;padding:12px 0}
+@media(max-width:650px){.admin-section-nav{top:61px;gap:5px}.admin-section-nav button{font-size:12px;flex:1 1 43%;padding:7px}}
