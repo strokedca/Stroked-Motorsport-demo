@@ -1,7 +1,7 @@
 /* Layout enhancements use the existing event and account flows. */
 (()=>{'use strict';const el=id=>document.getElementById(id);if(!el('browse'))return;
  const make=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};
- const eyebrow=make('p','Born on PEI. Discover events across Canada.');eyebrow.className='app-eyebrow';el('browse').querySelector('h2').before(eyebrow);
+ const eyebrow=make('p','Born in PEI, built for Canada.');eyebrow.className='app-eyebrow';el('browse').querySelector('h2').before(eyebrow);
  const hint=make('p','Your category and region choices are remembered on this device.');hint.className='app-preferences';el('advancedSearch').before(hint);
  const quick=make('div');quick.className='app-quick';quick.setAttribute('aria-label','Quick event dates');
  const modes=[['upcoming','Upcoming'],['weekend','This weekend'],['next30','Next 30 days'],['full','All dates']];
