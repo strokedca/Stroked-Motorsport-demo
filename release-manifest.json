@@ -1,18 +1,18 @@
 {
-  "version": "5.5.5",
+  "version": "5.5.6",
   "mode": "production",
   "rpcPrefix": "stroked_live_v55_",
   "files": {
     "assets/stroked-security.js": "8b2bf6dad601efaae1e8b0b0ff3c991f52f4b39a204ec3e06a8dfe4213ae404b",
     "assets/stroked-actions.js": "399dd47eaac68d491c4cc6f70be6d5c2960d31a1edfc285bbeb5ad652bad36e0",
-    "assets/stroked-app.js": "67efff9e3a9e92deddf12bb6b8cc4a5b66000a8a5d6637143b8d7857bc392414",
-    "assets/stroked-app.css": "e79e9cf52265f2b697550ebef420fdb47351732cc13a9266a028d310e97d0503",
-    "index.html": "ed5c53a196f1703825092d9567ac2535ab341ceb1d88420ac0d3286b0cb2d8cf",
+    "assets/stroked-app.js": "961bbf764c4c9ed4a9a87436c64ff84bcea5985da9da88c74ecae7de18783399",
+    "assets/stroked-app.css": "b8f4796d9aee33242cf47475952eb9720bea75f4b35a4fe26b4dfba519a162e0",
+    "index.html": "83200af2bfe1ea376429f861789248329c3bfc06559ae9bc20cab96cb2e3df1b",
     "events-logo-1.png": "7315576883420cd5653372e3c82f1357e0af5d03663ce4803ce6598db3bc20a7",
     "clothing-apparel-logo.png": "54484e08625253ddd8e624bedffda5562212dda4e25d706780a2cde4ad61448b",
     "assets/stroked-config.js": "c48636b870d2b34f5bd36ddd1e04577d70850e38db8312d6eee4c4e2c9509de6",
     "assets/stroked-core.js": "02a4a8e5f3afdadc895649a9713ed450c85d9d91dc0def43175c2f5c01da94ae",
-    "assets/stroked-live.js": "e466a95faac9a080247f717cfc6c759be595ddb74d1c9b30e9ca9da75942fc02",
+    "assets/stroked-live.js": "4fdbd06fef91732083d7bb81b1d06fd0beaabba892bcaf6047f6b734dde05a70",
     "assets/stroked-engagement.js": "2490e9dd3dfe6a763e5fe801e3a3ba5a6908156f67f79602e39f17012701cd54",
     "assets/stroked-announcements.js": "84d3efea6f3eb0167f71e8e88a14ab5fefe077f44f4a7b5ece101b7eff2d18f8",
     "assets/stroked-unsubscribe.js": "808598eaba40752e0984cb87a2703960a2614cf9710d62b33122ab7af88d1849",
@@ -38,6 +38,6 @@
     "contact.html": "17b2f61a7182cedd55138601d7cec3678c6fbe10cb96e3fd70f608e37e2d018f",
     "robots.txt": "01938262823c7b0ced06b5ecdfd52874273cc6d9fcb6918a336a92e10fd272ec",
     "sitemap.xml": "c43bfdc9416908b19d5f0947c2ce73f85a5f7e350d0b0a5bb169985d7507f3ad",
-    "_headers": "b6d0653490f3485bd98b7965422c34b243340f4455da993c5151aa01c61759ff"
+    "_headers": "32ab9608b885b27ae1c8b7eb08300a6c21a10fdcf00b36145299b2756d24a516"
   }
 }

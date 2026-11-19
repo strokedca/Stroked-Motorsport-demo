@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {Window} from 'happy-dom';
 
-async function setup(app=false) {
+async function setup(app=false,width=1024) {
   const win=new Window({url:'https://stroked.ca/',settings:{disableCSSFileLoading:true,disableJavaScriptFileLoading:true}});
+  win.innerWidth=width;
   win.document.write(await readFile(new URL('../index.html',import.meta.url),'utf8'));
   win.alert=()=>{};
   const inline=[...win.document.querySelectorAll('script:not([src])')].map(s=>s.textContent).join('\n');
@@ -14,14 +15,11 @@ async function setup(app=false) {
   return {win,ui:win.navigationTest,$:id=>win.document.getElementById(id)};
 }
 
-test('desktop date selection retains the clicked calendar cell so a double-click can open its events',async()=>{
+test('a single mouse click opens the selected date events',async()=>{
   const {win,$}=await setup(true);
   try{
     win.document.querySelector('[data-destination="calendar"]').click();
-    const day=$('calendar').querySelector('.day-cell'),action=day.getAttribute('data-stroked-click');
-    day.click();assert.equal(day.isConnected,true,'selection must not replace the double-click target');
-    assert.equal($('calendar').querySelector('[data-stroked-click="'+action+'"]'),day);
-    day.dispatchEvent(new win.MouseEvent('dblclick',{bubbles:true}));
+    const day=$('calendar').querySelector('.day-cell');day.click();
     assert.equal($('dayEventsDialog').open,true);assert.match($('dayEventsCount').textContent,/matching/);
   }finally{await win.happyDOM.abort();}
 });
@@ -85,4 +83,27 @@ test('event details use public profile contact when the event contact is blank',
     assert.equal($('eventSponsorRows').closest('details').open,false);
     assert.ok($('cards').compareDocumentPosition($('calendarViewDetails'))&4,'event cards precede the optional calendar');
   } finally {await win.happyDOM.abort()}
+});
+
+test('province filtering matches full names and abbreviations without hiding PEI events',async()=>{
+  const {win,ui}=await setup();
+  try{
+    const regions=['PEI','Prince Edward Island','P.E.I.','Nova Scotia','NS'];
+    ui.seed(regions.map((province,i)=>({id:'region-'+i,name:province,club:'Club',city:'Town',province,date:ui.today(),categories:['Motorcycles'],rsvps:[]})));
+    const pei=win.document.querySelector('[name="filterProvince"][value="PEI"]');pei.checked=true;
+    assert.deepEqual(Array.from(ui.filtered(),e=>e.name),['P.E.I.','PEI','Prince Edward Island']);
+    pei.checked=false;win.document.querySelector('[name="filterProvince"][value="Nova Scotia"]').checked=true;
+    assert.deepEqual(Array.from(ui.filtered(),e=>e.name),['Nova Scotia','NS']);
+  }finally{await win.happyDOM.abort();}
+});
+
+test('phone calendar defaults to List and preserves Explore choices',async()=>{
+  const {win,$}=await setup(true,390);
+  try{
+    assert.equal($('appDiscoveryFilters').open,false);
+    win.document.querySelector('[data-destination="calendar"]').click();
+    assert.equal($('listBtn').className,'');assert.equal($('calendar').querySelector('.calendar-grid'),null);
+    win.document.querySelector('[data-destination="browse"]').click();
+    assert.equal($('filterDateRange').value,'upcoming');
+  }finally{await win.happyDOM.abort();}
 });

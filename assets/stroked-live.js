@@ -16,6 +16,7 @@
         <p id="sv5Message" role="status" aria-live="polite">Connecting…</p><p id="sv5Identity">Not signed in</p>
         <div id="sv53Welcome"><h3 id="sv55WelcomeHeading">Welcome, riders</h3><p id="sv55WelcomeText">Create a free account to save and update your RSVPs.</p><div class="actions"><button id="sv53ShowSignup" type="button">Create rider account</button><button id="sv53ShowLogin" type="button" class="secondary">Sign in</button></div></div>
         <form id="sv5Auth" hidden>
+          <div class="auth-choices" aria-label="Account options"><button id="sv60ChooseLogin" type="button" class="secondary">Sign in</button><button id="sv60ChooseSignup" type="button" class="secondary">Create account</button></div>
           <h3 id="sv53AuthHeading">Sign in</h3>
           <div id="sv55NameFields" class="grid" hidden><label>First name<input name="first_name" autocomplete="given-name" maxlength="80"></label><label>Last name<input name="last_name" autocomplete="family-name" maxlength="80"></label></div>
           <label>Email address<input name="email" type="email" autocomplete="username" required maxlength="254" autocapitalize="none" spellcheck="false"></label>
@@ -43,18 +44,23 @@
         </div>
       </div>
     </dialog>`;
-  const alertLabel=document.createElement('label');alertLabel.className='check';alertLabel.innerHTML='<input id="strokedEmailUpdates" type="checkbox" disabled><span>Email my RSVP confirmation and organizer updates for this event</span>';el('rsvpForm').querySelector('p').before(alertLabel);const alertHelp=document.createElement('small');alertHelp.id='strokedAlertHelp';alertHelp.textContent='Checking email alerts…';alertLabel.after(alertHelp);let alertsReady=false;if(!config.testing)Promise.resolve().then(async()=>{try{alertsReady=await rpc('notification_status')===true;}catch{}el('strokedEmailUpdates').disabled=!alertsReady;alertHelp.textContent=alertsReady?'Uses your account email. Clear this option and save to stop updates. Text alerts are not connected.':'Email delivery is awaiting sender setup. Your RSVP still saves normally. Text alerts are not connected.';});else alertHelp.textContent='Email alerts are disabled in testing.';
+  const alertLabel=document.createElement('label');alertLabel.className='check';alertLabel.innerHTML='<input id="strokedEmailUpdates" type="checkbox" disabled><span>Email my RSVP confirmation and organizer updates for this event</span>';el('rsvpForm').querySelector('p').before(alertLabel);const alertHelp=document.createElement('small');alertHelp.id='strokedAlertHelp';alertHelp.textContent='Checking email alerts…';alertLabel.after(alertHelp);let alertsReady=false;if(!config.testing)Promise.resolve().then(async()=>{try{alertsReady=await rpc('notification_status')===true;}catch{}el('strokedEmailUpdates').disabled=!alertsReady;alertHelp.textContent=alertsReady?'Send updates to your account email. You can turn these off later.':'Email delivery is awaiting sender setup. Your RSVP still saves normally. Text alerts are not connected.';});else alertHelp.textContent='Email alerts are disabled in testing.';
   el('sv53ChangeForm').elements.namedItem('province').innerHTML=el('evProv').innerHTML;
   const panel = el('sv5Panel'), form = el('sv5Auth');
   let mode = 'login', requestedType = 'rider', user = null, account = null, myRows = [];
   let authEpoch = 0, detailEpoch = 0, refreshTimer, publicPromise, callbackHandled = false;
-  let countsReady = false, totals = new Map(), recovery = false, resumeEvent = null;
+  let countsReady = false, totals = new Map(), recovery = false, resumeEvent = null, resumeDraft = null;
   const initialUrl = new URL(location.href), hash = new URLSearchParams(initialUrl.hash.slice(1));
   const hasAuthLink = initialUrl.searchParams.has('auth') || initialUrl.searchParams.has('code') || hash.has('access_token') || hash.has('error');
   const authLinkError = hash.get('error_description') || initialUrl.searchParams.get('error_description');
   recovery = initialUrl.searchParams.get('auth') === 'recovery' || hash.get('type') === 'recovery';
   const message = (text, error = false) => {el('sv5Message').textContent=text;el('sv5Message').classList.toggle('account-error',error);};
   const failure = e => e?.code==='PGRST202'?(config.testing?'The testing account and event services still need to be enabled.':'Account services are temporarily unavailable. Please try again later.'):String(e?.message || e || 'Please try again.').slice(0,400);
+  function authReturnUrl(kind) {
+    const url=new URL(location.href);
+    if(resumeEvent&&core.eventId({id:resumeEvent,strokedLive:true}))url.searchParams.set('event',resumeEvent);
+    return core.callbackUrl(url.href,kind);
+  }
   function openAccount(type = 'rider') {
     requestedType = type;
     el('sv55WelcomeHeading').textContent = type === 'organizer' ? 'Welcome, organizers' : 'Welcome, riders';
@@ -76,9 +82,12 @@
     form.elements.namedItem('password').autocomplete=signup?'new-password':'current-password';
     el('sv55AuthSubmit').textContent=signup?'Create '+requestedType+' account':reset?'Send password reset email':'Sign in';
     el('sv53ResetPassword').hidden=signup||reset;el('sv55Resend').hidden=reset;
-    form.elements.namedItem('email').focus();
+    el('sv60ChooseLogin').setAttribute('aria-pressed',String(mode==='login'));
+    el('sv60ChooseSignup').setAttribute('aria-pressed',String(signup));
+    form.elements.namedItem(signup?'first_name':'email').focus();
   }
   el('sv53ShowSignup').onclick=()=>choose('signup');el('sv53ShowLogin').onclick=()=>choose('login');
+  el('sv60ChooseSignup').onclick=()=>choose('signup');el('sv60ChooseLogin').onclick=()=>choose('login');
   el('sv53ResetPassword').onclick=()=>choose('reset');
   el('sv53AuthBack').onclick=()=>{form.hidden=true;el('sv53Welcome').hidden=false;form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';};
   function busy(target, value) {target.querySelectorAll('button').forEach(b=>b.disabled=value);}
@@ -104,7 +113,7 @@
         el('sv58Promotions').prepend(help);
       }
     }else adminHelp?.remove();
-    el('sv53Welcome').hidden=signed||recovery;form.hidden=signed||recovery||form.hidden;
+    el('sv53Welcome').hidden=signed||recovery||!form.hidden;form.hidden=signed||recovery||form.hidden;
     el('sv5SignedIn').hidden=!signed||recovery;el('sv55Recovery').hidden=!signed||!recovery;
     el('sv55Organizer').hidden=!organizer;el('sv5Admin').hidden=!account?.is_admin;
     el('sv58OrganizerTools').hidden=!organizer;
@@ -242,10 +251,10 @@
     busy(form,true);message(mode==='reset'?'Sending reset email…':'Checking account…');
     try {
       if(mode==='reset'){
-        const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:core.callbackUrl(location.href,'recovery')});if(error)throw error;
+        const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:authReturnUrl('recovery')});if(error)throw error;
         message('If an account uses that email, a password reset link has been sent.');return;
       }
-      const result=mode==='signup'?await db.auth.signUp({email,password,options:{emailRedirectTo:core.callbackUrl(location.href),data:{first_name:String(values.get('first_name')).trim(),last_name:String(values.get('last_name')).trim(),account_type:requestedType}}}):await db.auth.signInWithPassword({email,password});
+      const result=mode==='signup'?await db.auth.signUp({email,password,options:{emailRedirectTo:authReturnUrl(),data:{first_name:String(values.get('first_name')).trim(),last_name:String(values.get('last_name')).trim(),account_type:requestedType}}}):await db.auth.signInWithPassword({email,password});
       if(result.error)throw result.error;
       form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';
       if(!result.data.session){message('Check your email and use the newest confirmation link. Then return here to sign in. If you already have an account, choose Sign in.');return;}
@@ -255,7 +264,7 @@
   });
   el('sv55Resend').onclick=async()=>{
     const email=form.elements.namedItem('email').value.trim();if(!email||!form.elements.namedItem('email').checkValidity()){message('Enter a valid email address first.',true);return;}
-    busy(form,true);try{const {error}=await db.auth.resend({type:'signup',email,options:{emailRedirectTo:core.callbackUrl(location.href)}});if(error)throw error;message('If confirmation is needed, a new link has been sent. Use the newest email.');}catch(e){message(failure(e),true);}finally{busy(form,false);}
+    busy(form,true);try{const {error}=await db.auth.resend({type:'signup',email,options:{emailRedirectTo:authReturnUrl()}});if(error)throw error;message('If confirmation is needed, a new link has been sent. Use the newest email.');}catch(e){message(failure(e),true);}finally{busy(form,false);}
   };
   el('sv55Recovery').addEventListener('submit',async e=>{
     e.preventDefault();const f=e.currentTarget;if(f.querySelector('button').disabled)return;const values=new FormData(f),password=String(values.get('password')||'');
@@ -325,15 +334,15 @@
   }
   const demoOpen=openEvent;
   openEvent=function(id){demoOpen(id);const e=state.events.find(x=>x.id===id);if(!e)return;++detailEpoch;el('rsvpForm').querySelector('button[type="submit"]').hidden=false;el('rsvpStatus').value='Going';el('rsvpGuests').value='0';el('sv55RemoveRsvp').hidden=true;let status=el('sv55RsvpStatus');if(!status){status=text('p','');status.id='sv55RsvpStatus';status.setAttribute('role','status');status.setAttribute('aria-live','polite');el('rsvpForm').append(status);}status.textContent='';const live=core.eventId(e);if(!live){busy(el('rsvpForm'),false);const mine=e.rsvps.find(r=>r.viewerId==='local-viewer');if(mine){el('rsvpStatus').value=mine.status;el('rsvpGuests').value=mine.guests||0;el('sv55RemoveRsvp').hidden=false;}toggleGuests();status.textContent='Sample event: your RSVP stays in this browser.';return;}
-    const info=text('p','Approved organizer listing. Attendance is an estimate based on saved RSVPs.');el('detailBody').append(info);const org=e.publicOrganizer,primaryContact=e.organizerContact||org?.public_email||org?.website||'';if(org){el('detailBody').append(text('h3','About the organizer'),text('p',[org.organization||e.club,org.city,org.region].filter(Boolean).join(' · ')));const url=validUrl(org.website);if(url&&url!==primaryContact){const a=text('a','Organizer website / Facebook');a.href=url;a.target='_blank';a.rel='noopener noreferrer';el('detailBody').append(a);}if(org.public_email&&org.public_email!==primaryContact&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(org.public_email)){const p=text('p',''),a=text('a','Contact organizer');a.href='mailto:'+org.public_email;p.append(a);el('detailBody').append(p);}}
+    const info=text('p','These are Stroked RSVPs, not total event attendance. Check the organizer’s registration requirements.');el('detailBody').append(info);const org=e.publicOrganizer,primaryContact=e.organizerContact||org?.public_email||org?.website||'';if(org){el('detailBody').append(text('h3','About the organizer'),text('p',[org.organization||e.club,org.city,org.region].filter(Boolean).join(' · ')));const url=validUrl(org.website);if(url&&url!==primaryContact){const a=text('a','Organizer website / Facebook');a.href=url;a.target='_blank';a.rel='noopener noreferrer';el('detailBody').append(a);}if(org.public_email&&org.public_email!==primaryContact&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(org.public_email)){const p=text('p',''),a=text('a','Contact organizer');a.href='mailto:'+org.public_email;p.append(a);el('detailBody').append(p);}}
     const share=[...el('eventExtraActions').querySelectorAll('button')].find(b=>b.textContent==='Share');if(share)share.onclick=async()=>{const url=new URL(location.pathname,location.origin);url.searchParams.set('event',id);try{if(navigator.share)await navigator.share({title:e.name,url:url.href});else if(navigator.clipboard){await navigator.clipboard.writeText(url.href);status.textContent='Event link copied.';}else prompt('Copy event link:',url.href);}catch(err){if(err.name!=='AbortError')status.textContent='Unable to share this link.';}};
     promotionTools?.decorateEventDetail(e);engagement?.decorateDetail(e);engagement?.decorateMedia(el('detailBody'),e);updateLiveStats();loadMyRsvp().catch(err=>{if(selectedId===id)status.textContent=failure(err);});
   };
-  function updateLiveStats(){const e=state.events.find(x=>x.id===selectedId);if(!e?.strokedLive||!el('detailsDialog').open)return;const c=totals.get(core.eventId(e)),stats=el('detailBody').querySelector('.stats');if(stats){stats.replaceChildren();for(const [v,label] of [[c?.attendees,'expected attendees'],[c?.interested,'interested']]){const div=text('div','');div.append(text('strong',countsReady&&c?v:'—'),text('small',label));stats.append(div);}}}
+  function updateLiveStats(){const e=state.events.find(x=>x.id===selectedId);if(!e?.strokedLive||!el('detailsDialog').open)return;const c=totals.get(core.eventId(e)),stats=el('detailBody').querySelector('.stats');if(stats){stats.replaceChildren();for(const [v,label] of [[c?.attendees,'Going on Stroked'],[c?.interested,'interested']]){const div=text('div','');div.append(text('strong',countsReady&&c?v:'—'),text('small',label));stats.append(div);}}}
   async function loadMyRsvp(){
     const epoch=++detailEpoch,id=selectedId,e=state.events.find(x=>x.id===id);if(!core.eventId(e))return;const status=el('sv55RsvpStatus'),f=el('rsvpForm');busy(f,true);el('sv55RemoveRsvp').hidden=true;el('strokedEmailUpdates').checked=false;el('rsvpStatus').value='Going';el('rsvpGuests').value='0';
     const available=e.date>=core.day()&&e.status!=='Cancelled';f.style.display='block';f.querySelector('button[type="submit"]').hidden=!available;
-    try{const {data}=await db.auth.getUser();if(epoch!==detailEpoch||selectedId!==id)return;user=data?.user||null;if(!user){status.textContent=available?'Sign in to save an RSVP.':'This event is not accepting new RSVPs.';return;}const mine=await rpc(config.testing?'my_rsvp':'alerts_my_rsvp',{p_event_id:core.eventId(e)});if(epoch!==detailEpoch||selectedId!==id)return;if(mine){el('strokedEmailUpdates').checked=Boolean(mine.email_updates);el('rsvpStatus').value=mine.response==='going'?'Going':'Interested';el('rsvpGuests').value=mine.guests||0;el('sv55RemoveRsvp').hidden=false;status.textContent='Your saved RSVP: '+el('rsvpStatus').value+(available?'. You can update or remove it.':'. This event is not accepting RSVPs; you can remove your saved response.');}else status.textContent=available?'Choose Going or Interested, then save your RSVP.':'This event is not accepting new RSVPs.';}finally{if(epoch===detailEpoch&&selectedId===id){busy(f,false);toggleGuests();}}
+    try{const {data}=await db.auth.getUser();if(epoch!==detailEpoch||selectedId!==id)return;user=data?.user||null;if(!user){status.textContent=available?'Sign in or create a free account to save an RSVP.':'This event is not accepting new RSVPs.';return;}const mine=await rpc(config.testing?'my_rsvp':'alerts_my_rsvp',{p_event_id:core.eventId(e)});if(epoch!==detailEpoch||selectedId!==id)return;if(mine){el('strokedEmailUpdates').checked=Boolean(mine.email_updates);el('rsvpStatus').value=mine.response==='going'?'Going':'Interested';el('rsvpGuests').value=mine.guests||0;el('sv55RemoveRsvp').hidden=false;status.textContent='Your saved RSVP: '+el('rsvpStatus').value+(available?'. You can update or remove it.':'. This event is not accepting RSVPs; you can remove your saved response.');}else status.textContent=available?'Choose Going or Interested, then save your RSVP.':'This event is not accepting new RSVPs.';}finally{if(epoch===detailEpoch&&selectedId===id){if(user&&resumeDraft?.id===id){el('rsvpStatus').value=resumeDraft.response==='going'?'Going':'Interested';el('rsvpGuests').value=String(resumeDraft.guests);el('strokedEmailUpdates').checked=alertsReady&&resumeDraft.email;resumeDraft=null;status.textContent='Your choices are ready. Press Save RSVP to confirm.';}busy(f,false);toggleGuests();}}
   }
   function toggleGuests(){const going=el('rsvpStatus').value==='Going',event=state.events.find(e=>e.id===selectedId),closed=Boolean(event?.strokedLive)&&!(event.date>=core.day()&&event.status!=='Cancelled');el('rsvpStatus').disabled=closed;el('rsvpGuests').disabled=closed||!going;if(!going)el('rsvpGuests').value='0';}
   el('rsvpStatus').addEventListener('change',toggleGuests);
@@ -342,7 +351,7 @@
     let value;try{value=core.rsvp(remove?'not_going':el('rsvpStatus').value==='Going'?'going':'interested',el('rsvpGuests').value);}catch(err){status.textContent=failure(err);return;}
     if(!e.strokedLive){e.rsvps=e.rsvps.filter(r=>r.viewerId!=='local-viewer');if(!remove)e.rsvps.push({viewerId:'local-viewer',status:value.response==='going'?'Going':'Interested',guests:value.guests});save();render();status.textContent=remove?'Demo RSVP removed from this browser.':'Demo RSVP saved in this browser only.';el('sv55RemoveRsvp').hidden=remove;return;}
     busy(f,true);status.textContent=remove?'Removing RSVP…':'Saving RSVP…';
-    try{const {data,error}=await db.auth.getUser();if(error||!data?.user){resumeEvent=id;openAccount('rider');choose('login');status.textContent='Sign in to save your RSVP.';return;}const saved=await rpc(config.testing?'save_rsvp':'alerts_save_rsvp',{p_event_id:core.eventId(e),p_response:value.response,p_guests:value.guests,...(config.testing?{}:{p_email_updates:alertsReady&&el('strokedEmailUpdates').checked})});if(saved!==true)throw Error('RSVP was not saved. Please retry.');let refreshed=true;try{await refreshPublic();}catch{refreshed=false;}if(selectedId===id){try{await loadMyRsvp();}catch{refreshed=false;}status.textContent=(remove?'Your RSVP was removed.':'RSVP saved. It will be available when you sign in on another device.'+(alertsReady&&el('strokedEmailUpdates').checked?' Email confirmation queued.':''))+(refreshed?'':' The display could not refresh; try Refresh.');}}catch(err){if(selectedId===id)status.textContent='RSVP failed: '+failure(err);}finally{if(selectedId===id){busy(f,false);toggleGuests();}}
+    try{const {data,error}=await db.auth.getUser();if(error||!data?.user){resumeEvent=id;resumeDraft={id,response:value.response,guests:value.guests,email:el('strokedEmailUpdates').checked};openAccount('rider');choose('login');status.textContent='Sign in to save your RSVP.';return;}const saved=await rpc(config.testing?'save_rsvp':'alerts_save_rsvp',{p_event_id:core.eventId(e),p_response:value.response,p_guests:value.guests,...(config.testing?{}:{p_email_updates:alertsReady&&el('strokedEmailUpdates').checked})});if(saved!==true)throw Error('RSVP was not saved. Please retry.');let refreshed=true;try{await refreshPublic();}catch{refreshed=false;}if(selectedId===id){try{await loadMyRsvp();}catch{refreshed=false;}status.textContent=(remove?'Your RSVP was removed.':'RSVP saved. It will be available when you sign in on another device.'+(alertsReady&&el('strokedEmailUpdates').checked?' Email confirmation queued.':''))+(refreshed?'':' The display could not refresh; try Refresh.');}}catch(err){if(selectedId===id)status.textContent='RSVP failed: '+failure(err);}finally{if(selectedId===id){busy(f,false);toggleGuests();}}
   }
   el('sv55RemoveRsvp').onclick=()=>saveRsvp(true);
   async function eventPayload(f){const fd=new FormData(f),get=(k,max=700)=>String(fd.get(k)||'').trim().slice(0,max),payload={};for(const [key,max] of Object.entries({name:90,club:80,province:50,state:50,city:70,date:10,time:5,rain:10,startLocation:180,endLocation:180,registration:5,ksu:5,organizerContact:220,stops:700,food:400,status:30,details:600}))payload[key]=get(key,max);payload.categories=fd.getAll('categories').map(String);payload.sponsors=[];for(const row of el('eventSponsorRows').querySelectorAll('.event-sponsor-row')){const name=row.querySelector('.support-name').value.trim();if(!name)continue;const link=row.querySelector('.support-link').value.trim();if(link&&!validUrl(link))throw Error('Use a valid http or https sponsor website.');payload.sponsors.push({name:name.slice(0,120),contribution:row.querySelector('.support-contribution').value.trim().slice(0,220),link:validUrl(link),logo:row.dataset.logo||''});}if(!payload.categories.length)throw Error('Choose at least one category.');if(!core.isoDate(payload.date))throw Error('Enter a valid event date.');await engagement?.preparePayload(f,payload);return payload;}
