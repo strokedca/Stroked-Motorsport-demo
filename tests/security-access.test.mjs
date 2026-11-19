@@ -45,6 +45,20 @@ test('legacy administration and private image reads reject blocked, unverified a
   await assert.rejects(()=>pg.query('select * from public.stroked_live_v55_admin_promotions()'),/Administrator only/);
   await pg.exec('reset role');await pg.exec(fix); // Reapplication changes no records.
   assert.equal((await pg.query('select count(*)::int n from storage.objects')).rows[0].n,1);
+  // Recovery must finish with the current live grants, including after old fixes.
+  await pg.query('delete from stroked_live_v55.member_blocks where user_id=$1',[id(1)]);
+  const lockdown=await read('../supabase/fixes/legacy_rpc_lockdown.sql');
+  await pg.exec(lockdown);await pg.exec(lockdown);
+  for(const fn of ['admin_pending_events','get_pending_events','is_event_admin']){
+   for(const role of ['anon','authenticated'])assert.equal((await pg.query('select has_function_privilege($1,$2,\'EXECUTE\') ok',[role,'public.'+fn+'()'])).rows[0].ok,false);
+   assert.equal((await pg.query('select has_function_privilege(\'service_role\',$1,\'EXECUTE\') ok',['public.'+fn+'()'])).rows[0].ok,true);
+  }
+  for(const n of [null,1,3]){
+   await actor(n);
+   for(const fn of ['admin_pending_events','get_pending_events','is_event_admin'])await assert.rejects(()=>pg.query('select * from public.'+fn+'()'),/permission denied/);
+  }
+  await actor(1);assert.ok(Array.isArray((await pg.query('select * from public.stroked_live_v55_admin_events()')).rows));
+  await pg.exec('reset role');assert.equal((await pg.query('select count(*)::int n from storage.objects')).rows[0].n,1);
  }finally{await pg.close();}
 });
 
@@ -53,6 +67,7 @@ test('root deployment and generated build share browser protections and integrit
  try{
   await buildSite({mode:'production',outDir:dir});
   const headers=await readFile(join(dir,'_headers'),'utf8');assert.equal(headers,await read('../_headers'));
+  assert.deepEqual(JSON.parse(await readFile(join(dir,'release-manifest.json'),'utf8')),JSON.parse(await read('../release-manifest.json')),'root deployments must publish the current build checksums');
   for(const value of ["frame-ancestors 'none'","object-src 'none'","base-uri 'self'",'X-Frame-Options: DENY','Strict-Transport-Security: max-age=31536000','X-Content-Type-Options: nosniff','Permissions-Policy: camera=(), microphone=(), geolocation=()'])assert.ok(headers.includes(value),value);
   for(const page of ['index.html','unsubscribe.html']){
    const html=await readFile(join(dir,page),'utf8');

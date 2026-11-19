@@ -44,6 +44,13 @@ test('administrator MFA activates only after verified TOTP at AAL2, protects leg
  await assert.rejects(()=>pg.query('select * from stroked_live_v55.admin_security'),/permission denied/);
  state=(await pg.query('select public.stroked_live_v55_security_status() s')).rows[0].s;assert.equal(state.mfa_required,true);assert.equal(state.mfa_enrolled,true);
  await actor(pg,1,'aal2');assert.ok(Array.isArray((await pg.query('select * from public.stroked_live_v55_admin_events()')).rows));
+ await pg.exec('reset role');await pg.query('insert into stroked_v55_testing.admins(user_id) values($1),($2)',[id(1),id(2)]);
+ const testingMfa=await read('../supabase/fixes/testing_administrator_mfa.sql');await pg.exec(testingMfa);await pg.exec(testingMfa);
+ await actor(pg,1);await assert.rejects(()=>pg.query('select * from public.stroked_v55_admin_events()'),/Administrator/);
+ assert.equal((await pg.query("select stroked_promotions.is_admin('testing') ok")).rows[0].ok,false);
+ await actor(pg,2,'aal2');await assert.rejects(()=>pg.query('select * from public.stroked_v55_admin_events()'),/Administrator/);
+ await actor(pg,1,'aal2');assert.ok(Array.isArray((await pg.query('select * from public.stroked_v55_admin_events()')).rows));
+ assert.equal((await pg.query("select stroked_promotions.is_admin('testing') ok")).rows[0].ok,true);
  await pg.exec('reset role');await pg.query('delete from auth.mfa_factors where user_id=$1',[id(1)]);
  await actor(pg,1,'aal2');assert.equal((await pg.query('select public.is_event_admin() ok')).rows[0].ok,false,'old AAL2 does not bypass removed factors');
  state=(await pg.query('select public.stroked_live_v55_security_status() s')).rows[0].s;assert.equal(state.mfa_required,true);assert.equal(state.mfa_enrolled,false);
