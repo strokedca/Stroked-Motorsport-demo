@@ -22,6 +22,17 @@ No account credentials or authenticators are created or changed by deployment. T
 
 Apply supabase/fixes/event_submission_limits.sql and supabase/fixes/administrator_mfa.sql after the earlier security_access_review.sql change. Do not reapply older authorization definitions over the MFA-aware functions. Publish the source and regenerate root _headers whenever inline script content changes. npm test validates policy hashes and permissions; npm run build:production makes the deployable allowlisted bundle.
 
+### November 19 recovery additions
+
+The hosted database now has administrator MFA activated and two additional checks that require testing administrators to satisfy the live administrator gate. After restoring the preceding application migrations and fixes, apply these final files in order:
+
+1. `supabase/fixes/testing_administrator_mfa.sql`: retain the hosted testing and promotion administration checks.
+2. `supabase/fixes/legacy_rpc_lockdown.sql`: remove browser execution of `admin_pending_events`, `get_pending_events`, and `is_event_admin`; retain service-role execution. Current website administration uses the `stroked_live_v55_*` RPCs instead.
+
+Both final fixes are idempotent and change no application records. Tests cover anonymous/member/administrator denials on the retired endpoints, continuing access through the modern checked endpoint, and the AAL2 requirement across testing/promotion administration. These files reproduce repairs already verified on the hosted project; publishing them does not run SQL automatically.
+
+Keep the private `admin_security` rows and Auth MFA enrollment data in the database backup. Replaying function definitions alone does not restore enrolled factors or the per-account activation state. Follow [backup and recovery](BACKUP_RECOVERY.md) before restoring a project.
+
 ## Still separate work
 
 - DMARC requires access to the domain DNS dashboard and verification of iCloud and transactional sender alignment. Start with a reviewed monitoring configuration, then move to enforcement. No DNS changes are part of this release.
