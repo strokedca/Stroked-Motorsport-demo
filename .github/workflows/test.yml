@@ -3,6 +3,8 @@ on:
   push:
     branches: [v5.5-testing, payments-support-testing, main]
   pull_request:
+permissions:
+  contents: read
 jobs:
   regression-tests:
     runs-on: ubuntu-latest
