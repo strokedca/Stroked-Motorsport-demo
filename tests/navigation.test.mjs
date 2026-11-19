@@ -107,3 +107,20 @@ test('phone calendar defaults to List and preserves Explore choices',async()=>{
     assert.equal($('filterDateRange').value,'upcoming');
   }finally{await win.happyDOM.abort();}
 });
+
+test('phone event details expose useful actions and preserve full untrusted descriptions safely',async()=>{
+  const {win,ui,$}=await setup(true,390);
+  try{
+    const details='<img src=x onerror=alert(1)> '+('A charity ride with registration and route information. '.repeat(8));
+    ui.seed([{id:'polish-test',name:'Polish ride',club:'Club',city:'Charlottetown',province:'PEI',date:ui.today(),time:'',categories:['Motorcycles'],details,rsvps:[]}]);
+    ui.open('polish-test');
+    assert.match($('detailSummary').textContent,/charity ride/);assert.equal($('detailSummary').querySelector('.event-brief img'),null);
+    assert.match($('detailSummary').textContent,/Meeting point to be confirmed/);
+    assert.equal($('eventFullDetails').open,false);
+    assert.deepEqual(Array.from($('eventQuickActions').querySelectorAll('button'),b=>b.textContent),['Directions','Share event']);
+    const read=$('detailSummary').querySelector('.read-event-details');assert.ok(read);read.click();assert.equal($('eventFullDetails').open,true);
+    assert.ok($('detailBody').textContent.includes(details));
+    ui.open('polish-test');assert.equal($('eventQuickActions').querySelectorAll('button').length,2,'reopening never duplicates actions');
+    const art=$('cards').querySelector('.event-category-art');assert.ok(art);assert.match(art.textContent,/Motorcycles/);
+  }finally{await win.happyDOM.abort();}
+});

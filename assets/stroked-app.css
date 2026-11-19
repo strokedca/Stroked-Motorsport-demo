@@ -30,3 +30,26 @@ body{background:#0d1219;padding-bottom:calc(88px + env(safe-area-inset-bottom))}
  .app-quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible;margin-top:10px;padding:0}.app-quick button{min-width:0;min-height:44px;font-size:13px;padding:6px 3px}.date-label-full{display:none}.date-label-short{display:inline}.search-options{margin:6px 0}.search-actions{gap:8px;font-size:13px}.search-actions button{min-height:44px;padding:8px 10px}.search-options>summary{font-size:14px}#eventListHeading{font-size:22px;margin:14px 0 8px}#cards article.card{padding:16px}#cards article.card h3{font-size:22px}.app-calendar-mode .event-dot{font-size:0}
  #detailsDialog{max-height:94dvh;width:97%;padding:14px}#detailsDialog>.line h2{font-size:22px}#detailSummary .event-summary>.chip{display:none}#detailSummary p{font-size:15px;line-height:1.4}#rsvpForm{padding:12px}.rsvp-choices{gap:10px}.rsvp-choices label{font-size:14px}.account-body label{margin-top:10px}.account-body h3{margin-top:12px}.account-body #sv5Identity:empty{display:none}
 }
+
+/* Event information leads; artwork and secondary status follow. */
+#cards article.event-card-polished{display:flex;flex-direction:column;gap:0;background:#192430;border-color:#3a4859;border-radius:16px;padding:20px}
+#cards .card-event-name{order:0;margin:0 0 10px!important;font-size:24px;line-height:1.2;letter-spacing:-.3px}
+#cards .card-when-where{order:1;font-size:16px;font-weight:650;line-height:1.6;margin:0 0 6px;color:#f3f5f8}
+#cards .card-organizer{order:2;font-size:14px;line-height:1.5;color:#becada;margin:0 0 2px}
+#cards .event-card-poster{order:3;position:relative;aspect-ratio:16/6;min-height:112px;max-height:none;width:100%;margin:14px 0;border-radius:10px;overflow:hidden;background:#0e151e}
+#cards .event-card-poster>.event-upload-image{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;padding:6px;border-radius:0}
+.event-category-art{display:flex;align-items:center;justify-content:center;gap:16px;height:100%;min-height:112px;padding:18px;background:repeating-linear-gradient(125deg,transparent 0 22px,#ffffff04 22px 23px),linear-gradient(125deg,#243244,#18212b 60%,#742f2b);color:#f1f4f8}
+.event-category-art img{width:64px;height:54px;object-fit:contain}.event-category-art span{max-width:180px;font-size:16px;font-weight:700;line-height:1.4}.has-event-image>.event-category-art{display:none}
+#cards article.card>.chips{order:4;margin:0 0 10px;gap:5px}#cards .chip{font-size:12px;line-height:1.4;padding:3px 7px;letter-spacing:0;background:#263545}
+.card-statuses{order:5;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 12px}.card-statuses .sv54-flag{font-size:12px;font-weight:500;color:#b8c8d8;background:transparent;padding:0}.card-statuses .event-status{font-size:12px;line-height:1.4;padding:3px 7px;margin:0}.card-statuses .event-status.scheduled{background:#263545;color:#c4d2e0}
+#cards .card-rsvp-count{order:6;font-size:14px;line-height:1.5;color:#c4d2e0;margin:0 0 10px}#cards article.card>button{order:7;margin-top:auto;min-height:48px;font-size:16px}#cards article.card>.tiny{order:8}
+.event-brief{font-size:16px;line-height:1.5;color:#dce4ed}.read-event-details{display:block;padding:4px 0;min-height:44px;background:transparent;color:#ffb5a9;text-decoration:underline;text-underline-offset:3px;font-size:14px;text-align:left}
+.event-quick-actions{display:flex;gap:10px;margin:12px 0}.event-quick-actions button{flex:1;min-height:48px;border:1px solid #647287;background:#273849;border-radius:9px;font-size:15px;font-weight:650}
+#sv55RsvpStatus{font-size:14px;line-height:1.5;margin:12px 0 0}#sv55RsvpStatus[data-state=saved]{padding:12px;background:#193e33;color:#d2f8e7;border-left:3px solid #70cfa5;border-radius:6px}#sv55RsvpStatus[data-state=error]{color:#ffc4bd}.event-unconfirmed{color:#d5c4a7}
+.province-options input[type=checkbox]{min-height:0;width:20px;height:20px;flex-shrink:0}.province-options .check{padding:7px 9px;margin:4px 0;min-height:44px}
+@media(max-width:650px){
+ #cards article.event-card-polished{padding:16px}#cards .card-event-name{font-size:23px!important}#cards article.card h3{margin-top:0}#cards .card-when-where{font-size:16px;line-height:1.5}.app-bottom{padding-left:6px;padding-right:6px}.app-bottom button{font-size:12px;padding:4px 2px}.app-bottom svg{width:20px;height:20px}#detailSummary p{font-size:16px;line-height:1.45}#detailSummary .event-summary>.event-status.scheduled{font-size:12px;background:transparent;color:#c4d2e0;padding:0}.event-quick-actions{margin:10px 0}#rsvpForm{border:0;border-top:1px solid #526174;border-radius:0;padding:14px 0;background:transparent}#rsvpForm h3{font-size:18px}.rsvp-choices label{font-size:14px}#eventExtraActions button{font-size:14px;min-height:44px}.event-category-art{gap:12px;padding:14px}
+}
+
+.card-event-name,.card-when-where,.event-brief{overflow-wrap:anywhere}
+@media(max-width:650px){.rsvp-choices label{min-height:22px;margin:4px 0 5px}.app-bottom button{justify-content:flex-start;padding-top:6px;min-height:60px}.app-bottom button span{line-height:1.2}}
