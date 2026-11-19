@@ -67,6 +67,7 @@ test('root deployment and generated build share browser protections and integrit
  try{
   await buildSite({mode:'production',outDir:dir});
   const headers=await readFile(join(dir,'_headers'),'utf8');assert.equal(headers,await read('../_headers'));
+  assert.deepEqual(JSON.parse(await readFile(join(dir,'release-manifest.json'),'utf8')),JSON.parse(await read('../release-manifest.json')),'root deployments must publish the current build checksums');
   for(const value of ["frame-ancestors 'none'","object-src 'none'","base-uri 'self'",'X-Frame-Options: DENY','Strict-Transport-Security: max-age=31536000','X-Content-Type-Options: nosniff','Permissions-Policy: camera=(), microphone=(), geolocation=()'])assert.ok(headers.includes(value),value);
   for(const page of ['index.html','unsubscribe.html']){
    const html=await readFile(join(dir,page),'utf8');
