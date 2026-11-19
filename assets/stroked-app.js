@@ -9,7 +9,7 @@
  const filterSummary=make('summary','Filters'),filterValue=make('span');filterValue.className='app-filter-summary';filterSummary.append(filterValue);filters.append(filterSummary);
  const filterOptions=make('div');filterOptions.className='app-filter-options';filterFields.forEach(n=>filterOptions.append(n));filters.append(filterOptions);discovery.prepend(filters);
  const done=make('button','Done');done.type='button';done.className='secondary province-done';done.onclick=()=>{el('provincePicker').open=false;el('provinceSummary').focus();};el('provincePicker').querySelector('.province-options').prepend(done);
- const mobileMenu=el('mobileSiteMenu');if(mobileMenu)mobileMenu.open=!phone.matches;
+ const mobileMenu=el('mobileSiteMenu');if(mobileMenu){mobileMenu.open=!phone.matches;mobileMenu.querySelector('[data-stroked-click]')?.addEventListener('click',()=>{if(phone.matches)mobileMenu.open=false;});}
  phone.addEventListener('change',()=>{filters.open=!phone.matches;if(mobileMenu)mobileMenu.open=!phone.matches;});
  const eyebrow=make('p','Born in PEI, built for Canada.');eyebrow.className='app-eyebrow';el('browse').querySelector('h2').before(eyebrow);
  const hint=make('p','Your category and region choices are remembered on this device.');hint.className='app-preferences';el('advancedSearch').before(hint);

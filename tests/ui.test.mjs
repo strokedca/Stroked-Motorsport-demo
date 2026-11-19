@@ -48,7 +48,10 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);
   assert.equal($('sv56SignupCounts').children.length,0);assert.ok(!calls.some(c=>c.name.endsWith('admin_signup_stats')),'signed-out visitors do not request signup totals');
   assert.equal($('moreNavigation').hidden,true);assert.equal(win.document.querySelector('.ad-hero'),null);assert.equal($('promotionCards').closest('section').hidden,true);assert.doesNotMatch($('promotionCards').textContent,/Stored demo|Ronan/);
-  assert.equal($('eventForm').querySelectorAll('input[name="upgrade"]').length,0,'legacy demonstration upgrade checkboxes stay removed');assert.match($('promotionInformation').textContent,/Prices are one-time CAD payments/);
+  assert.equal($('eventForm').querySelectorAll('input[name="upgrade"]').length,0,'legacy demonstration upgrade checkboxes stay removed');assert.match($('promotionInformation').textContent,/Paid bookings are not open yet/);
+  $('tabSponsor').click();assert.equal($('sponsor').classList.contains('hidden'),false,'promotion information opens from navigation');
+  $('sponsor').querySelector('.promotion-free button').click();assert.equal($('add').classList.contains('hidden'),false,'free event posting remains directly available');
+  $('tabBrowse').click();
   const ids=[...win.document.querySelectorAll('[id]')].map(n=>n.id);assert.equal(new Set(ids).size,ids.length,'all HTML IDs are unique');
   assert.equal($('strokedAdminHelp'),null,'anonymous visitors receive no administrator help section');
   $('sv5Open').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/rider/);

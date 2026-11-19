@@ -31,9 +31,10 @@ test('production upload contains the current app and routes to live services wit
     assert.doesNotMatch(await readFile(join(dir,'_headers'),'utf8'),/noindex/);
     assert.match(await readFile(join(dir,'robots.txt'),'utf8'),/Allow: \/\n\nSitemap: https:\/\/stroked.ca\/sitemap.xml/);
     assert.match(await readFile(join(dir,'sitemap.xml'),'utf8'),/<loc>https:\/\/stroked.ca\/<\/loc>/);
-    assert.match(html,/data-stroked-offers="event"/,'approved event prices use the shared catalog');
-    assert.match(html,/data-stroked-offers="business"/,'advertisers have their own duration packages');
-    assert.match(html,/No GST\/HST is currently added/,'the confirmed unregistered tax setup is explicit');
+    assert.match(html,/<h3>Promote an event<\/h3>/,'event promotion has its own public information path');
+    assert.match(html,/<h3>Advertise a business<\/h3>/,'business advertising has its own public information path');
+    assert.match(html,/Paid bookings are not open yet/,'production clearly states that purchases are paused');
+    assert.match(await readFile(join(dir,'assets/stroked-pricing.js'),'utf8'),/No GST\/HST is currently added/,'the prepared checkout keeps the tax disclosure');
     const files=(await readdir(dir,{recursive:true})).filter(p=>!['assets'].includes(p)).sort();
     assert.deepEqual(files.filter(p=>p.endsWith('.html')),['about.html','clothing-apparel.html','contact.html','how-it-works.html','index.html','motorsports.html','unsubscribe.html'],'only the published public pages are runnable');
     assert.ok(files.every(p=>!/[.]sql$|[.]zip$|backup|fixture|package[-.]|test[.]/i.test(p)),'private build inputs and old clients are excluded');
