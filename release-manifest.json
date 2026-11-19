@@ -1,12 +1,12 @@
 {
-  "version": "5.5.7",
+  "version": "5.5.8",
   "mode": "production",
   "rpcPrefix": "stroked_live_v55_",
   "files": {
     "assets/stroked-security.js": "8b2bf6dad601efaae1e8b0b0ff3c991f52f4b39a204ec3e06a8dfe4213ae404b",
     "assets/stroked-actions.js": "399dd47eaac68d491c4cc6f70be6d5c2960d31a1edfc285bbeb5ad652bad36e0",
     "assets/stroked-app.js": "165c02aa08f322220603e80c3af8fdd29bc87c1b1213ca641a490c997e20dd73",
-    "assets/stroked-app.css": "2bcd4e23206fa523fd2f96742ba2dcc7d453b2afaba8e5a0d3cc9e8cf4139fbf",
+    "assets/stroked-app.css": "871cdca1ef94a349ae3dfb6cfb35fc273e2a042d7bc02f5f48e9951461d45210",
     "index.html": "35f9cb846a8b9aafbc71525a0bda94785c6340d563840a50f51d2190de503a94",
     "events-logo-1.png": "7315576883420cd5653372e3c82f1357e0af5d03663ce4803ce6598db3bc20a7",
     "clothing-apparel-logo.png": "54484e08625253ddd8e624bedffda5562212dda4e25d706780a2cde4ad61448b",
