@@ -73,6 +73,24 @@ ALTER ROLE service_role BYPASSRLS;
     $null=$restore.AppendLine('\i /restore/roles.sql')
     foreach ($phase in 0..2) {
         foreach ($block in @($blocks.ToArray() | Where-Object {$_.Phase -eq $phase})) { $null=$restore.AppendLine($block.Sql) }
+        if($phase -eq 0) {
+            # CLI dumps exclude managed extension schemas. Recreate the seven
+            # enabled extensions confirmed for this project, without platform
+            # table defaults or scheduled/outgoing jobs.
+            $null=$restore.AppendLine(@'
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE SCHEMA IF NOT EXISTS vault;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
+CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
+DO $pub$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_publication WHERE pubname='supabase_realtime') THEN
+ CREATE PUBLICATION supabase_realtime;
+END IF; END $pub$;
+'@)
+        }
     }
     $null=$restore.AppendLine('SET session_replication_role=replica;')
     $null=$restore.AppendLine('\i /restore/data.sql')

@@ -151,3 +151,39 @@ restore and isolated starter installation. It never contacts the live services.
 See [the recovery plan](../../BACKUP_RECOVERY.md) for the full backup scope and
 the current official [Supabase backup guide](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore)
 and [CLI reference](https://supabase.com/docs/reference/cli/supabase-db-dump).
+
+## Offline PostgreSQL drill and fresh backup starter
+
+Extract the backup-tools package and run `CHECK-DATABASE.cmd` with Docker
+running. It installs checksum-checked helpers, decrypts the newest saved database
+component privately and verifies its manifest. The drill uses the already cached
+Supabase PostgreSQL 17 image; it never downloads owner data to CI or connects to
+the hosted database. The downloaded offsite identity check remains a separate
+completed step; this local drill uses the unchanged local recovery identity.
+
+The temporary container has `--network none`, no published ports and a read-only
+input mount. It bypasses the image's default initialized Auth tables, creates an
+empty cluster and imports the archived managed schemas as well as application
+schemas. Dump object headers order schemas/extensions, definitions, data,
+constraints and policies; unsupported or conflicting definitions stop the drill.
+The archived Vault root key is read from a private mounted file, never an argument.
+Cron is disabled and no Auth, mail, payment or Storage HTTP services are started.
+
+Every recorded COPY table count and the separate migration-history counts must
+match. The Vault decrypted column must actually evaluate successfully. Checks
+also cover restored administrator MFA rows/factors, AAL1/AAL2 database gates,
+private-table RLS/grants, retired RPC denials and current administrator RPC grants.
+The container and plaintext workspace are removed, including after a failed
+check. A local report explicitly leaves full browser/site restoration false.
+
+`BACKUP-NOW.cmd` is the reusable fresh entry point: database exports run without
+`-UseExistingExports`, followed by current files/source/configuration references.
+Both archive manifests and their exact database/files pairing must pass before
+the pair is marked saved. Existing archives are not removed; OneDrive upload,
+provider inventories, scheduling and retention remain separate. Keep this whole
+extracted folder for the starters.
+
+Windows PowerShell 5.1 CI checks the scripts and starter checksums. A Linux Docker
+job restores synthetic-only pg_dump exports, including cross-schema policies and
+Vault ciphertext/root-key recovery, into this same offline image. These checks
+do not claim the owner's actual database restore has run.

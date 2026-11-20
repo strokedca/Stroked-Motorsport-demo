@@ -8,7 +8,7 @@ printf '#!/bin/sh\ncat /restore/vault-root-key.txt\nprintf "\\n"\n' > /tmp/strok
 chmod 700 /tmp/stroked-getkey
 exec postgres -D /tmp/stroked-pg \
   -c listen_addresses='' -c unix_socket_directories=/tmp \
-  -c shared_preload_libraries=supabase_vault,pg_cron \
+  -c shared_preload_libraries=supabase_vault,pg_cron,pg_net,pg_stat_statements \
   -c vault.getkey_script=/tmp/stroked-getkey \
   -c cron.database_name=postgres -c cron.launch_active_jobs=off \
   -c max_connections=20 -c shared_buffers=128MB \
