@@ -53,7 +53,7 @@ try {
     finally { $zip.Dispose() }
 
     # Check that a source-history bundle can actually populate a new repository.
-    $git = (Get-Command git.exe -CommandType Application).Source
+    $git = (Get-Command git.exe -CommandType Application | Select-Object -First 1).Source
     $repo = Join-Path $temp 'repo'
     $null = Invoke-StrokedNative $git @('init', '--initial-branch=main', $repo) 'Synthetic source initialization'
     [IO.File]::WriteAllText((Join-Path $repo 'source.txt'), 'synthetic source snapshot')

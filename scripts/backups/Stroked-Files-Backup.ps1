@@ -101,9 +101,9 @@ function Invoke-StrokedFilesBackup {
         if ($previous.Count -eq 0) { throw 'The verified database archive was not found in the OneDrive backup folder.' }
         $databaseArchive = $previous[0]
         $databaseHash = (Get-FileHash -LiteralPath $databaseArchive.FullName -Algorithm SHA256).Hash
-        $age = (Get-Command age.exe -CommandType Application -ErrorAction Stop).Source
-        $keygen = (Get-Command age-keygen.exe -CommandType Application -ErrorAction Stop).Source
-        $git = (Get-Command git.exe -CommandType Application -ErrorAction Stop).Source
+        $age = (Get-Command age.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+        $keygen = (Get-Command age-keygen.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+        $git = (Get-Command git.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
         try {
             $lock = [IO.File]::Open((Join-Path $privateRoot 'database-backup.lock'),
                 [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
