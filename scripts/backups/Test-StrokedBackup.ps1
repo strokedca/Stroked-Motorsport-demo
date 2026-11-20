@@ -79,3 +79,5 @@ COPY public.events (id) FROM stdin;
     Write-Host 'Windows PowerShell backup helper checks passed (synthetic fixtures only).'
 }
 finally { Remove-Item -LiteralPath $temp -Recurse -Force }
+# The deliberate native exit-7 probe must not become the CI shell's exit code.
+exit 0
