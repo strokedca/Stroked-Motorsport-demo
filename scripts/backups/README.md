@@ -222,8 +222,10 @@ verify OneDrive cloud bytes automatically.
 
 The schedule package provides `CHECK-BACKUP-STATUS.cmd`, a `BACKUP-NOW.cmd` alias
 of `BACKUP-NOW-INSTALLED.cmd`, and `REMOVE-SUNDAY-SCHEDULE.cmd`. Removing the task
-keeps archives, keys and helper files. Installer readback and the first owner
-automatic run still need confirmation. CI registers only a uniquely named,
+keeps archives, keys and helper files. The owner's November 20 screenshot
+confirmed successful installer readback and the next Sunday trigger at
+2026-11-22 09:00 local time. The first automatic run still needs confirmation.
+CI registers only a uniquely named,
 disabled synthetic task and removes it; it never installs the real owner task.
 
 References: [Task Scheduler settings](https://learn.microsoft.com/en-us/windows/win32/taskschd/tasksettings),

@@ -13,8 +13,11 @@ checks passed, and the temporary container was removed. The fresh-backup master
 also passed and published a newly verified database/files pair. File Explorer
 showed both new 13:30 local-time files and the updated protected identity with
 OneDrive green status icons; those new cloud bytes have not been independently
-downloaded and rechecked. A full browser/Auth/site restore, external provider
-dashboard inventories and actual schedule installation remain pending.
+downloaded and rechecked. The Sunday schedule installer then completed on the
+Surface: the owner's screenshot confirmed its final installed message and
+Sunday 2026-11-22 09:00 as the next Sunday trigger. A full browser/Auth/site
+restore, external provider dashboard inventories and the first automatic backup
+run remain pending.
 The same-identity recovery-passphrase updater completed on the owner's Surface;
 the owner confirmed its final success line. Upload of the updated protected
 identity still needs confirmation. Older encrypted wrappers and old downloaded
@@ -39,10 +42,11 @@ Install the official Supabase CLI and Docker Desktop on the backup computer. Bef
 ## Selected schedule and retention
 
 The owner selected Sunday mornings because the Surface is not regularly
-connected. The prepared Windows installer targets Sunday 09:00 in the Surface's
+connected. The installed Windows task targets Sunday 09:00 in the Surface's
 local time, using the current owner's interactive Windows session and existing
 CLI credentials/recovery identity. No Windows password is stored. The owner must
-run the installer before this schedule exists on the Surface.
+be signed in for its interactive task to run. The owner confirmed installation
+on November 20; the first automatic weekly backup still needs verification.
 
 Missed runs are retried by lightweight hourly and sign-in checks while the
 computer is awake, signed in and has network access. A due-period guard reads the
