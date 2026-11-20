@@ -2,12 +2,15 @@
 
 Prepared November 19, 2026. This is the setup and recovery plan, not confirmation that a backup job or restore drill has run.
 
-Owner-device progress, November 20: the first encrypted database archive passed
-local decryption/checksum verification, and a browser screenshot confirmed that
-both it and the encrypted recovery identity reached OneDrive online. Independent
-offsite download/decryption and a full isolated restore are still pending. The
-Windows image/source/configuration-reference helper is the next component; it
-does not itself establish complete recovery or scheduling.
+Owner-device progress, November 20: the database and image/source/configuration
+reference archives passed local decryption/checksum checks, and screenshots
+confirmed both archives and the protected recovery identity in OneDrive online.
+The downloaded three-file set then passed recovery-identity unlock, every archive
+manifest checksum, image mapping checks and an isolated Git-bundle restore using
+the downloaded identity. A full PostgreSQL/site restore, external provider
+dashboard inventories and regular fresh-backup scheduling remain pending.
+The same-identity recovery-passphrase updater is prepared; its owner-device run
+and upload of the updated protected identity have not yet been confirmed.
 
 ## Destination and first setup
 
