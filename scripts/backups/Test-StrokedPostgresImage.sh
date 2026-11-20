@@ -81,15 +81,24 @@ SELECT vault.create_secret('synthetic-secret-not-an-owner-credential','synthetic
 SQL
 query "$source_name" -f /restore/fixture.sql >/dev/null
 dump() { docker exec "$source_name" pg_dump -h /tmp -U supabase_admin -d postgres "$@"; }
-dump --schema-only --exclude-schema=auth --exclude-schema=storage --exclude-schema=supabase_migrations --exclude-schema=cron --exclude-schema=net > "$work/schema.sql"
-dump --schema-only --schema=auth --schema=storage > "$work/managed-schema-reference.sql"
-dump --data-only --exclude-schema=supabase_migrations --exclude-schema=cron --exclude-schema=net > "$work/data.sql"
-dump --schema-only --schema=supabase_migrations > "$work/migration-history-schema.sql"
-dump --data-only --schema=supabase_migrations > "$work/migration-history-data.sql"
+# Exercise the actual CLI default that caused the owner's first drill to stop:
+# buildSchemaDumpEnv sets EXTRA_SED=/^--/d unless --keep-comments is requested.
+# https://github.com/supabase/cli/blob/main/apps/cli/src/command-internal/pg-dump.env.ts
+# Keep the same idempotent DDL and managed-schema exclusions as the CLI pipeline.
+schema_dump() {
+ dump --schema-only --quote-all-identifier --role=postgres "$@" |
+ sed -E 's/^\\(un)?restrict .*$/-- &/; s/^CREATE SCHEMA "/CREATE SCHEMA IF NOT EXISTS "/; s/^CREATE TABLE "/CREATE TABLE IF NOT EXISTS "/; s/^CREATE SEQUENCE "/CREATE SEQUENCE IF NOT EXISTS "/; s/^CREATE VIEW "/CREATE OR REPLACE VIEW "/; s/^CREATE FUNCTION "/CREATE OR REPLACE FUNCTION "/; s/^CREATE TRIGGER "/CREATE OR REPLACE TRIGGER "/; s/^COMMENT ON EXTENSION /-- &/; s/^SET transaction_timeout = 0;/-- &/; /^--/d'
+}
+schema_dump --exclude-schema=auth --exclude-schema=storage --exclude-schema=extensions --exclude-schema=vault --exclude-schema=supabase_migrations --exclude-schema=cron --exclude-schema=net > "$work/schema.sql"
+schema_dump --schema=auth --schema=storage > "$work/managed-schema-reference.sql"
+{ printf 'SET session_replication_role = replica;\n'; dump --data-only --quote-all-identifier --role=postgres --exclude-schema=supabase_migrations --exclude-schema=vault --exclude-schema=extensions | sed -E 's/^\\(un)?restrict .*$/-- &/'; printf 'RESET ALL;\n'; } > "$work/data.sql"
+{ printf 'SET session_replication_role = replica;\n'; dump --data-only --quote-all-identifier --role=postgres --schema=vault | sed -E 's/^\\(un)?restrict .*$/-- &/'; printf 'RESET ALL;\n'; } > "$work/vault-data.sql"
+schema_dump --schema=supabase_migrations > "$work/migration-history-schema.sql"
+dump --data-only --quote-all-identifier --schema=supabase_migrations > "$work/migration-history-data.sql"
 printf -- '-- synthetic fixture has no additional custom roles\n' > "$work/roles.sql"
 chmod 644 "$work/"*
 export STROKED_SYNTHETIC_PAYLOAD="$work"
-pwsh -NoProfile -Command '. ./scripts/backups/Stroked-Postgres-Restore-Check.ps1; $p=$env:STROKED_SYNTHETIC_PAYLOAD; $i=Get-StrokedCopyInventory @((Join-Path $p "data.sql")); $m=@{copyTableRowCounts=$i;migrationHistoryAlreadyInPrimaryData=$false}|ConvertTo-Json -Depth 8|ConvertFrom-Json; $n=New-StrokedRestoreSql $p $m $p; Write-Host "Generated offline restore plan for $n synthetic tables"'
+pwsh -NoProfile -Command '. ./scripts/backups/Stroked-Postgres-Restore-Check.ps1; $p=$env:STROKED_SYNTHETIC_PAYLOAD; $i=Get-StrokedCopyInventory @((Join-Path $p "data.sql"),(Join-Path $p "vault-data.sql")); $m=@{copyTableRowCounts=$i;migrationHistoryAlreadyInPrimaryData=$false}|ConvertTo-Json -Depth 8|ConvertFrom-Json; $n=New-StrokedRestoreSql $p $m $p; Write-Host "Generated offline restore plan for $n synthetic tables from comment-free CLI-format schemas"'
 chmod 644 "$work/"*
 cp scripts/backups/verify-restored-database.sql "$work/"
 start_pg "$target_name"

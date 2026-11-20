@@ -164,8 +164,11 @@ completed step; this local drill uses the unchanged local recovery identity.
 The temporary container has `--network none`, no published ports and a read-only
 input mount. It bypasses the image's default initialized Auth tables, creates an
 empty cluster and imports the archived managed schemas as well as application
-schemas. Dump object headers order schemas/extensions, definitions, data,
-constraints and policies; unsupported or conflicting definitions stop the drill.
+schemas. SQL statement boundaries are parsed with support for quoted strings,
+identifiers, routine bodies and comments. This supports the CLI's default
+comment-free schema exports as well as annotated pg_dump output. Statements
+order schemas/extensions, definitions, data, constraints and policies;
+unsupported or conflicting definitions stop the drill.
 The archived Vault root key is read from a private mounted file, never an argument.
 Cron is disabled and no Auth, mail, payment or Storage HTTP services are started.
 

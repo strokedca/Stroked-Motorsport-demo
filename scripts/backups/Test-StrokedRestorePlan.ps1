@@ -30,12 +30,36 @@ ALTER TABLE auth.users ADD PRIMARY KEY(id);
 \unrestrict fixture
 '@
  $p=Join-Path $temp 'fixture.sql';[IO.File]::WriteAllText($p,$fixture)
- $blocks=@(Get-StrokedDumpBlocks $p)
+ $blocks=@(Get-StrokedDumpBlocks $p | Where-Object {$_.Type -ne 'PRELUDE'})
  Assert-True ($blocks.Count -eq 3) 'Schema objects were not split correctly.'
  Assert-True ($blocks[0].Phase -eq 2 -and $blocks[1].Phase -eq 5 -and $blocks[2].Phase -eq 3) 'Post-data dependencies are not ordered.'
  Assert-True (($blocks.Sql -join '') -notmatch '\\(?:un)?restrict') 'Dump session guards were not removed.'
- [IO.File]::WriteAllText($p,$fixture.Replace('Type: POLICY','Type: UNKNOWN THING'))
+ # Match CLI v3's default: all lines beginning with -- are omitted, including
+ # object annotations and the dump footer. The actual SQL remains recoverable.
+ $withoutComments=[regex]::Replace($fixture,'(?m)^--[^\r\n]*\r?\n?','')
+ [IO.File]::WriteAllText($p,$withoutComments)
+ $bare=@(Get-StrokedDumpBlocks $p | Where-Object {$_.Type -ne 'PRELUDE'})
+ Assert-True (($bare.Sql -join "`n") -ceq ($blocks.Sql -join "`n")) 'Comment-free CLI SQL changed while planning the restore.'
+ [IO.File]::WriteAllText($p,'VACUUM;')
  $threw=$false;try{$null=Get-StrokedDumpBlocks $p}catch{$threw=$true};Assert-True $threw 'Unsupported object was silently accepted.'
+ $quoted=@'
+/* outer ; /* inner ; */ comment */
+CREATE FUNCTION public.quoted_fixture() RETURNS text LANGUAGE plpgsql AS $body$
+BEGIN
+ -- A routine body can contain SQL-looking text and semicolons.
+ RETURN 'CREATE POLICY fake; it''s a literal';
+END
+$body$;
+COMMENT ON FUNCTION public.quoted_fixture() IS E'escaped quote: \' ; remains one value';
+CREATE TABLE public."semi;colon"(id int, note text DEFAULT 'line one
+line two;');
+'@
+ $statements=@(Split-StrokedSchemaStatements $quoted)
+ Assert-True ($statements.Count -eq 3) 'Quoted or dollar-quoted SQL was split inside its contents.'
+ Assert-True ($statements[0].Contains("RETURN 'CREATE POLICY fake; it''s a literal';")) 'Routine body contents changed.'
+ foreach($broken in @("CREATE TABLE public.fixture(id int)","SELECT 'unfinished",'CREATE FUNCTION f() RETURNS void AS $broken$ BEGIN;','/* unfinished','\! unsafe-command')) {
+  $threw=$false;try{$null=Split-StrokedSchemaStatements $broken}catch{$threw=$true};Assert-True $threw 'Incomplete or unexpected schema input was accepted.'
+ }
  $main=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Stroked-Run-Fresh-Backup.ps1'))
  Assert-True ($main -notmatch '(?m)^\s*&.*-UseExistingExports') 'Fresh starter passes the old export switch.'
  foreach($starter in @('CHECK-DATABASE.cmd','BACKUP-NOW.cmd')) {
