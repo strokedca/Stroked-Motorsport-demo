@@ -9,8 +9,10 @@ The downloaded three-file set then passed recovery-identity unlock, every archiv
 manifest checksum, image mapping checks and an isolated Git-bundle restore using
 the downloaded identity. A full PostgreSQL/site restore, external provider
 dashboard inventories and regular fresh-backup scheduling remain pending.
-The same-identity recovery-passphrase updater is prepared; its owner-device run
-and upload of the updated protected identity have not yet been confirmed.
+The same-identity recovery-passphrase updater completed on the owner's Surface;
+the owner confirmed its final success line. Upload of the updated protected
+identity still needs confirmation. Older encrypted wrappers and old downloaded
+ZIPs retain their earlier passphrase; this update does not revoke those copies.
 
 ## Destination and first setup
 

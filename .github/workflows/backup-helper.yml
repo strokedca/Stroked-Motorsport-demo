@@ -32,3 +32,15 @@ jobs:
       - name: Exercise encrypted recovery-wrapper replacement with synthetic data
         shell: powershell
         run: ./scripts/backups/Test-StrokedPasswordUpdate.ps1
+      - name: Exercise schema dependency planning and fresh-backup starter
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedRestorePlan.ps1
+  offline-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Restore synthetic backups into an offline PostgreSQL 17 container
+        run: bash scripts/backups/Test-StrokedPostgresImage.sh
