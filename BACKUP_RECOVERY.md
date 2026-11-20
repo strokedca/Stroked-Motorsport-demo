@@ -2,6 +2,13 @@
 
 Prepared November 19, 2026. This is the setup and recovery plan, not confirmation that a backup job or restore drill has run.
 
+Owner-device progress, November 20: the first encrypted database archive passed
+local decryption/checksum verification, and a browser screenshot confirmed that
+both it and the encrypted recovery identity reached OneDrive online. Independent
+offsite download/decryption and a full isolated restore are still pending. The
+Windows image/source/configuration-reference helper is the next component; it
+does not itself establish complete recovery or scheduling.
+
 ## Destination and first setup
 
 Use the owner's Microsoft 365 OneDrive as the private off-site destination. Complete setup on the home computer, where OneDrive is signed in. Encrypt archives before they enter the OneDrive folder; keep the recovery password in a separate password manager or offline recovery record. Never put database exports, API secrets, or backup passwords in this public GitHub repository.

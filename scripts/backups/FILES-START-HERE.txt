@@ -1,0 +1,19 @@
+STROKED IMAGE AND SOURCE BACKUP
+
+1. Right-click the downloaded ZIP and choose Extract All.
+2. Open the extracted folder. Keep Docker Desktop running.
+3. Double-click Setup-and-Run-Files-Backup.cmd.
+4. Leave its window open and tell ChatGPT the final message.
+
+Keep both PowerShell files and the .cmd starter together when you start it.
+No passwords or recovery keys need to be pasted into chat or the starter.
+
+This component downloads uploaded images, preserves bucket metadata, creates
+and verifies a Git source-history bundle, downloads deployed Edge Function code
+and saves Supabase configuration/cron references. It encrypts and checks the
+archive before saving it to the existing OneDrive backup folder.
+
+The existing database and recovery archives are retained. They are separate
+components with different export times. Cloudflare/Resend/Stripe dashboard
+exports, offsite recovery testing and a full isolated restore are still pending.
+No nightly job or deletion of older backups is installed.

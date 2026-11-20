@@ -90,6 +90,39 @@ an apostrophe and an ampersand, without starting the database helper.
 They never contact Supabase or use owner credentials. They do not test a live
 export, age cryptography, OneDrive sync or a database restore.
 
+## Image/source/configuration-reference component
+
+After the database component succeeds, extract the files-component package and
+start `Setup-and-Run-Files-Backup.cmd`. Both PowerShell files must remain beside
+the starter. It installs their checksum-verified copies, then runs
+`Stroked-Files-Backup.ps1`; it does not rerun the database export.
+
+The component discovers every current Storage bucket and object through a
+read-only metadata query. It downloads each object twice to generated local
+filenames, compares SHA-256 and expected lengths, and rechecks the inventory
+for additions, removals or changes. Original case-sensitive bucket/key mappings,
+bucket settings and checksums stay in the encrypted manifest. No remote key is
+used as a local filesystem path. Empty buckets are preserved as metadata.
+
+It mirrors the public source repository, creates/verifies an all-ref Git bundle,
+downloads deployed Edge Function code and records a Supabase config pull under a
+separate remote-label block in a private local workspace. Cron definitions,
+extensions/publications, masked-settings reports and source refs are retained
+as confidential references. Config pull writes only the local temporary file;
+no configuration push, deployment or remote mutation runs.
+
+The nested/hidden payload files are archived through .NET ZipArchive. The archive
+must pass encryption, local decryption and checksum checks before publication to
+OneDrive. Earlier database/recovery archives are retained and the paired database
+archive's name/hash is recorded. These components have separate export times.
+
+Cloudflare DNS/actual Pages/domain, Resend and Stripe dashboard inventories and
+separately held credentials remain explicit gaps. The files archive is not
+declared a complete site recovery, and no task or retention pruning is installed.
+`Test-StrokedFilesBackup.ps1` checks inventory parsing/project identity, key
+encoding, changed inventories, nested/hidden ZIP content, a synthetic Git-bundle
+restore and isolated starter installation. It never contacts the live services.
+
 See [the recovery plan](../../BACKUP_RECOVERY.md) for the full backup scope and
 the current official [Supabase backup guide](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore)
 and [CLI reference](https://supabase.com/docs/reference/cli/supabase-db-dump).
