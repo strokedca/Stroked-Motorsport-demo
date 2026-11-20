@@ -20,7 +20,7 @@ function Publish-StrokedRecoveryKey {
         try {
             [IO.File]::Copy($NewCipher,$partial,$false)
             if((Get-FileHash -LiteralPath $partial).Hash -ne $hash){throw 'Recovery-key copy verification failed.'}
-            if(Test-Path -LiteralPath $target -PathType Leaf){[IO.File]::Replace($partial,$target,$null)}
+            if(Test-Path -LiteralPath $target -PathType Leaf){[IO.File]::Replace($partial,$target,[System.Management.Automation.Language.NullString]::Value)}
             else{[IO.File]::Move($partial,$target)}
             if((Get-FileHash -LiteralPath $target).Hash -ne $hash){throw 'Published recovery-key verification failed.'}
         }
