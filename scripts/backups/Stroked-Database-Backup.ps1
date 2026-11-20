@@ -60,20 +60,24 @@ function Get-StrokedCopyInventory {
         $inCopy = $false
         $currentTable = ''
         $complete = $false
-        foreach ($line in [IO.File]::ReadLines($path)) {
-            if ($inCopy) {
-                if ($line -eq '\.') { $inCopy = $false }
-                else { $tables[$currentTable] = [long]$tables[$currentTable] + 1 }
-                continue
-            }
-            if ($line -match '^-- PostgreSQL database dump complete\s*$') { $complete = $true }
-            if ($line -match '^COPY\s+(?:"(?<schema>[^"]+)"|(?<schema>[A-Za-z_][A-Za-z0-9_$]*))\.(?:"(?<table>[^"]+)"|(?<table>[A-Za-z_][A-Za-z0-9_$]*))\s+\(.*\)\s+FROM stdin;\s*$') {
-                $currentTable = $Matches.schema + '.' + $Matches.table
-                if ($tables.ContainsKey($currentTable)) { throw "Duplicate COPY table in export: $currentTable" }
-                $tables[$currentTable] = [long]0
-                $inCopy = $true
+        $reader = [IO.File]::OpenText($path)
+        try {
+            while ($null -ne ($line = $reader.ReadLine())) {
+                if ($inCopy) {
+                    if ($line -eq '\.') { $inCopy = $false }
+                    else { $tables[$currentTable] = [long]$tables[$currentTable] + 1 }
+                    continue
+                }
+                if ($line -match '^-- PostgreSQL database dump complete\s*$') { $complete = $true }
+                if ($line -match '^COPY\s+(?:"(?<schema>[^"]+)"|(?<schema>[A-Za-z_][A-Za-z0-9_$]*))\.(?:"(?<table>[^"]+)"|(?<table>[A-Za-z_][A-Za-z0-9_$]*))\s+\(.*\)\s+FROM stdin;\s*$') {
+                    $currentTable = $Matches.schema + '.' + $Matches.table
+                    if ($tables.ContainsKey($currentTable)) { throw "Duplicate COPY table in export: $currentTable" }
+                    $tables[$currentTable] = [long]0
+                    $inCopy = $true
+                }
             }
         }
+        finally { $reader.Dispose() }
         if ($inCopy -or -not $complete) {
             throw ('Incomplete SQL data export: ' + [IO.Path]::GetFileName($path))
         }
