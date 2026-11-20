@@ -1,0 +1,21 @@
+STROKED DATABASE BACKUP - FIRST RUN
+
+1. Right-click the downloaded ZIP and choose Extract All.
+2. Open the extracted folder. Keep Docker Desktop running.
+3. Double-click Setup-and-Run-Database-Backup.cmd.
+4. Leave its window open and tell ChatGPT the final message.
+
+Keep both the .cmd and .ps1 files together when you start the setup file.
+You do not need to paste any commands, passwords or recovery keys.
+
+The starter checks the supplied script, installs a copy under your private
+StrokedBackup tools folder, and runs it using your completed first SQL exports.
+It does not download additional code or change the permanent execution policy.
+
+This starter is for completing the FIRST archive, using the exports already
+made. Do not use it as a recurring backup: that would archive the same old SQL.
+Future backups need fresh exports and the remaining backup components.
+
+A successful database-component message is not yet proof of OneDrive upload
+or a full site restore. Images, source history and provider settings remain
+separate steps. No nightly task is installed by this package.

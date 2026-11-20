@@ -76,7 +76,39 @@ COPY public.events (id) FROM stdin;
     catch { $failureMessage = $_.Exception.Message }
     Assert-True ($failureMessage.Contains('exit 7')) 'Nonzero native exit was ignored.'
     Assert-True (-not $failureMessage.Contains('do-not-expose-canary')) 'Captured native output leaked into an error.'
-    Write-Host 'Windows PowerShell backup helper checks passed (synthetic fixtures only).'
+    # Exercise the click-to-start installer in a temporary destination. This
+    # mode never runs the database helper or contacts the owner's services.
+    $starter = Join-Path $PSScriptRoot 'Setup-and-Run-Database-Backup.cmd'
+    $starterText = [IO.File]::ReadAllText($starter)
+    $scriptHash = (Get-FileHash -LiteralPath $scriptPath -Algorithm SHA256).Hash
+    Assert-True ($starterText.ToLowerInvariant().Contains($scriptHash.ToLowerInvariant())) 'Starter checksum is stale.'
+    $bundle = Join-Path $temp "Jason's backup & test folder"
+    $null = New-Item -ItemType Directory -Path $bundle
+    Copy-Item -LiteralPath $starter -Destination $bundle
+    Copy-Item -LiteralPath $scriptPath -Destination $bundle
+    $installed = Join-Path $temp 'installed tools'
+    $startInfo = New-Object Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $env:ComSpec
+    $startInfo.Arguments = '/d /s /c ""' + (Join-Path $bundle 'Setup-and-Run-Database-Backup.cmd') + '" --install-only < NUL"'
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.EnvironmentVariables['STROKED_BACKUP_INSTALL_DIR'] = $installed
+    $process = New-Object Diagnostics.Process
+    $process.StartInfo = $startInfo
+    try {
+        $null = $process.Start()
+        $installerOutput = $process.StandardOutput.ReadToEnd()
+        $installerError = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        Assert-True ($process.ExitCode -eq 0) ('Starter installation failed: ' + $installerOutput + $installerError)
+        Assert-True ($installerOutput.Contains('Helper installed. No backup was started.')) 'Install-only mode ran the backup.'
+    }
+    finally { $process.Dispose() }
+    $installedScript = Join-Path $installed 'Stroked-Database-Backup.ps1'
+    Assert-True ((Get-FileHash -LiteralPath $installedScript -Algorithm SHA256).Hash -eq $scriptHash) 'Installed script changed.'
+    Write-Host 'Windows PowerShell backup helper and starter checks passed (synthetic fixtures only).'
 }
 finally { Remove-Item -LiteralPath $temp -Recurse -Force }
 # The deliberate native exit-7 probe must not become the CI shell's exit code.

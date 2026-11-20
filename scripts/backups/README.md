@@ -6,6 +6,18 @@ password, deletes remote data or schedules a task.
 
 ## First pilot on the owner's Surface
 
+The simpler packaged option includes `Setup-and-Run-Database-Backup.cmd`, the
+PowerShell script and `START-HERE.txt`. Extract the whole ZIP and double-click
+the `.cmd` starter with Docker running. It verifies the script SHA-256, unblocks
+that file, copies it to `%LOCALAPPDATA%\StrokedBackup\tools` and starts the first
+pilot with `-UseExistingExports`. It does not change the permanent execution
+policy, install a schedule or download more code. This starter intentionally
+reuses old exports and must not become the recurring backup entry point.
+Its `--install-only` mode is used in isolated installer checks and skips the
+backup. `STROKED_BACKUP_INSTALL_DIR` can override the local helper destination.
+
+Alternatively, use the two manual commands below.
+
 Save the script in Downloads, open a **fresh** Windows PowerShell window and run
 these two commands separately:
 
@@ -73,6 +85,8 @@ remains pending that end-to-end verification.
 Run `Test-StrokedBackup.ps1` in Windows PowerShell 5.1. Tests use only synthetic
 fixtures in a temporary folder. They parse the script, check COPY/key parsing,
 verify ciphertext publication guards and test native stderr/exit-code capture.
+They also install the starter into a temporary folder whose path contains spaces,
+an apostrophe and an ampersand, without starting the database helper.
 They never contact Supabase or use owner credentials. They do not test a live
 export, age cryptography, OneDrive sync or a database restore.
 
