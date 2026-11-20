@@ -104,6 +104,13 @@ for additions, removals or changes. Original case-sensitive bucket/key mappings,
 bucket settings and checksums stay in the encrypted manifest. No remote key is
 used as a local filesystem path. Empty buckets are preserved as metadata.
 
+Public-bucket bytes use the documented HTTPS download endpoint, with cache
+revalidation and ETag comparison when supplied by both the inventory and server.
+Private-bucket bytes use the authenticated CLI with a relative destination and
+matching native cwd/workdir, avoiding drive letters being parsed as URL schemes.
+Private failures expose a safe error category; full native diagnostics stay in
+the private local run folder. No bucket privacy or access policy is changed.
+
 It mirrors the public source repository, creates/verifies an all-ref Git bundle,
 downloads deployed Edge Function code and records a Supabase config pull under a
 separate remote-label block in a private local workspace. Cron definitions,

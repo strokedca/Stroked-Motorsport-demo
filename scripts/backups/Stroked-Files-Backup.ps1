@@ -45,17 +45,21 @@ function Get-StrokedPublicStorageUrl {
 }
 
 function Save-StrokedPublicFile {
-    param([Uri]$Uri, [string]$Path)
+    param([Uri]$Uri, [string]$Path, [string]$ExpectedETag = '')
     if ($Uri.Scheme -ne 'https' -and -not ($Uri.Scheme -eq 'http' -and $Uri.IsLoopback)) {
         throw 'Image download requires HTTPS.'
     }
     try {
-        $null = Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $Path -TimeoutSec 60 -MaximumRedirection 0 -ErrorAction Stop
+        $response = Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $Path -PassThru -TimeoutSec 60 -MaximumRedirection 0 -Headers @{'Cache-Control'='no-cache'; 'Pragma'='no-cache'} -ErrorAction Stop
     }
     catch {
         $status = 'connection error'
         if ($null -ne $_.Exception.Response) { $status = 'HTTP ' + [int]$_.Exception.Response.StatusCode }
         throw ("Public image download failed ($status). No new files archive has been marked saved.")
+    }
+    $returnedETag = [string]$response.Headers['ETag']
+    if ($ExpectedETag -and $returnedETag -and $ExpectedETag.Trim().Trim('"') -cne $returnedETag.Trim().Trim('"')) {
+        throw 'The downloaded image version did not match its Storage inventory. No new archive was marked saved.'
     }
 }
 
@@ -230,14 +234,14 @@ SELECT 'STROKED_INVENTORY_V1:' || replace(encode(convert_to(jsonb_build_object(
             if ($bucket.public -isnot [bool]) { throw 'A bucket privacy setting could not be verified.' }
             if ($bucket.public) {
                 $publicUrl = Get-StrokedPublicStorageUrl $bucket ([string]$object.name)
-                Save-StrokedPublicFile $publicUrl $file
+                Save-StrokedPublicFile $publicUrl $file ([string]$object.metadata.eTag)
             }
             else { Save-StrokedPrivateFile $SupabaseCliPath $url ('payload/storage/files/' + $localName) $stage }
             if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw 'A Storage download did not create its local file.' }
             $bytes = (Get-Item -LiteralPath $file).Length
             if ($null -ne $object.metadata.size -and [long]$object.metadata.size -ne $bytes) { throw 'A downloaded Storage file did not match its recorded byte length.' }
             $hash = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
-            if ($bucket.public) { Save-StrokedPublicFile $publicUrl $second }
+            if ($bucket.public) { Save-StrokedPublicFile $publicUrl $second ([string]$object.metadata.eTag) }
             else { Save-StrokedPrivateFile $SupabaseCliPath $url ('check-' + $localName) $stage }
             if ((Get-FileHash -LiteralPath $second -Algorithm SHA256).Hash -ne $hash) { throw 'Two downloads of a Storage object did not match. No new archive was marked saved.' }
             Remove-Item -LiteralPath $second -Force

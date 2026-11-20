@@ -48,7 +48,7 @@ try {
     $job = Start-Job -ArgumentList $module, $port, $downloaded -ScriptBlock {
         param($ModulePath, $Port, $OutputPath)
         . $ModulePath
-        Save-StrokedPublicFile ([Uri]("http://127.0.0.1:$Port/fixture")) $OutputPath
+        Save-StrokedPublicFile ([Uri]("http://127.0.0.1:$Port/fixture")) $OutputPath 'synthetic-etag'
     }
     try {
         $pending = $listener.AcceptTcpClientAsync()
@@ -59,7 +59,7 @@ try {
             $reader = New-Object IO.StreamReader($stream, [Text.Encoding]::ASCII, $false, 1024, $true)
             try { while (($line = $reader.ReadLine()) -ne '') { if ($null -eq $line) { throw 'Incomplete synthetic HTTP request.' } } }
             finally { $reader.Dispose() }
-            $header = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Length: 5`r`nContent-Type: application/octet-stream`r`nConnection: close`r`n`r`n")
+            $header = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Length: 5`r`nContent-Type: application/octet-stream`r`nETag: synthetic-etag`r`nConnection: close`r`n`r`n")
             $stream.Write($header, 0, $header.Length)
             $stream.Write([byte[]](0, 1, 127, 128, 255), 0, 5)
             $stream.Flush()
