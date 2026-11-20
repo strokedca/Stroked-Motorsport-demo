@@ -1,0 +1,23 @@
+name: Windows backup helper checks
+on:
+  pull_request:
+    paths:
+      - 'scripts/backups/**'
+      - '.github/workflows/backup-helper.yml'
+  push:
+    branches: [backup/windows-database-helper-20261120]
+    paths:
+      - 'scripts/backups/**'
+      - '.github/workflows/backup-helper.yml'
+permissions:
+  contents: read
+jobs:
+  windows-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Parse and exercise private backup helpers with synthetic data
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedBackup.ps1
