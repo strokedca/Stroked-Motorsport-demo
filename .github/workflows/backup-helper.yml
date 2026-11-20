@@ -2,11 +2,13 @@ name: Windows backup helper checks
 on:
   pull_request:
     paths:
+      - '.gitattributes'
       - 'scripts/backups/**'
       - '.github/workflows/backup-helper.yml'
   push:
     branches: [backup/windows-database-helper-20261120]
     paths:
+      - '.gitattributes'
       - 'scripts/backups/**'
       - '.github/workflows/backup-helper.yml'
 permissions:
