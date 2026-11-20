@@ -190,3 +190,42 @@ Windows PowerShell 5.1 CI checks the scripts and starter checksums. A Linux Dock
 job restores synthetic-only pg_dump exports, including cross-schema policies and
 Vault ciphertext/root-key recovery, into this same offline image. These checks
 do not claim the owner's actual database restore has run.
+
+Owner-device follow-up: the SQL-aware parser passed the actual database drill
+with 67 table counts, Vault decryption and administrator checks. The fresh master
+also passed, and OneDrive's local folder showed both new archives with green
+status icons. A full browser/Auth/site restore remains separate.
+
+## Sunday schedule for an intermittently connected Surface
+
+`Stroked-Sunday-Schedule.ps1` installs the owner-selected weekly schedule through
+Windows Task Scheduler. The packaged `SETUP-SUNDAY-BACKUP.cmd` checksum-checks and
+installs the four proven backup helpers plus the scheduler, then registers and
+reads back a Sunday 09:00 local-time task. It uses the owner's existing interactive
+token at least privilege, without storing a Windows password. It requires a
+previous verified fresh-pair report and the corresponding saved archives.
+
+A weekly trigger, hourly lightweight catch-up checks and a delayed owner-logon
+check cover missed Sundays. The due-period guard uses Surface local time with
+UTC success timestamps, including DST transitions. A successful manual fresh
+backup counts toward that Sunday's period. Offline attempts and failed child
+processes never advance success. Overlap guards and the existing fresh/master
+locks prevent two concurrent scheduled runs from being marked saved.
+
+The runner probes network reachability before export, starts Docker Desktop with
+its official `desktop start --detach` command when needed, invokes the existing
+fresh master in a hidden child process, and validates its new verified-pair
+report before recording success. Logs and safe status stay under local AppData;
+only the existing encrypted archives enter the OneDrive backup folder. The task
+does not wake a sleeping PC, change Windows power plans, delete archives, or
+verify OneDrive cloud bytes automatically.
+
+The schedule package provides `CHECK-BACKUP-STATUS.cmd`, a `BACKUP-NOW.cmd` alias
+of `BACKUP-NOW-INSTALLED.cmd`, and `REMOVE-SUNDAY-SCHEDULE.cmd`. Removing the task
+keeps archives, keys and helper files. Installer readback and the first owner
+automatic run still need confirmation. CI registers only a uniquely named,
+disabled synthetic task and removes it; it never installs the real owner task.
+
+References: [Task Scheduler settings](https://learn.microsoft.com/en-us/windows/win32/taskschd/tasksettings),
+[interactive logon](https://learn.microsoft.com/en-us/windows/win32/api/taskschd/ne-taskschd-task_logon_type),
+and [Docker Desktop start](https://docs.docker.com/reference/cli/docker/desktop/start/).

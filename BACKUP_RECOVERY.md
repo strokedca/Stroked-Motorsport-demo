@@ -1,14 +1,20 @@
 # Stroked backup and recovery
 
-Prepared November 19, 2026. This is the setup and recovery plan, not confirmation that a backup job or restore drill has run.
+Updated November 20, 2026. Owner-device evidence and remaining setup are recorded below.
 
 Owner-device progress, November 20: the database and image/source/configuration
 reference archives passed local decryption/checksum checks, and screenshots
 confirmed both archives and the protected recovery identity in OneDrive online.
 The downloaded three-file set then passed recovery-identity unlock, every archive
 manifest checksum, image mapping checks and an isolated Git-bundle restore using
-the downloaded identity. A full PostgreSQL/site restore, external provider
-dashboard inventories and regular fresh-backup scheduling remain pending.
+the downloaded identity. The corrected offline PostgreSQL drill then passed on
+the Surface: 67 table counts matched, Vault decryption and administrator database
+checks passed, and the temporary container was removed. The fresh-backup master
+also passed and published a newly verified database/files pair. File Explorer
+showed both new 13:30 local-time files and the updated protected identity with
+OneDrive green status icons; those new cloud bytes have not been independently
+downloaded and rechecked. A full browser/Auth/site restore, external provider
+dashboard inventories and actual schedule installation remain pending.
 The same-identity recovery-passphrase updater completed on the owner's Surface;
 the owner confirmed its final success line. Upload of the updated protected
 identity still needs confirmation. Older encrypted wrappers and old downloaded
@@ -30,9 +36,26 @@ Install the official Supabase CLI and Docker Desktop on the backup computer. Bef
 - Provider configuration inventory: Cloudflare DNS export, Pages branch/build/output settings, domain connections, Auth callback/Site URLs and email settings, Edge Function settings, scheduler definitions, Resend sender domains and Stripe webhook configuration. Store actual secrets only in the owner's password manager and rotate/reconfigure them during recovery as appropriate.
 - An inventory with UTC export time, project identifier, source commit, file counts, bucket/object counts and checksums. Record success only after every component succeeds. Record how long the separate database/image exports took; they are not automatically one simultaneous snapshot.
 
-## Proposed schedule and retention
+## Selected schedule and retention
 
-After the first verified backup, configure a nightly home-computer job with timestamped archives. Proposed target: at most 24 hours of data loss; actual protection depends on the computer being awake and the job and OneDrive upload succeeding. Keep seven daily, four weekly, and twelve monthly verified archives, subject to measured size. Do not delete older usable backups when a new run fails. Add a separate external-drive copy when available.
+The owner selected Sunday mornings because the Surface is not regularly
+connected. The prepared Windows installer targets Sunday 09:00 in the Surface's
+local time, using the current owner's interactive Windows session and existing
+CLI credentials/recovery identity. No Windows password is stored. The owner must
+run the installer before this schedule exists on the Surface.
+
+Missed runs are retried by lightweight hourly and sign-in checks while the
+computer is awake, signed in and has network access. A due-period guard reads the
+verified fresh-pair report and skips weeks already covered by a manual or
+automatic backup. Docker Desktop is started only when a backup is due. An offline
+or failed attempt never advances the last verified backup. Local status and
+private child-output logs expose failures without putting credentials into chat
+or OneDrive. Windows power plans and provider settings are not changed.
+
+Keep existing verified archives; automatic retention deletion is not installed.
+Do not delete older usable backups when a new run fails. Add a separate
+external-drive copy when available. This weekly choice replaces the earlier
+nightly proposal; recovery freshness depends on the Surface and upload succeeding.
 
 Confirm each archive is fully uploaded and can be downloaded and decrypted from another device. OneDrive synchronization and version history alone do not prove the database and uploaded files are recoverable. Keep automated credentials out of command arguments, logs, Git and the synced folder; use Windows-protected local credential storage when configuring the unattended job.
 
@@ -45,7 +68,10 @@ Confirm each archive is fully uploaded and can be downloaded and decrypted from 
 5. Reconfigure secrets, sender settings, redirect URLs, webhook destinations and scheduled jobs for the test environment. Keep real payments and outgoing member email disabled during the drill.
 6. Build the recorded Git commit, compare its manifest, and check login, administration and representative event images using authorized test identities. Record restoration duration, missing components, and the newest recoverable record.
 
-Only call the backup process operational after a complete export, off-site upload, download/decryption check and successful isolated restore drill. At preparation time, backup scheduling and the first full restore drill remain pending home-computer setup.
+Database logical recovery and an earlier off-site download/decryption/source
+check have passed. Do not describe the whole site/provider recovery as tested:
+the full browser/Auth/site drill and provider inventories remain separate, and
+the first automatic scheduled run is not yet confirmed.
 
 ## References
 

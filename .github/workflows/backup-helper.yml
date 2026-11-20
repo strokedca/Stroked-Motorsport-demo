@@ -35,6 +35,9 @@ jobs:
       - name: Exercise schema dependency planning and fresh-backup starter
         shell: powershell
         run: ./scripts/backups/Test-StrokedRestorePlan.ps1
+      - name: Exercise Sunday schedule and native disabled-task registration
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedSundaySchedule.ps1
   offline-postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 10
