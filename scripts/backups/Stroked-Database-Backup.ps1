@@ -17,11 +17,11 @@ function Invoke-StrokedNative {
     # In Windows PowerShell 5.1, redirected native stderr can become an
     # ErrorRecord. Capture both streams without echoing secrets or SQL rows.
     $previousPreference = $ErrorActionPreference
-    $LASTEXITCODE = -1
+    $global:LASTEXITCODE = -1
     try {
         $ErrorActionPreference = 'Continue'
         $captured = @(& $Program @Arguments 2>&1)
-        $code = $LASTEXITCODE
+        $code = $global:LASTEXITCODE
     }
     finally { $ErrorActionPreference = $previousPreference }
     if ($code -ne 0) {
