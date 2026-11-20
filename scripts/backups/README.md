@@ -118,6 +118,24 @@ extensions/publications, masked-settings reports and source refs are retained
 as confidential references. Config pull writes only the local temporary file;
 no configuration push, deployment or remote mutation runs.
 
+## Download recovery check
+
+`Stroked-Recovery-Check.ps1` consumes a ZIP downloaded from OneDrive that contains
+exactly one database archive, one files archive and `Stroked-Recovery-Key.age`.
+It finds a matching OneDrive/backup ZIP in Downloads or opens a file picker. It
+unlocks the downloaded identity through age's hidden interactive passphrase
+prompt; the original local identity is never used. Passwords never enter script
+arguments, reports, Git or chat.
+
+Both archives must decrypt with that recovered identity and pass every manifest
+checksum, required component, image mapping and database-pair check. A bare Git
+clone from the downloaded bundle verifies source recovery without executing the
+website. ZIP entries are checked for traversal/duplicates and only allowlisted
+input files and the source bundle are copied to generated private paths.
+Temporary decrypted files are deleted after the check, including on failure.
+A safe local report distinguishes these checks from a PostgreSQL/site restore
+drill, which remains pending along with external provider exports and scheduling.
+
 The nested/hidden payload files are archived through .NET ZipArchive. The archive
 must pass encryption, local decryption and checksum checks before publication to
 OneDrive. Earlier database/recovery archives are retained and the paired database
