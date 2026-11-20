@@ -37,6 +37,67 @@ function Get-StrokedStorageUrl {
     return 'ss:///' + [Uri]::EscapeDataString($Bucket) + '/' + ($parts -join '/')
 }
 
+function Get-StrokedPublicStorageUrl {
+    param($Bucket, [string]$ObjectName)
+    if ($Bucket.public -isnot [bool] -or -not $Bucket.public) { throw 'An anonymous download cannot be used for a private bucket.' }
+    $encoded = Get-StrokedStorageUrl ([string]$Bucket.id) $ObjectName
+    return 'https://aodywiwkhtxwlscpqnda.supabase.co/storage/v1/object/public/' + $encoded.Substring(6)
+}
+
+function Save-StrokedPublicFile {
+    param([Uri]$Uri, [string]$Path)
+    if ($Uri.Scheme -ne 'https' -and -not ($Uri.Scheme -eq 'http' -and $Uri.IsLoopback)) {
+        throw 'Image download requires HTTPS.'
+    }
+    try {
+        $null = Invoke-WebRequest -UseBasicParsing -Uri $Uri -OutFile $Path -TimeoutSec 60 -MaximumRedirection 0 -ErrorAction Stop
+    }
+    catch {
+        $status = 'connection error'
+        if ($null -ne $_.Exception.Response) { $status = 'HTTP ' + [int]$_.Exception.Response.StatusCode }
+        throw ("Public image download failed ($status). No new files archive has been marked saved.")
+    }
+}
+
+function Get-StrokedPrivateCopyArguments {
+    param([string]$RemoteUrl, [string]$RelativePath, [string]$WorkDir)
+    # A Windows drive-letter destination can be mistaken for a URL scheme by
+    # the Storage CLI. Keep native cwd and --workdir equal and pass a relative
+    # generated filename, regardless of CLI version.
+    if ([IO.Path]::IsPathRooted($RelativePath) -or $RelativePath -match '(^|[/\\])\.\.([/\\]|$)' -or $RelativePath.Contains(':')) {
+        throw 'The private Storage destination must be a relative staging path.'
+    }
+    return @('storage', 'cp', $RemoteUrl, $RelativePath, '--experimental', '--remote=aodywiwkhtxwlscpqnda', '--workdir', $WorkDir)
+}
+
+function Get-StrokedStorageFailureSummary {
+    param([string]$CapturedText)
+    if ($CapturedText -match '(?i)\b(401|403|404|429|500|502|503)\b') { return ('Storage API returned HTTP ' + $Matches[1] + '.') }
+    if ($CapturedText -match '(?i)unauthori[sz]ed|invalid jwt|expired jwt|invalid api key|forbidden') { return 'Storage authorization was rejected.' }
+    if ($CapturedText -match '(?i)unsupported|invalid.*url|unknown.*scheme') { return 'The CLI rejected the download path format.' }
+    if ($CapturedText -match '(?i)timeout|timed out|certificate|no such host|connection refused|network') { return 'The Storage connection failed.' }
+    return 'The CLI rejected the Storage download; a private diagnostic was retained locally.'
+}
+
+function Save-StrokedPrivateFile {
+    param([string]$Cli, [string]$RemoteUrl, [string]$RelativePath, [string]$WorkDir)
+    $arguments = @(Get-StrokedPrivateCopyArguments $RemoteUrl $RelativePath $WorkDir)
+    $previousPreference = $ErrorActionPreference
+    Push-Location -LiteralPath $WorkDir
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = -1
+        $captured = @(& $Cli @arguments 2>&1)
+        $code = $global:LASTEXITCODE
+    }
+    finally { Pop-Location; $ErrorActionPreference = $previousPreference }
+    if ($code -ne 0) {
+        $text = ($captured | ForEach-Object { [string]$_ }) -join "`n"
+        [IO.File]::WriteAllText((Join-Path $WorkDir 'private-storage-error.txt'), $text)
+        throw ("Private image download failed (exit $code). " + (Get-StrokedStorageFailureSummary $text))
+    }
+}
+
 function Assert-StrokedStorageUnchanged {
     param($Before, $After)
     $beforeBuckets = ConvertTo-Json -InputObject @($Before.buckets) -Depth 50 -Compress
@@ -148,6 +209,11 @@ SELECT 'STROKED_INVENTORY_V1:' || replace(encode(convert_to(jsonb_build_object(
         [IO.File]::WriteAllText((Join-Path $payload 'storage\inventory-before.json'), ($before | ConvertTo-Json -Depth 50), (New-Object Text.UTF8Encoding($false)))
         $objectRecords = New-Object 'System.Collections.Generic.List[object]'
         $objectList = @($before.objects)
+        # This isolated config copy gives private downloads a workspace whose
+        # cwd equals --workdir. No CLI credential cache is copied.
+        $stageConfig = Join-Path $stage 'supabase'
+        $null = New-Item -ItemType Directory -Path $stageConfig
+        Copy-Item -LiteralPath (Join-Path $work 'supabase\config.toml') -Destination (Join-Path $stageConfig 'config.toml')
         $storageStarted = [DateTime]::UtcNow.ToString('o')
         Write-Host ('3/8 Downloading and checking ' + $objectList.Count + ' uploaded files...')
         for ($index = 0; $index -lt $objectList.Count; $index++) {
@@ -158,12 +224,21 @@ SELECT 'STROKED_INVENTORY_V1:' || replace(encode(convert_to(jsonb_build_object(
             $localName = ('{0:D8}.bin' -f $index)
             $file = Join-Path $objectFolder $localName
             $second = Join-Path $stage ('check-' + $localName)
-            $null = Invoke-StrokedNative $SupabaseCliPath (@('storage', 'cp', $url, $file, '--experimental') + $common) ('Storage file ' + ($index + 1) + ' download')
+            $buckets = @($before.buckets | Where-Object { [string]$_.id -ceq [string]$object.bucket_id })
+            if ($buckets.Count -ne 1) { throw 'An image did not match exactly one recorded bucket.' }
+            $bucket = $buckets[0]
+            if ($bucket.public -isnot [bool]) { throw 'A bucket privacy setting could not be verified.' }
+            if ($bucket.public) {
+                $publicUrl = Get-StrokedPublicStorageUrl $bucket ([string]$object.name)
+                Save-StrokedPublicFile $publicUrl $file
+            }
+            else { Save-StrokedPrivateFile $SupabaseCliPath $url ('payload/storage/files/' + $localName) $stage }
             if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw 'A Storage download did not create its local file.' }
             $bytes = (Get-Item -LiteralPath $file).Length
             if ($null -ne $object.metadata.size -and [long]$object.metadata.size -ne $bytes) { throw 'A downloaded Storage file did not match its recorded byte length.' }
             $hash = (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash
-            $null = Invoke-StrokedNative $SupabaseCliPath (@('storage', 'cp', $url, $second, '--experimental') + $common) ('Storage file ' + ($index + 1) + ' verification download')
+            if ($bucket.public) { Save-StrokedPublicFile $publicUrl $second }
+            else { Save-StrokedPrivateFile $SupabaseCliPath $url ('check-' + $localName) $stage }
             if ((Get-FileHash -LiteralPath $second -Algorithm SHA256).Hash -ne $hash) { throw 'Two downloads of a Storage object did not match. No new archive was marked saved.' }
             Remove-Item -LiteralPath $second -Force
             $objectRecords.Add([pscustomobject]@{

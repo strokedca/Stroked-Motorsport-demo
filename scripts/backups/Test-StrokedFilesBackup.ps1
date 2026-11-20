@@ -29,6 +29,46 @@ try {
     Assert-Throws { ConvertFrom-StrokedInventoryOutput ('STROKED_INVENTORY_V1:' + $bad + ':END_STROKED_INVENTORY_V1') } 'Wrong project inventory was accepted.'
     Assert-True ((Get-StrokedStorageUrl 'bucket' 'folder/a #?%.png') -ceq 'ss:///bucket/folder/a%20%23%3F%25.png') 'Storage key URL encoding changed the key.'
     Assert-Throws { Get-StrokedStorageUrl 'bad/bucket' 'file.png' } 'An invalid bucket name was accepted.'
+    $privateBucket = [pscustomobject]@{id='bucket'; public=$false}
+    $publicBucket = [pscustomobject]@{id='bucket'; public=$true}
+    Assert-Throws { Get-StrokedPublicStorageUrl $privateBucket 'image.png' } 'A private bucket received an anonymous URL.'
+    Assert-True ((Get-StrokedPublicStorageUrl $publicBucket 'a #.png') -ceq 'https://aodywiwkhtxwlscpqnda.supabase.co/storage/v1/object/public/bucket/a%20%23.png') 'Public image URL changed its key.'
+    Assert-Throws { Get-StrokedPrivateCopyArguments 'ss:///bucket/x' 'C:\private\x.bin' $temp } 'Drive-letter CLI destination was accepted.'
+    $copyArgs = @(Get-StrokedPrivateCopyArguments 'ss:///bucket/x' 'payload/storage/files/00000000.bin' $temp)
+    Assert-True ($copyArgs[3] -ceq 'payload/storage/files/00000000.bin') 'Private download did not use its relative filename.'
+    Assert-True ((Get-StrokedStorageFailureSummary 'HTTP 403 do-not-show-canary') -ceq 'Storage API returned HTTP 403.') 'Storage error classification leaked native text.'
+
+    # Exercise the real Windows HTTP downloader against a loopback-only
+    # synthetic response. No owner images or credentials enter CI.
+    $listener = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback, 0)
+    $listener.Start()
+    $port = $listener.LocalEndpoint.Port
+    $downloaded = Join-Path $temp 'http-fixture.bin'
+    $module = Join-Path $PSScriptRoot 'Stroked-Files-Backup.ps1'
+    $job = Start-Job -ArgumentList $module, $port, $downloaded -ScriptBlock {
+        param($ModulePath, $Port, $OutputPath)
+        . $ModulePath
+        Save-StrokedPublicFile ([Uri]("http://127.0.0.1:$Port/fixture")) $OutputPath
+    }
+    try {
+        $pending = $listener.AcceptTcpClientAsync()
+        if (-not $pending.Wait(20000)) { throw 'Synthetic HTTP downloader did not connect.' }
+        $client = $pending.Result
+        try {
+            $stream = $client.GetStream()
+            $reader = New-Object IO.StreamReader($stream, [Text.Encoding]::ASCII, $false, 1024, $true)
+            try { while (($line = $reader.ReadLine()) -ne '') { if ($null -eq $line) { throw 'Incomplete synthetic HTTP request.' } } }
+            finally { $reader.Dispose() }
+            $header = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Length: 5`r`nContent-Type: application/octet-stream`r`nConnection: close`r`n`r`n")
+            $stream.Write($header, 0, $header.Length)
+            $stream.Write([byte[]](0, 1, 127, 128, 255), 0, 5)
+            $stream.Flush()
+        }
+        finally { $client.Dispose() }
+        $null = Receive-Job $job -Wait -ErrorAction Stop
+        Assert-True (([Convert]::ToBase64String([IO.File]::ReadAllBytes($downloaded))) -ceq 'AAF/gP8=') 'HTTP downloader changed binary bytes.'
+    }
+    finally { $listener.Stop(); Stop-Job $job -ErrorAction SilentlyContinue; Remove-Job $job -Force -ErrorAction SilentlyContinue }
     $a = [pscustomobject]@{ buckets = @([pscustomobject]@{id='b'; public=$false}); objects = @() }
     $b = [pscustomobject]@{ buckets = @([pscustomobject]@{id='b'; public=$true}); objects = @() }
     Assert-StrokedStorageUnchanged $a $a
