@@ -3,21 +3,22 @@
   "mode": "production",
   "rpcPrefix": "stroked_live_v55_",
   "files": {
+    "assets/stroked-auth-captcha.js": "25279ffff2e6f5d976680b1b1752c379370f060aa710064b915b2d72031515c1",
     "assets/stroked-security.js": "8b2bf6dad601efaae1e8b0b0ff3c991f52f4b39a204ec3e06a8dfe4213ae404b",
     "assets/stroked-actions.js": "399dd47eaac68d491c4cc6f70be6d5c2960d31a1edfc285bbeb5ad652bad36e0",
     "assets/stroked-app.js": "56b84f808c6c18f47a584e91f6d53cc152e2a11850d51b9bcba600446499e4b7",
     "assets/stroked-app.css": "de52a6387dca07c752a1734e4199bb9ba805bc8dcccff1896140bf40fb947e8d",
-    "index.html": "213ef01fe7c2c9b4bb16908f7ed3cf84003aec64a8a67e6b4f36e557f4dcc54b",
+    "index.html": "8ac0cc230f8a998391f7af30e84942d99db227e986ad338015b4f7e9f9dddba1",
     "events-logo-1.png": "7315576883420cd5653372e3c82f1357e0af5d03663ce4803ce6598db3bc20a7",
     "clothing-apparel-logo.png": "54484e08625253ddd8e624bedffda5562212dda4e25d706780a2cde4ad61448b",
-    "assets/stroked-config.js": "c48636b870d2b34f5bd36ddd1e04577d70850e38db8312d6eee4c4e2c9509de6",
+    "assets/stroked-config.js": "7f1bc4bde457dc402ed4b8bd4e68761076674e7845667709833cf507943e5e9d",
     "assets/stroked-core.js": "02a4a8e5f3afdadc895649a9713ed450c85d9d91dc0def43175c2f5c01da94ae",
-    "assets/stroked-live.js": "bb3135dbd3af2f53d3e8ba303f98557d4eeecb5d13cd45c8c70abd54fbf5b8ca",
+    "assets/stroked-live.js": "5a2c6edf5aa6b89b965b80385a5bb7324457b3c423a3fb7cd56ff376086d20e5",
     "assets/stroked-engagement.js": "ed1639d180c39e301c0b9d79beafd55cf15b838583c9786f27cf531c0f67c1d2",
     "assets/stroked-announcements.js": "84d3efea6f3eb0167f71e8e88a14ab5fefe077f44f4a7b5ece101b7eff2d18f8",
     "assets/stroked-unsubscribe.js": "808598eaba40752e0984cb87a2703960a2614cf9710d62b33122ab7af88d1849",
     "unsubscribe.html": "c29837e3400cf33e0c446cb578810da3a921ed1a7bd1c8911e1e9c5f4890b608",
-    "assets/stroked-live.css": "57611dd6ed937a8be8b0d82347938824908df98751943668a4cfd9ed0f50d776",
+    "assets/stroked-live.css": "c101e20a133637aa5e327b4dc7a9d5d5f5bc320128f880cca15c3629aec63649",
     "assets/stroked-payments-config.js": "fae5bf593eccceda8598b533ce4681762298a8e0d71f615ba6994a3b0ac270fb",
     "assets/stroked-support.js": "3e7060c6d125f6c3a8647cb487c71b3cfad99e7862f6f02f1bbd3db2072ef98f",
     "assets/stroked-support.css": "add35b3759ed4c689e405cce766d63033f57a41e777d458f51d0c734039f2a90",
@@ -38,6 +39,6 @@
     "contact.html": "17b2f61a7182cedd55138601d7cec3678c6fbe10cb96e3fd70f608e37e2d018f",
     "robots.txt": "01938262823c7b0ced06b5ecdfd52874273cc6d9fcb6918a336a92e10fd272ec",
     "sitemap.xml": "c43bfdc9416908b19d5f0947c2ce73f85a5f7e350d0b0a5bb169985d7507f3ad",
-    "_headers": "4a3e74cc8716906353448ec7f9cdb6f43fae4dbbab99f6e0ac53303fc4fda668"
+    "_headers": "56c9493cd47f8f017260ac833c38664b019e48cc4295dc6145188b11b0922d6f"
   }
 }

@@ -42,7 +42,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.supabase={createClient:()=>{clientCount++;return sdk;}};
   // One evaluation keeps classic-script global lexical bindings in this DOM simulator.
   const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
-  for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-pricing.js','assets/stroked-announcements.js','assets/stroked-engagement.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await readFile(new URL(path,base),'utf8'));
+  for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-pricing.js','assets/stroked-announcements.js','assets/stroked-engagement.js','assets/stroked-auth-captcha.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await readFile(new URL(path,base),'utf8'));
   win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
   await settle();assert.equal(clientCount,1);
   assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);
@@ -57,7 +57,7 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   $('sv5Open').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/rider/);
   const f=$('sv5Auth');for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Password123!',confirm_password:'Different123!'}))f.elements.namedItem(key).value=value;
   f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.match($('sv5Message').textContent,/do not match/);assert.equal(registered,undefined);
-  f.elements.namedItem('password').value='short7!';assert.equal(f.elements.namedItem('password').checkValidity(),false,'new passwords still require eight characters');f.elements.namedItem('password').value='Password123!';
+  f.elements.namedItem('password').value='shortEight!';assert.equal(f.elements.namedItem('password').checkValidity(),false,'new passwords match the server minimum of twelve characters');f.elements.namedItem('password').value='Password123!';
   f.elements.namedItem('confirm_password').value='Password123!';f.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();assert.equal(registered.options.data.account_type,'rider');assert.equal(registered.options.emailRedirectTo,origin+'?auth=confirm');assert.match($('sv5Message').textContent,/Check your email/);
   $('sv5Close').click();$('sv55OrganizerOpen').click();$('sv53ShowSignup').click();assert.match($('sv53AuthHeading').textContent,/organizer/);
   for(const [key,value] of Object.entries({password:'Password123!',confirm_password:'Password123!'}))f.elements.namedItem(key).value=value;
