@@ -1,0 +1,33 @@
+STROKED BACKUP TOOLS
+
+1. Right-click the ZIP and choose Extract All.
+2. Leave Docker Desktop running. You can leave it on Containers; no Docker login is needed.
+3. In the extracted folder, double-click CHECK-DATABASE.cmd.
+
+CHECK-DATABASE restores the saved database into a temporary local Docker
+container with networking disabled. It checks every recorded table count,
+Vault decryption and database administrator protections, then removes the
+container. It does not contact or change your live Supabase project.
+No password should need to be pasted. Wait for the final green result:
+
+DATABASE RESTORE CHECK PASSED
+
+Leave that result open for review. Browser login, email/payments and external
+provider settings are separate from this database-only drill.
+
+FOR FUTURE FRESH BACKUPS
+
+Double-click BACKUP-NOW.cmd from this extracted folder. It makes NEW database
+exports, then current image/source/configuration-reference exports. It checks
+both manifests and their pairing. Wait for:
+
+FRESH BACKUP PAIR VERIFIED AND SAVED
+
+Let OneDrive finish uploading. Existing backups are kept. This package does
+not install a schedule, retention deletion or a permanent execution policy.
+The first-pilot database starter is different: it reuses old SQL exports and
+must not be used as a recurring backup.
+
+These starters install checksum-checked helper copies under your private local
+AppData\Local\StrokedBackup\tools folder. Never upload raw SQL, the local
+recovery-key.txt file, passwords or Vault keys into chat or GitHub.

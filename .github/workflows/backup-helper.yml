@@ -1,0 +1,49 @@
+name: Windows backup helper checks
+on:
+  pull_request:
+    paths:
+      - '.gitattributes'
+      - 'scripts/backups/**'
+      - '.github/workflows/backup-helper.yml'
+  push:
+    branches: [backup/windows-database-helper-20261120]
+    paths:
+      - '.gitattributes'
+      - 'scripts/backups/**'
+      - '.github/workflows/backup-helper.yml'
+permissions:
+  contents: read
+jobs:
+  windows-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Parse and exercise private backup helpers with synthetic data
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedBackup.ps1
+      - name: Exercise Storage mapping, ZIP preservation and source recovery
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedFilesBackup.ps1
+      - name: Exercise downloaded recovery archive checks with synthetic data
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedRecovery.ps1
+      - name: Exercise encrypted recovery-wrapper replacement with synthetic data
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedPasswordUpdate.ps1
+      - name: Exercise schema dependency planning and fresh-backup starter
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedRestorePlan.ps1
+      - name: Exercise Sunday schedule and native disabled-task registration
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedSundaySchedule.ps1
+  offline-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Restore synthetic backups into an offline PostgreSQL 17 container
+        run: bash scripts/backups/Test-StrokedPostgresImage.sh

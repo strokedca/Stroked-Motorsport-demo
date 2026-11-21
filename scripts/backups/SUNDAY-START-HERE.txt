@@ -1,0 +1,33 @@
+STROKED SUNDAY BACKUPS
+
+1. Extract All from this ZIP.
+2. In the extracted folder, double-click SETUP-SUNDAY-BACKUP.cmd.
+3. Wait for SUNDAY BACKUP SCHEDULE INSTALLED and leave the result open for review.
+
+The schedule is Sunday at 9:00 AM in the Surface's local time. It uses your
+existing working backup setup and recovery identity. No password needs to be
+pasted. Nothing changes on the live site.
+
+Keep the Surface awake, connected to the internet and signed in to your Windows
+account on Sunday morning. It cannot back up while shut down, asleep, signed out
+or offline. Docker Desktop starts automatically when a backup is due.
+
+If Sunday is missed, lightweight checks after sign-in and hourly while available
+will try to catch up. A verified backup made after that Sunday's 9:00 AM deadline
+counts for that week, including a manual BACKUP-NOW run. These checks do not make
+extra backups once the week has a verified pair.
+
+Keep the folder if you want its shortcuts. The actual task and installed helpers
+use AppData, so moving the extracted folder later does not break the schedule.
+
+CHECK-BACKUP-STATUS.cmd shows the schedule and the last verified fresh backup.
+BACKUP-NOW.cmd starts a manual fresh backup whenever you want one.
+REMOVE-SUNDAY-SCHEDULE.cmd removes only this schedule, keeping backups and keys.
+
+Only encrypted archives enter Stroked back up. Let OneDrive finish uploading and
+check uploads periodically. The schedule reports locally verified archives;
+it does not independently prove each OneDrive cloud upload.
+
+All earlier backup archives are kept. No automatic retention deletion is installed.
+The database restore and fresh manual backup already passed on this Surface;
+the first automatic weekly run still needs checking after installation.

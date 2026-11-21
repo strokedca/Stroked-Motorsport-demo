@@ -1,0 +1,5 @@
+# Keep the reviewed PowerShell bytes identical for the starter's checksum.
+scripts/backups/*.ps1 text eol=lf
+scripts/backups/*.cmd text eol=crlf
+scripts/backups/*.sh text eol=lf
+scripts/backups/*.sql text eol=lf

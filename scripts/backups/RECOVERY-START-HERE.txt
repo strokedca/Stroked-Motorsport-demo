@@ -1,0 +1,7 @@
+1. In OneDrive online, select the three backup files and Download them as a ZIP. Save in Downloads.
+2. Extract All from the Stroked-Recovery-Check package.
+3. Double-click RUN-RECOVERY-CHECK.cmd in its extracted folder.
+4. At the age passphrase prompt, use the saved backup-recovery password for stroked.ca from Edge Password Manager. Characters are hidden.
+5. Leave the final result open and tell ChatGPT the message.
+
+The checker uses the downloaded encrypted identity, not the original local key. It checks both archives and restores the Git bundle into a private temporary folder, then removes temporary decrypted files. It does not touch the live site or restore a live database. A full PostgreSQL/site restore, provider exports and regular backup setup still remain.
