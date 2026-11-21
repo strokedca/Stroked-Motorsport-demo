@@ -55,7 +55,7 @@ export async function handleAlerts(request, {rpc, getConfig, send}) {
     }
     try {
       const result = await send({
-        from: config.from, to: [config.testTo],
+        from: config.from, reply_to: 'info@stroked.ca', to: [config.testTo],
         subject: 'Stroked email connection test',
         text: 'Whisky, this is the Stroked Motorsports Events email connection test.\n\nThis checks the same sender used for RSVP confirmations and organizer updates. No RSVP or attendance was created.\n\nBorn in PEI, built for Canada.\nhttps://stroked.ca/'
       }, 'stroked-connection-test-' + body.test_id, config.key);
@@ -72,7 +72,7 @@ export async function handleAlerts(request, {rpc, getConfig, send}) {
   for (const job of jobs) {
     try {
       if (['announcement','announcement_test'].includes(job.kind) && !(await rpc('stroked_alert_announcement_can_send', {p_id:job.id}))) continue;
-      const result = await send({...emailContent(job), to: [job.email], from: config.from}, 'stroked-alert-' + job.id, config.key);
+      const result = await send({...emailContent(job), to: [job.email], from: config.from, reply_to: 'info@stroked.ca'}, 'stroked-alert-' + job.id, config.key);
       if (!result?.id) throw Error('Provider did not accept message');
       await rpc('stroked_alert_worker_ack', {p_id: job.id, p_provider_id: result.id, p_error: null});
       await rpc('stroked_alert_worker_ready', {p_ready: true});
