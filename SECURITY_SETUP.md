@@ -52,3 +52,8 @@ Automated coverage includes quotas through live/legacy/testing APIs, separate ac
 - Dependabot checks npm packages and pinned GitHub Actions weekly and proposes pull requests. Updates still need review and the existing required checks; this configuration does not enable automatic merging.
 - npm audit only covers dependencies represented in this lockfile. It does not scan application authorization, the separately pinned browser Supabase CDN SDK, Supabase-managed services, provider settings, passwords or secrets. Review those separately.
 - Publishing a version-update configuration does not independently verify that repository-level Dependabot alerts/security updates or secret scanning/push protection are enabled. Confirm those settings through an authorized account.
+
+## Request and installation safeguards
+
+- The Stripe webhook enforces its 1 MiB request limit while reading the stream and cancels oversized input, including chunked requests without a trustworthy Content-Length. It rejects that input before retrieving a signing secret or recording an event. Valid signed UTF-8 payloads remain supported across stream chunk boundaries. The limit is an application safeguard, not a guarantee against all denial-of-service attacks.
+- The repository's `.npmrc` sets `ignore-scripts=true`, extending the existing CI installation rule to ordinary npm installs that honor project configuration. Explicit `npm test` and build commands still run. This reduces exposure to dependency lifecycle hooks without enabling automatic updates or changing installed versions. Environment/command-line overrides and provider settings must still be reviewed separately.
