@@ -43,3 +43,12 @@ Keep the private `admin_security` rows and Auth MFA enrollment data in the datab
 ## Verification
 
 Automated coverage includes quotas through live/legacy/testing APIs, separate accounts, rolling windows, pending limits, administrator behavior, MFA activation prerequisites, low-assurance denial, factor removal, secret clearing on sign-out, late-response isolation, script hashes, blocked action strings and existing application workflows. Synthetic test identities are used in isolated PostgreSQL and DOM tests; no bulk announcements, real charges or production quota flooding are needed.
+
+## Ongoing dependency review
+
+- The existing regression-test workflow checks the full npm lockfile, including development dependencies, with `npm audit --include=dev --audit-level=high`. A high or critical advisory stops that check; it never runs `npm audit fix` or changes dependencies automatically.
+- Development dependencies are included because this project uses them for its database and browser tests. There are currently no npm production dependencies; omitting development dependencies would not check the tools this workflow installs.
+- The same regression job can be started manually and rechecks the lockfile weekly on Monday at 12:17 UTC. It retains read-only repository permissions, pinned Actions, disabled checkout credential persistence, and `npm ci --ignore-scripts`.
+- Dependabot checks npm packages and pinned GitHub Actions weekly and proposes pull requests. Updates still need review and the existing required checks; this configuration does not enable automatic merging.
+- npm audit only covers dependencies represented in this lockfile. It does not scan application authorization, the separately pinned browser Supabase CDN SDK, Supabase-managed services, provider settings, passwords or secrets. Review those separately.
+- Publishing a version-update configuration does not independently verify that repository-level Dependabot alerts/security updates or secret scanning/push protection are enabled. Confirm those settings through an authorized account.

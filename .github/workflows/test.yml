@@ -3,6 +3,10 @@ on:
   push:
     branches: [v5.5-testing, payments-support-testing, main]
   pull_request:
+  workflow_dispatch:
+  schedule:
+    # Recheck the lockfile for newly disclosed advisories even without a code change.
+    - cron: '17 12 * * 1'
 permissions:
   contents: read
 jobs:
@@ -17,6 +21,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts
+      - name: Check locked dependencies for high or critical advisories
+        run: npm audit --include=dev --audit-level=high
       - run: npm test
       - run: npm run build:production
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
