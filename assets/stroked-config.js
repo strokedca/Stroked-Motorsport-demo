@@ -3,5 +3,7 @@ window.STROKED_CONFIG = Object.freeze({
   url: 'https://aodywiwkhtxwlscpqnda.supabase.co',
   publishableKey: 'sb_publishable_jJH7MJkeTxWDGV3RSc0sTg_MvdqjM_c',
   rpcPrefix: 'stroked_live_v55_',
-  testing: false
+  testing: false,
+  // Public Turnstile site key only. The secret belongs in Supabase Auth settings.
+  authCaptchaSiteKey: ''
 });

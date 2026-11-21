@@ -20,11 +20,13 @@
           <h3 id="sv53AuthHeading">Sign in</h3>
           <div id="sv55NameFields" class="grid" hidden><label>First name<input name="first_name" autocomplete="given-name" maxlength="80"></label><label>Last name<input name="last_name" autocomplete="family-name" maxlength="80"></label></div>
           <label>Email address<input name="email" type="email" autocomplete="username" required maxlength="254" autocapitalize="none" spellcheck="false"></label>
-          <label id="sv55PasswordWrap">Password<input name="password" type="password" autocomplete="current-password" required minlength="8"></label>
-          <label id="sv55ConfirmWrap" hidden>Confirm password<input name="confirm_password" type="password" autocomplete="new-password" minlength="8"></label>
+          <label id="sv55PasswordWrap">Password<input name="password" type="password" autocomplete="current-password" required minlength="1"></label>
+          <label id="sv55ConfirmWrap" hidden>Confirm password<input name="confirm_password" type="password" autocomplete="new-password" minlength="12"></label>
+          <p id="sv61PasswordHelp" class="account-help" hidden>Use at least 12 characters for your new password.</p>
+          <section id="sv61AuthCaptcha" class="auth-captcha" aria-label="Human verification" hidden></section>
           <div class="actions"><button id="sv55AuthSubmit" type="submit">Sign in</button><button id="sv53ResetPassword" type="button" class="secondary">Forgot password?</button><button id="sv55Resend" type="button" class="secondary">Resend confirmation email</button><button id="sv53AuthBack" type="button" class="secondary">Back</button></div>
         </form>
-        <form id="sv55Recovery" hidden><h3>Choose a new password</h3><label>New password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><label>Confirm new password<input name="confirm_password" type="password" minlength="8" autocomplete="new-password" required></label><button type="submit">Save new password</button></form>
+        <form id="sv55Recovery" hidden><h3>Choose a new password</h3><p>Use at least 12 characters for your new password.</p><label>New password<input name="password" type="password" minlength="12" autocomplete="new-password" required></label><label>Confirm new password<input name="confirm_password" type="password" minlength="12" autocomplete="new-password" required></label><button type="submit">Save new password</button></form>
         <div id="sv5SignedIn" hidden><div class="actions"><button id="sv5Post" type="button" hidden>Post an event</button><button id="sv55BecomeOrganizer" type="button" class="secondary" hidden>Set up an organizer account</button><button id="sv5Refresh" type="button" class="secondary">Refresh</button><button id="sv5Logout" type="button" class="secondary">Sign out</button></div>
           <section id="sv55Organizer" hidden><h3>My organizer profile</h3><p class="account-help">Only the public contact details you supply below appear on your approved events. Your login email stays private.</p>
             <form id="sv53ProfileForm" class="sv5Card"><label>Club / organization name<input name="organization" maxlength="100" required minlength="2"></label><div class="grid"><label>City / town<input name="city" maxlength="80"></label><label>Province / state<input name="region" maxlength="80"></label></div><label>Public contact email<input name="public_email" type="email" maxlength="160"></label><label>Website / Facebook URL<input name="website" type="url" maxlength="300" placeholder="https://"></label><button type="submit">Save organizer profile</button></form>
@@ -47,6 +49,7 @@
   const alertLabel=document.createElement('label');alertLabel.className='check';alertLabel.innerHTML='<input id="strokedEmailUpdates" type="checkbox" disabled><span>Email me confirmation and event updates</span>';el('rsvpForm').querySelector('p').before(alertLabel);const alertHelp=document.createElement('small');alertHelp.id='strokedAlertHelp';alertHelp.textContent='Checking email alerts…';alertLabel.after(alertHelp);let alertsReady=false;if(!config.testing)Promise.resolve().then(async()=>{try{alertsReady=await rpc('notification_status')===true;}catch{}el('strokedEmailUpdates').disabled=!alertsReady;alertHelp.textContent=alertsReady?'Send updates to your account email. You can turn these off later.':'Email delivery is awaiting sender setup. Your RSVP still saves normally. Text alerts are not connected.';});else alertHelp.textContent='Email alerts are disabled in testing.';
   el('sv53ChangeForm').elements.namedItem('province').innerHTML=el('evProv').innerHTML;
   const panel = el('sv5Panel'), form = el('sv5Auth');
+  const authCaptcha = window.StrokedAuthCaptcha.mount({container:el('sv61AuthCaptcha'),siteKey:config.authCaptchaSiteKey});
   let mode = 'login', requestedType = 'rider', user = null, account = null, myRows = [];
   let authEpoch = 0, detailEpoch = 0, refreshTimer, publicPromise, callbackHandled = false;
   let countsReady = false, totals = new Map(), recovery = false, resumeEvent = null, resumeDraft = null;
@@ -66,11 +69,13 @@
     el('sv55WelcomeHeading').textContent = type === 'organizer' ? 'Welcome, organizers' : 'Welcome, riders';
     el('sv55WelcomeText').textContent = type === 'organizer' ? 'Create a free organizer account to submit events for approval.' : 'Create a free account to save and update your RSVPs.';
     el('sv53ShowSignup').textContent = 'Create '+type+' account';
-    if (!panel.open) panel.showModal();
+    if (!panel.open) {panel.showModal();if(!form.hidden)void authCaptcha.show(mode);}
   }
   el('sv5Open').onclick = () => openAccount('rider');
   el('sv55OrganizerOpen').onclick = () => openAccount('organizer');
   el('sv5Close').onclick = () => panel.close();
+  panel.addEventListener('close',()=>{if(!panel.open)authCaptcha.clear();});
+  panel.addEventListener('cancel',()=>authCaptcha.clear());
   function choose(next) {
     mode=next; el('sv53Welcome').hidden=true;form.hidden=false;
     const signup=mode==='signup', reset=mode==='reset';
@@ -78,18 +83,19 @@
     el('sv55NameFields').hidden=!signup;el('sv55ConfirmWrap').hidden=!signup;el('sv55PasswordWrap').hidden=reset;
     for (const name of ['first_name','last_name','confirm_password']) {form.elements.namedItem(name).required=signup;form.elements.namedItem(name).disabled=!signup;}
     form.elements.namedItem('password').required=!reset;form.elements.namedItem('password').disabled=reset;
-    form.elements.namedItem('password').minLength=signup?8:1;
+    form.elements.namedItem('password').minLength=signup?12:1;el('sv61PasswordHelp').hidden=!signup;
     form.elements.namedItem('password').autocomplete=signup?'new-password':'current-password';
     el('sv55AuthSubmit').textContent=signup?'Create '+requestedType+' account':reset?'Send password reset email':'Sign in';
     el('sv53ResetPassword').hidden=signup||reset;el('sv55Resend').hidden=reset;
     el('sv60ChooseLogin').setAttribute('aria-pressed',String(mode==='login'));
     el('sv60ChooseSignup').setAttribute('aria-pressed',String(signup));
     form.elements.namedItem(signup?'first_name':'email').focus();
+    void authCaptcha.show(mode);
   }
   el('sv53ShowSignup').onclick=()=>choose('signup');el('sv53ShowLogin').onclick=()=>choose('login');
   el('sv60ChooseSignup').onclick=()=>choose('signup');el('sv60ChooseLogin').onclick=()=>choose('login');
   el('sv53ResetPassword').onclick=()=>choose('reset');
-  el('sv53AuthBack').onclick=()=>{form.hidden=true;el('sv53Welcome').hidden=false;form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';};
+  el('sv53AuthBack').onclick=()=>{authCaptcha.clear();form.hidden=true;el('sv53Welcome').hidden=false;form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';};
   function busy(target, value) {target.querySelectorAll('button').forEach(b=>b.disabled=value);}
   const connected = Boolean(window.supabase?.createClient && config?.url && config?.publishableKey);
   if (!connected) {message('Account service could not load. Check your connection and reload.',true);busy(form,true);return;}
@@ -114,6 +120,7 @@
       }
     }else adminHelp?.remove();
     el('sv53Welcome').hidden=signed||recovery||!form.hidden;form.hidden=signed||recovery||form.hidden;
+    if(form.hidden)authCaptcha.clear();
     el('sv5SignedIn').hidden=!signed||recovery;el('sv55Recovery').hidden=!signed||!recovery;
     el('sv55Organizer').hidden=!organizer;el('sv5Admin').hidden=!account?.is_admin;
     el('sv58OrganizerTools').hidden=!organizer;
@@ -248,13 +255,14 @@
     const values=new FormData(form),email=String(values.get('email')||'').trim(),password=String(values.get('password')||'');
     if(mode==='signup'&&password!==values.get('confirm_password')){message('The passwords do not match.',true);return;}
     if(mode==='signup'&&(!String(values.get('first_name')||'').trim()||!String(values.get('last_name')||'').trim())){message('Enter your first and last name.',true);return;}
+    if(mode==='signup'&&password.length<12){message('Use at least 12 characters for your new password.',true);return;}
     busy(form,true);message(mode==='reset'?'Sending reset email…':'Checking account…');
     try {
       if(mode==='reset'){
-        const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:authReturnUrl('recovery')});if(error)throw error;
+        const {error}=await authCaptcha.run(options=>db.auth.resetPasswordForEmail(email,{redirectTo:authReturnUrl('recovery'),...options}));if(error)throw error;
         message('If an account uses that email, a password reset link has been sent.');return;
       }
-      const result=mode==='signup'?await db.auth.signUp({email,password,options:{emailRedirectTo:authReturnUrl(),data:{first_name:String(values.get('first_name')).trim(),last_name:String(values.get('last_name')).trim(),account_type:requestedType}}}):await db.auth.signInWithPassword({email,password});
+      const result=await authCaptcha.run(options=>mode==='signup'?db.auth.signUp({email,password,options:{emailRedirectTo:authReturnUrl(),...options,data:{first_name:String(values.get('first_name')).trim(),last_name:String(values.get('last_name')).trim(),account_type:requestedType}}}):db.auth.signInWithPassword({email,password,options}));
       if(result.error)throw result.error;
       form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';
       if(!result.data.session){message('Check your email and use the newest confirmation link. Then return here to sign in. If you already have an account, choose Sign in.');return;}
@@ -264,11 +272,12 @@
   });
   el('sv55Resend').onclick=async()=>{
     const email=form.elements.namedItem('email').value.trim();if(!email||!form.elements.namedItem('email').checkValidity()){message('Enter a valid email address first.',true);return;}
-    busy(form,true);try{const {error}=await db.auth.resend({type:'signup',email,options:{emailRedirectTo:authReturnUrl()}});if(error)throw error;message('If confirmation is needed, a new link has been sent. Use the newest email.');}catch(e){message(failure(e),true);}finally{busy(form,false);}
+    busy(form,true);try{const {error}=await authCaptcha.run(options=>db.auth.resend({type:'signup',email,options:{emailRedirectTo:authReturnUrl(),...options}}));if(error)throw error;message('If confirmation is needed, a new link has been sent. Use the newest email.');}catch(e){message(failure(e),true);}finally{busy(form,false);}
   };
   el('sv55Recovery').addEventListener('submit',async e=>{
     e.preventDefault();const f=e.currentTarget;if(f.querySelector('button').disabled)return;const values=new FormData(f),password=String(values.get('password')||'');
     if(password!==values.get('confirm_password')){message('The passwords do not match.',true);return;}
+    if(password.length<12){message('Use at least 12 characters for your new password.',true);return;}
     busy(f,true);try{const {error}=await db.auth.updateUser({password});if(error)throw error;f.reset();recovery=false;updateAccountView();message('Password updated.');}catch(err){message(failure(err),true);}finally{busy(f,false);}
   });
   el('sv5Logout').onclick=async()=>{

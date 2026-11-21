@@ -21,7 +21,7 @@ test('a guest can choose signup or login directly and returns to an unsaved RSVP
   try{
     win.document.write(await read('index.html'));const $=id=>win.document.getElementById(id);
     const sources=Array.from(win.document.querySelectorAll('script:not([src])'),s=>s.textContent);
-    for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await read(path));
+    for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-auth-captcha.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await read(path));
     win.eval(sources.join('\n')+'\nwindow.openForTest=id=>openEvent(id);');await settle();
     win.openForTest('live-'+id);await settle();
     assert.equal($('detailSummary').querySelector('.event-summary')!==null,true);
@@ -32,7 +32,7 @@ test('a guest can choose signup or login directly and returns to an unsaved RSVP
     assert.equal($('sv60ChooseSignup').hidden,false);assert.equal(saves.length,0);
     $('sv60ChooseSignup').click();assert.match($('sv53AuthHeading').textContent,/Create your rider account/);
     const form=$('sv5Auth');
-    for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Testing123!',confirm_password:'Testing123!'}))form.elements.namedItem(key).value=value;
+    for(const [key,value] of Object.entries({first_name:'Test',last_name:'Rider',email:'rider@example.test',password:'Testing1234!',confirm_password:'Testing1234!'}))form.elements.namedItem(key).value=value;
     form.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));await settle();
     assert.equal(new URL(registration.options.emailRedirectTo).searchParams.get('event'),'live-'+id);
     assert.match($('sv5Message').textContent,/Check your email/);
