@@ -1,4 +1,22 @@
 const encoder=new TextEncoder();
+const maxWebhookBytes=1048576;
+async function readWebhookBody(request){
+  if(!request.body)return '';
+  const reader=request.body.getReader(),decoder=new TextDecoder();
+  let bytes=0,raw='';
+  try{
+    while(true){
+      const {done,value}=await reader.read();if(done)break;
+      bytes+=value.byteLength;
+      if(bytes>maxWebhookBytes){
+        try{await reader.cancel();}catch{/* The size rejection still applies if cancellation fails. */}
+        return null;
+      }
+      raw+=decoder.decode(value,{stream:true});
+    }
+    return raw+decoder.decode();
+  }finally{reader.releaseLock();}
+}
 export async function verifyStripeSignature(raw,header,secret,now=Date.now()/1000){
   if(typeof secret!=='string'||!secret.startsWith('whsec_')||typeof header!=='string')return false;
   const parts=header.split(',').map(s=>s.trim().split('=')),times=parts.filter(p=>p[0]==='t');
@@ -16,8 +34,9 @@ export async function handleRequest(request,{getSecret,recordEvent,environment='
   const response=(status,message)=>new Response(JSON.stringify({message}),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
   if(request.method!=='POST')return response(405,'POST required');
   const signature=request.headers.get('Stripe-Signature');if(!signature)return response(400,'Stripe signature required');
-  if(Number(request.headers.get('Content-Length'))>1048576)return response(413,'Request too large');
-  const raw=await request.text();if(encoder.encode(raw).length>1048576)return response(413,'Request too large');
+  if(Number(request.headers.get('Content-Length'))>maxWebhookBytes)return response(413,'Request too large');
+  let raw;try{raw=await readWebhookBody(request);}catch{return response(400,'Invalid request body');}
+  if(raw===null)return response(413,'Request too large');
   let secret;try{secret=await getSecret();}catch{return response(503,'Payment confirmation is not configured');}
   if(!await verifyStripeSignature(raw,signature,secret,now()))return response(400,'Invalid Stripe signature');
   let event;try{event=JSON.parse(raw);}catch{return response(400,'Invalid event');}

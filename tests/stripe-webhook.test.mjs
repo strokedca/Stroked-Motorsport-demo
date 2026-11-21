@@ -23,3 +23,25 @@ test('payment handler authenticates before recording, isolates modes and retries
   assert.equal((await handleRequest(new Request('https://example.test',{method:'POST',body:raw}),opts)).status,400);
   assert.equal(minimalEvent(event).data.object.payment_status,'paid');
 });
+test('oversized streamed webhooks stop reading without a trustworthy Content-Length',async()=>{
+  for(const declaredLength of [null,'1']){
+    let chunks=0,cancelled=false,secretReads=0,recorded=0;
+    const body=new ReadableStream({pull(controller){if(++chunks<=6)controller.enqueue(new Uint8Array(262144));else controller.close();},cancel(){cancelled=true;}},{highWaterMark:0});
+    const headers={'Stripe-Signature':'t=1800000000,v1='+'0'.repeat(64)};
+    if(declaredLength!==null)headers['Content-Length']=declaredLength;
+    const request=new Request('https://example.test',{method:'POST',headers,body,duplex:'half'});
+    const result=await handleRequest(request,{getSecret:async()=>{secretReads++;return secret;},recordEvent:async()=>{recorded++;},now:()=>timestamp});
+    assert.equal(result.status,413);
+    assert.equal(cancelled,true,'cancel the oversized input instead of buffering the entire body');
+    assert.ok(chunks<6,'stop before consuming all oversized input chunks');
+    assert.equal(secretReads,0);assert.equal(recorded,0);
+  }
+});
+test('bounded webhook reader preserves signed UTF-8 split across stream chunks',async()=>{
+  const raw=JSON.stringify({id:'evt_stream_fixture',type:'checkout.session.completed',livemode:true,data:{object:{id:'cs_fixture',description:'Événement 🏍️'}}});
+  const bytes=new TextEncoder().encode(raw);let offset=0,recorded=[];
+  const body=new ReadableStream({pull(controller){if(offset<bytes.length)controller.enqueue(bytes.slice(offset,++offset));else controller.close();}},{highWaterMark:0});
+  const request=new Request('https://example.test',{method:'POST',headers:{'Stripe-Signature':sign(raw)},body,duplex:'half'});
+  const result=await handleRequest(request,{getSecret:async()=>secret,recordEvent:async e=>recorded.push(e),now:()=>timestamp});
+  assert.equal(result.status,200);assert.equal(recorded.length,1);assert.equal(recorded[0].id,'evt_stream_fixture');
+});
