@@ -12,7 +12,7 @@
     <dialog id="sv5Panel" aria-labelledby="sv55AccountHeading">
       <div class="account-header"><h2 id="sv55AccountHeading">Your Stroked account</h2><button id="sv5Close" type="button" class="secondary">Close</button></div>
       <div class="account-body">
-        <p class="release-note" ${config.testing ? '' : 'hidden'}>Testing release: submissions, approvals and RSVPs here use separate testing data.</p>
+        <p class="release-note" ${config.testing ? '' : 'hidden'}>Testing release: submissions, approvals and RSVPs here use separate testing data. Sign-in accounts are shared with stroked.ca.</p>
         <p id="sv5Message" role="status" aria-live="polite">Connecting…</p><p id="sv5Identity">Not signed in</p>
         <div id="sv53Welcome"><h3 id="sv55WelcomeHeading">Welcome, riders</h3><p id="sv55WelcomeText">Create a free account to save and update your RSVPs.</p><div class="actions"><button id="sv53ShowSignup" type="button">Create rider account</button><button id="sv53ShowLogin" type="button" class="secondary">Sign in</button></div></div>
         <form id="sv5Auth" hidden>
