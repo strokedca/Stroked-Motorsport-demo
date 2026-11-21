@@ -6,7 +6,7 @@
   rpcPrefix: 'stroked_live_v55_',
   testing: false,
   // Public Turnstile site key only. The secret belongs in Supabase Auth settings.
-  authCaptchaSiteKey: ''
+  authCaptchaSiteKey: '0x4AAAAAAGLvER4xZSM9jwZu'
   };
   // A Pages branch/hash preview must never inherit live event routing from a
   // raw-source upload or a production bundle. Auth still uses the same project.
