@@ -42,7 +42,12 @@ for(const mode of ['testing','production'])test('public cleanup, accounts, redir
   win.supabase={createClient:()=>{clientCount++;return sdk;}};
   // One evaluation keeps classic-script global lexical bindings in this DOM simulator.
   const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
-  for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-pricing.js','assets/stroked-announcements.js','assets/stroked-engagement.js','assets/stroked-auth-captcha.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await readFile(new URL(path,base),'utf8'));
+  for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-sales-pitch.js','assets/stroked-promotions.js','assets/stroked-pricing.js','assets/stroked-announcements.js','assets/stroked-engagement.js','assets/stroked-auth-captcha.js','assets/stroked-live.js','assets/stroked-app.js']){
+    sources.push(await readFile(new URL(path,base),'utf8'));
+    // These offline workflow fixtures do not load third-party verification.
+    // auth-captcha.test.mjs separately checks all proof-required Auth actions.
+    if(path==='assets/stroked-config.js')sources.push("window.STROKED_CONFIG=Object.freeze({...window.STROKED_CONFIG,authCaptchaSiteKey:''});");
+  }
   win.eval(sources.join('\n')+'\nwindow.__testOpenEvent = id => openEvent(id);');
   await settle();assert.equal(clientCount,1);
   assert.equal($('cards').querySelectorAll('article.card').length,1,'only the server event is displayed');assert.doesNotMatch($('cards').textContent,/Stored fictional|Sample|preview/);

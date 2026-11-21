@@ -21,7 +21,11 @@ test('a guest can choose signup or login directly and returns to an unsaved RSVP
   try{
     win.document.write(await read('index.html'));const $=id=>win.document.getElementById(id);
     const sources=Array.from(win.document.querySelectorAll('script:not([src])'),s=>s.textContent);
-    for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-auth-captcha.js','assets/stroked-live.js','assets/stroked-app.js'])sources.push(await read(path));
+    for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js','assets/stroked-auth-captcha.js','assets/stroked-live.js','assets/stroked-app.js']){
+      sources.push(await read(path));
+      // CAPTCHA-specific tests provide their own mocked provider and proofs.
+      if(path==='assets/stroked-config.js')sources.push("window.STROKED_CONFIG=Object.freeze({...window.STROKED_CONFIG,authCaptchaSiteKey:''});");
+    }
     win.eval(sources.join('\n')+'\nwindow.openForTest=id=>openEvent(id);');await settle();
     win.openForTest('live-'+id);await settle();
     assert.equal($('detailSummary').querySelector('.event-summary')!==null,true);
