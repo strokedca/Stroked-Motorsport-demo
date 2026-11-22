@@ -27,3 +27,14 @@ jobs:
       - name: Exercise isolated fixture containers on real Docker
         shell: pwsh
         run: ./scripts/recovery/Test-RecoveryDockerIntegration.ps1
+
+  actual-supabase-startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Reproduce internal-only port loss and exercise real Supabase cold start through fixed-target proxy
+        shell: pwsh
+        run: ./scripts/recovery/Test-RecoveryProxy.ps1
