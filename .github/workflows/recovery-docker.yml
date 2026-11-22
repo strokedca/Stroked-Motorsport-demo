@@ -1,0 +1,29 @@
+name: Local recovery Docker compatibility
+on:
+  pull_request:
+    paths:
+      - 'scripts/recovery/**'
+      - '.github/workflows/recovery-docker.yml'
+permissions:
+  contents: read
+jobs:
+  windows-powershell-51:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Reproduce owner array failure and test correction on Windows PowerShell 5.1
+        shell: powershell
+        run: ./scripts/recovery/Test-RecoveryDocker.ps1 -RequireWindows51
+  real-docker-network:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Exercise isolated fixture containers on real Docker
+        shell: pwsh
+        run: ./scripts/recovery/Test-RecoveryDockerIntegration.ps1
