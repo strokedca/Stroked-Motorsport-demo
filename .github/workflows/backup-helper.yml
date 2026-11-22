@@ -26,6 +26,9 @@ jobs:
       - name: Exercise Storage mapping, ZIP preservation and source recovery
         shell: powershell
         run: ./scripts/backups/Test-StrokedFilesBackup.ps1
+      - name: Verify deployed function exports use a clean workspace
+        shell: powershell
+        run: ./scripts/backups/Test-StrokedFunctionExport.ps1
       - name: Exercise downloaded recovery archive checks with synthetic data
         shell: powershell
         run: ./scripts/backups/Test-StrokedRecovery.ps1

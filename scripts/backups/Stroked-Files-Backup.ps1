@@ -283,8 +283,12 @@ SELECT 'STROKED_INVENTORY_V1:' || replace(encode(convert_to(jsonb_build_object(
         Copy-Item -LiteralPath $config -Destination (Join-Path $configFolder 'hosted-config.toml')
         $functionList = (Invoke-StrokedNative $SupabaseCliPath (@('functions', 'list') + $configCommon) 'Deployed function inventory').Text
         [IO.File]::WriteAllText((Join-Path $configFolder 'deployed-functions.txt'), $functionList)
-        $null = Invoke-StrokedNative $SupabaseCliPath (@('functions', 'download', '--use-api') + $configCommon) 'Deployed function source export'
-        $functionFolder = Join-Path $configWork 'supabase\functions'
+        $functionWork = Join-Path $stage 'function-export-workspace'
+        $null = New-Item -ItemType Directory -Path $functionWork
+        $null = Invoke-StrokedNative $SupabaseCliPath @('init', '--workdir', $functionWork) 'Function export workspace setup'
+        $functionCommon = @(('--remote=' + $project), '--workdir', $functionWork)
+        $null = Invoke-StrokedNative $SupabaseCliPath (@('functions', 'download', '--use-api') + $functionCommon) 'Deployed function source export'
+        $functionFolder = Join-Path $functionWork 'supabase\functions'
         foreach ($requiredFunction in @('stroked-email-alerts', 'stroked-stripe-webhook')) {
             $functionFiles = @(Get-ChildItem -LiteralPath (Join-Path $functionFolder $requiredFunction) -File -Recurse -Force)
             if ($functionFiles.Count -eq 0) { throw 'A required deployed function source export was empty.' }
