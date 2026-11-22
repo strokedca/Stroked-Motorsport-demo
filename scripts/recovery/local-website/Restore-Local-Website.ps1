@@ -4,7 +4,7 @@
 param()
 $ErrorActionPreference='Stop'
 $package=$PSScriptRoot
-foreach($file in @('Local-Core.ps1','Schema-Parser.ps1','Archive-Reader.ps1','Import-Plan.ps1','Website-Tools.ps1','Browser-Controller.ps1')){. (Join-Path $package $file)}
+foreach($file in @('Local-Core.ps1','Schema-Parser.ps1','Archive-Reader.ps1','Import-Plan.ps1','Website-Tools.ps1','Browser-Controller.ps1','Proxy-Tools.ps1')){. (Join-Path $package $file)}
 $project='StrokedRecoverySite'
 $root=Join-Path $env:LOCALAPPDATA 'StrokedBackup'
 $work=Join-Path $env:LOCALAPPDATA $project
@@ -12,9 +12,9 @@ $cli=Join-Path $env:USERPROFILE 'StrokedTools\supabase\supabase.exe'
 $statePath=Join-Path $root 'website-recovery-state.json'
 $reportPath=Join-Path $package ('Stroked-Website-Restore-'+[DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')+'.json')
 $drillLock=$null;$lock=$null;$stage=$null;$keys=$null;$mutated=$false;$script:ActiveTestState=$null;$script:LastSQLState=$null;$script:LastDataExportIssue=$null;$script:LastNativeFailure=$null
-$phase='Starting';$state=@{}
+$phase='Starting';$state=@{};$resumedStartup=$false;$proxyTouched=$false;$script:StartupPhase=$null;$script:NativePrivateLogPrefix=$null
 $report=[ordered]@{
-    ReportType='Stroked isolated website recovery';Version='1.4';StartedUTC=[DateTime]::UtcNow.ToString('o')
+    ReportType='Stroked isolated website recovery';Version='1.5';StartedUTC=[DateTime]::UtcNow.ToString('o')
     LiveProjectContacted=$false;RealEmailDeliveryEnabled=$false;PaymentsEnabled=$false
     CoreWebsiteRecoveryVerified=$false;FullProviderRecoveryVerified=$false;Result='In progress'
     Checks=[ordered]@{}
@@ -29,7 +29,7 @@ function Save-DrillCheckpoint {
     }finally{if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}}
 }
 try {
-    Write-Host 'Stroked local website restore v1.4'
+    Write-Host 'Stroked local website restore v1.5'
     Write-Host '1/7 Checking the existing local recovery setup...'
     $phase='Checking administrator launch';Assert-DrillAdministrator
     $report.Checks.AdministratorLaunchConfirmed=$true
@@ -54,21 +54,34 @@ try {
     $configText=[IO.File]::ReadAllText((Join-Path $work 'supabase\config.toml'))
     if([regex]::Matches($configText,'(?m)^project_id\s*=\s*"StrokedRecoverySite"\s*(?:#[^\r\n]*)?\r?$').Count -ne 1){throw 'Recovery configuration project_id differs.'}
     $phase='Checking scoped Windows firewall';Assert-ScopedFirewall
-    $phase='Checking existing recovery containers'
-    $containers=@(Get-DrillContainers)
-    $db=Get-DrillContainer 'supabase_db_StrokedRecoverySite'
     $phase='Checking local recovery checkpoint'
     if(Test-Path -LiteralPath $statePath){
         $saved=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
         foreach($p in $saved.PSObject.Properties){$state[$p.Name]=$p.Value}
-        if($state.Project -cne $project -or $state.ContainerID -cne $db.Id -or [string]$state.RunID -cnotmatch '^[a-f0-9]{32}$'){throw 'Recovery checkpoint does not match this local container.'}
+        if($state.Project -cne $project -or [string]$state.ContainerID -cnotmatch '^[a-f0-9]{64}$' -or [string]$state.RunID -cnotmatch '^[a-f0-9]{32}$'){throw 'Recovery checkpoint does not match this local container.'}
         $run=Join-Path $root ('website-drill-'+$state.RunID)
         if([string]$state.RunFolder -cne $run -or -not (Test-Path -LiteralPath $run -PathType Container)){throw 'Recovery checkpoint folder differs.'}
         if(((Get-Item -LiteralPath $run).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'The checkpoint folder is a link; review required.'}
+        if($state.LocalTOTPRestartRequested){
+            if($state.ImportAttempted -or $state.ImportCommitted){throw 'An imported clone cannot resume a pre-import restart.'}
+            $phase='Resuming interrupted local authenticator startup'
+            $mutated=$true;$proxyTouched=$true;$resumedStartup=$true
+            Invoke-DrillStackRestart $cli $work $run $package
+        }
+    }
+    $phase='Checking existing recovery containers'
+    $containers=@(Get-DrillContainers);$db=Get-DrillContainer 'supabase_db_StrokedRecoverySite'
+    if($state.RunID){
+        if(-not $resumedStartup -and $state.ContainerID -cne $db.Id){throw 'Recovery checkpoint does not match this local container.'}
         if($state.IsolationApplied){Assert-DrillIsolation}
         if(-not $db.State.Running){$null=Invoke-LocalDocker @('start','supabase_db_StrokedRecoverySite')}
     }
     $phase='Reading local database metadata';$local=Read-DrillMetadata
+    if($resumedStartup){
+        Confirm-DrillRestartMetadata $state $db $local
+        Save-DrillCheckpoint
+        $report.Checks.InterruptedLocalStartupRecovered=$true
+    }
     if([string]$local.postgres -cnotmatch '^17\.'){throw 'PostgreSQL major17 is required for this backup.'}
     if([long]$local.outboundExtensions -ne 0){throw 'An outbound/scheduler extension is active in the local database; review needed.'}
     $marker=$null
@@ -87,6 +100,16 @@ try {
         $state=@{Project=$project;RunID=[Guid]::NewGuid().ToString('N');ContainerID=$db.Id;SourceCommit=[string]$old.sourceMainCommit;IsolationApplied=$false;ImportCommitted=$false}
         $run=Join-Path $root ('website-drill-'+$state.RunID);New-PrivateFolder $run;$state.RunFolder=$run;Save-DrillCheckpoint
     }
+    $phase='Preparing isolated services and loopback proxy'
+    $mutated=$true;$proxyTouched=$true
+    Stop-AllDrillContainers
+    $containers=@(Get-DrillContainers)
+    Set-DrillIsolation $containers
+    $state.IsolationApplied=$true;Save-DrillCheckpoint
+    Ensure-DrillProxy $run $package
+    $null=Invoke-LocalDocker @('start','supabase_db_StrokedRecoverySite')
+    $report.Checks.LoopbackProxyConfigured=$true
+    $report.Checks.ApplicationContainersInternalOnly=$true
     $report.SourceCommit=$state.SourceCommit
     $report.Checks.Postgres=[string]$local.postgres
     $report.Checks.FirewallMatchesExpectedScope=$true
@@ -173,13 +196,13 @@ try {
         [IO.File]::WriteAllText($config,$updated,(New-Object Text.UTF8Encoding($false)))
         $state.LocalTOTPRestartRequested=$true;Save-DrillCheckpoint
         Write-Host 'Enabling authenticator verification in the still-empty local recovery copy...'
-        $null=Invoke-QuietNative $cli @('stop','--workdir',$work) 120
-        $null=Invoke-QuietNative $cli @('start','--network-id','stroked-recovery-internal','--workdir',$work) 240
+        $proxyTouched=$true
+        Invoke-DrillStackRestart $cli $work $run $package
         $containers=@(Get-DrillContainers);$db=Get-DrillContainer 'supabase_db_StrokedRecoverySite' -RequireRunning
-        $state.ContainerID=$db.Id;$state.LocalTOTPRestartRequested=$false;Save-DrillCheckpoint
         Set-DrillIsolation $containers
         $after=Read-DrillMetadata
-        if([long]$after.authUsers -ne 0 -or [long]$after.appTables -ne 0 -or [long]$after.outboundExtensions -ne 0 -or $after.markerExists){throw 'Local restart did not preserve the expected empty recovery state.'}
+        Confirm-DrillRestartMetadata $state $db $after
+        Save-DrillCheckpoint
         $report.Checks.LocalMFAConfigBackupSaved=$true
     }
     $authSettings=Get-ContainerValues (Get-DrillContainer 'supabase_auth_StrokedRecoverySite')
@@ -274,6 +297,7 @@ try {
     if($script:LastNativeFailure){$report.PrimaryNativeFailure=$script:LastNativeFailure}
     $report.Result='Stopped; review required'
     $report.StoppedAt=$phase
+    if($script:StartupPhase){$report.LocalStartupStep=$script:StartupPhase}
     $report.ErrorCode='LOCAL_WEBSITE_RECOVERY_DID_NOT_COMPLETE'
     $report.Failure=Get-DrillFailureSummary $_ $package
     if($script:LastDataExportIssue){$report.DataExportParser=$script:LastDataExportIssue}
@@ -284,12 +308,13 @@ try {
     if($script:ActiveTestState -and $keys -and -not $report.Checks.SyntheticAccountsRemoved){
         try{Remove-DrillTestUsers $script:ActiveTestState $keys;$report.Checks.SyntheticAccountsRemoved=$true}catch{$report.Checks.SyntheticAccountCleanupNeedsReview=$true}
     }
-    if($mutated){
+    if($mutated -and $state.ImportAttempted){
         try{$row=Get-DrillContainer 'supabase_db_StrokedRecoverySite';if($row.State.Running){$null=Invoke-LocalDocker @('exec','--user','root','supabase_db_StrokedRecoverySite','rm','-rf','/tmp/stroked-drill-sql')}}catch{$report.Checks.ContainerSQLCleanupNeedsReview=$true}
     }
     if($mutated -and -not $report.Checks.LocalServicesStopped){
         try{Stop-AllDrillContainers;$report.Checks.LocalServicesStopped=$true}catch{$report.Checks.LocalServicesStopped=$false;if($script:LastNativeFailure){$report.CleanupNativeFailure=$script:LastNativeFailure}}
     }
+    if($proxyTouched){try{Stop-DrillProxy;$report.Checks.LoopbackProxyStopped=$true}catch{$report.Checks.LoopbackProxyStopped=$false}}
     if($stage -and (Test-Path -LiteralPath $stage)){
         try{Remove-Item -LiteralPath $stage -Recurse -Force;$report.Checks.DecryptedTemporaryFilesRemoved=$true}catch{$report.Checks.DecryptedTemporaryFilesRemoved=$false}
     }

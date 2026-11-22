@@ -27,10 +27,11 @@ function Get-DrillCSP([string]$HTML) {
     return "default-src 'self'; script-src 'self' "+$hashes+"; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:54321 ws://127.0.0.1:54321; img-src 'self' data: blob: http://127.0.0.1:54321; font-src 'self' data:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 }
 function Stop-AllDrillContainers {
-    foreach($row in @(Get-DrillContainers)){
+    foreach($row in @(Get-DrillContainers -AllowIncomplete)){
         if($row.State.Running){$null=Invoke-LocalDocker @('stop','--time','15',$row.Name.TrimStart('/'))}
     }
-    if(@(Get-DrillContainers | Where-Object {$_.State.Running}).Count){throw 'Some recovery services are still running.'}
+    if(@(Get-DrillContainers -AllowIncomplete | Where-Object {$_.State.Running}).Count){throw 'Some recovery services are still running.'}
+    if(Get-Command Stop-DrillProxy -ErrorAction SilentlyContinue){Stop-DrillProxy}
 }
 function Start-DrillBrowserServer {
     param([string]$WebRoot,[string]$PackageRoot,$Report,[string]$ReportPath,$Keys,$Test,$RestoredIDs,$AdminIDs,$StoragePaths)
@@ -171,6 +172,7 @@ function Remove-CompletedDrillClone {
     # No force flags: Docker refuses to remove a running container or a volume used elsewhere.
     foreach($row in $rows){$null=Invoke-LocalDocker @('rm',$row.Name.TrimStart('/'))}
     foreach($name in $volumes){$null=Invoke-LocalDocker @('volume','rm',$name)}
+    Remove-DrillProxy
     $net=@(ConvertFrom-DrillDockerArray -Text (Invoke-LocalDocker @('network','inspect','stroked-recovery-internal')))
     if($net.Count -ne 1 -or $net[0].Labels.'stroked.recovery' -cne 'StrokedRecoverySite'){throw 'Recovery network cleanup identity differs.'}
     $null=Invoke-LocalDocker @('network','rm','stroked-recovery-internal')

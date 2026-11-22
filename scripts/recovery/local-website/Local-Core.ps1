@@ -38,27 +38,47 @@
         }
         $text=$outTask.GetAwaiter().GetResult()
         $errorText=$errTask.GetAwaiter().GetResult()
+        if($script:NativePrivateLogPrefix){
+            [IO.File]::WriteAllText($script:NativePrivateLogPrefix+'-stdout.txt',$text,(New-Object Text.UTF8Encoding($false)))
+            [IO.File]::WriteAllText($script:NativePrivateLogPrefix+'-stderr.txt',$errorText,(New-Object Text.UTF8Encoding($false)))
+        }
         if($proc.ExitCode -ne 0) {
             if($errorText -match 'ERROR:\s+([0-9A-Z]{5})\b'){$script:LastSQLState=$Matches[1]}
-            # Safe operation names and exit status only: never report argument
-            # values, native stdout/stderr, SQL, environments or private paths.
+            # Report operation/exit and bounded daemon-only error text. Never
+            # include inspect JSON, SQL/exec output, CLI logs or environments.
             $operation='Local command'
             if([IO.Path]::GetFileName($Program) -ieq 'docker.exe'){
                 $index=0;if($Arguments.Count -ge 3 -and $Arguments[0] -ceq '--host'){$index=2}
-                if($Arguments.Count -gt $index -and $Arguments[$index] -cmatch '^(?:ps|inspect|network|start|stop|exec|cp|rm|volume)$'){
+                if($Arguments.Count -gt $index -and $Arguments[$index] -cmatch '^(?:ps|inspect|network|start|stop|exec|cp|rm|volume|create|pull)$'){
                     $operation='Docker '+$Arguments[$index]
                     if($Arguments[$index] -cin @('network','volume') -and $Arguments.Count -gt ($index+1) -and $Arguments[$index+1] -cmatch '^(?:ls|inspect|create|connect|disconnect|rm)$'){$operation+=' '+$Arguments[$index+1]}
                 }
             }
+            if([IO.Path]::GetFileName($Program) -ieq 'supabase.exe' -and $Arguments[0] -cin @('start','stop','status')){$operation='Supabase '+$Arguments[0]}
             $script:LastNativeFailure=[ordered]@{Operation=$operation;ExitCode=[int]$proc.ExitCode}
+            if($operation -cmatch '^Docker (?:ps|inspect|network|start|stop|create|pull|volume)(?: |$)'){
+                $line=@($errorText -split '\r?\n'|Where-Object {$_.Trim()}|Select-Object -First 1) -join ''
+                $line=[regex]::Replace($line,'(?i)(AGE-SECRET-KEY-[A-Z0-9]+|sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)','[redacted]')
+                $line=[regex]::Replace($line,'(?i)(password|token|secret|authorization|api[_-]?key)\s*[:=]\s*\S+','$1=[redacted]')
+                $line=[regex]::Replace($line,'(?i)[0-9a-f]{32,64}','<id>')
+                $line=[regex]::Replace($line,'(?i)[A-Z]:\\[^\s"\r\n]+','<local-path>')
+                $line=[regex]::Replace($line,'(?i)https?://[^\s]+','<url>')
+                $script:LastNativeFailure.DockerError=$line.Substring(0,[Math]::Min(600,$line.Length))
+            }
+            if($operation -clike 'Supabase *'){
+                $signals=New-Object 'Collections.Generic.List[string]'
+                foreach($pair in @(@('connection refused','ConnectionRefused'),@('timed out|timeout','Timeout'),@('no such host|name resolution','DNSFailure'),@('unhealthy|not ready|health check','ReadinessFailure'),@('address already in use|port is already allocated','PortConflict'),@('failed to parse config|invalid config','ConfigurationFailure'),@('pull access denied|failed to pull','ImagePullFailure'))){if($errorText -match $pair[0]){$signals.Add($pair[1])}}
+                $script:LastNativeFailure.Signals=@($signals.ToArray())
+                $script:LastNativeFailure.Services=@([regex]::Matches($errorText,'supabase_(db|auth|rest|kong|storage|studio|pg_meta|inbucket|realtime|vector|analytics|edge_runtime)_StrokedRecoverySite')|ForEach-Object {$_.Groups[1].Value}|Sort-Object -Unique)
+            }
             throw 'Local command failed. Raw output withheld.'
         }
         return $text
     } finally { $proc.Dispose() }
 }
 
-function Invoke-LocalDocker([string[]]$Arguments) {
-    return Invoke-QuietNative $script:docker (@('--host','npipe:////./pipe/docker_engine')+$Arguments)
+function Invoke-LocalDocker([string[]]$Arguments,[int]$TimeoutSeconds=30) {
+    return Invoke-QuietNative $script:docker (@('--host','npipe:////./pipe/docker_engine')+$Arguments) $TimeoutSeconds
 }
 
 function Resolve-DrillLocalTool([string]$Name) {
@@ -110,7 +130,7 @@ function Get-DrillFailureSummary($Record,[string]$PackageRoot) {
         $result.HResult=[int]$base.HResult
         if($base -is [Net.Sockets.SocketException]){$result.SocketError=[string]$base.SocketErrorCode}
     }
-    $files=@('Restore-Local-Website.ps1','Local-Core.ps1','Schema-Parser.ps1','Archive-Reader.ps1','Import-Plan.ps1','Website-Tools.ps1','Browser-Controller.ps1')
+    $files=@('Restore-Local-Website.ps1','Local-Core.ps1','Schema-Parser.ps1','Archive-Reader.ps1','Import-Plan.ps1','Website-Tools.ps1','Browser-Controller.ps1','Proxy-Tools.ps1')
     $name=[IO.Path]::GetFileName([string]$Record.InvocationInfo.ScriptName)
     if($name -cin $files){$result.ScriptFile=$name;$result.ScriptLine=[int]$Record.InvocationInfo.ScriptLineNumber}
     # Only a complete literal throw string already shipped in this public package
@@ -259,8 +279,9 @@ function Get-DrillContainer([string]$Name,[switch]$RequireRunning) {
     return $items[0]
 }
 function Get-DrillContainers {
+    param([switch]$AllowIncomplete)
     $ids=(Invoke-LocalDocker @('ps','-aq','--filter','label=com.supabase.cli.project=StrokedRecoverySite')).Trim()
-    if(-not $ids){throw 'Local recovery containers are absent.'}
+    if(-not $ids){if($AllowIncomplete){return};throw 'Local recovery containers are absent.'}
     $selectedIDs=@($ids -split '\s+')
     $rows=@(ConvertFrom-DrillDockerArray -Text (Invoke-LocalDocker (@('inspect')+$selectedIDs)))
     if($rows.Count -ne $selectedIDs.Count){throw 'Docker container count differs from the scoped selection.'}
@@ -268,7 +289,7 @@ function Get-DrillContainers {
         $name=$row.Name.TrimStart('/')
         if($name -cnotmatch '^supabase_[a-z0-9_]+_StrokedRecoverySite$' -or $row.Config.Labels.'com.supabase.cli.project' -cne 'StrokedRecoverySite'){throw 'Unexpected container in the recovery project selection.'}
     }
-    foreach($suffix in @('db','auth','rest','storage','kong','inbucket')){if(@($rows | Where-Object {$_.Name -ceq ('/supabase_'+$suffix+'_StrokedRecoverySite')}).Count -ne 1){throw 'A required recovery service is missing.'}}
+    if(-not $AllowIncomplete){foreach($suffix in @('db','auth','rest','storage','kong','inbucket')){if(@($rows | Where-Object {$_.Name -ceq ('/supabase_'+$suffix+'_StrokedRecoverySite')}).Count -ne 1){throw 'A required recovery service is missing.'}}}
     return $rows
 }
 function Assert-DrillAuth {
@@ -311,7 +332,10 @@ function Set-DrillIsolation($Containers) {
     $net=@(ConvertFrom-DrillDockerArray -Text (Invoke-LocalDocker @('network','inspect',$netName)))
     if($net.Count -ne 1 -or -not $net[0].Internal -or $net[0].Driver -cne 'bridge' -or $net[0].Labels.'stroked.recovery' -cne 'StrokedRecoverySite'){throw 'Recovery internal network identity differs.'}
     $expected=@($Containers | ForEach-Object {$_.Id})
-    foreach($attached in $net[0].Containers.PSObject.Properties){if($attached.Name -cnotin $expected){throw 'An unrelated container is on the recovery network.'}}
+    foreach($attached in $net[0].Containers.PSObject.Properties){if($attached.Name -cnotin $expected){
+        if($attached.Value.Name -ceq 'stroked_recovery_loopback_StrokedRecoverySite' -and (Get-DrillProxy).Id -ceq $attached.Name){continue}
+        throw 'An unrelated container is on the recovery network.'
+    }}
     foreach($row in $Containers){
         $name=$row.Name.TrimStart('/')
         $aliases=New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)

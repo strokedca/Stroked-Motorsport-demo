@@ -1,4 +1,4 @@
-STROKED LOCAL WEBSITE RESTORE - 1.4
+STROKED LOCAL WEBSITE RESTORE - 1.5
 Prepared November 22, 2026 for Whisky's existing Surface recovery setup.
 
 RUN ON THE SURFACE
@@ -20,7 +20,8 @@ RUN ON THE SURFACE
    copied to your clipboard when available; return to chat and press Ctrl+V.
 
 The script uses your already verified backup download and existing local
-recovery identity. No new keys, installations or PowerShell pastes are needed.
+recovery identity. It downloads a pinned HAProxy image for local-only access;
+no new recovery keys or PowerShell pastes are needed.
 Enter your password and authenticator codes only in the local website.
 
 WHAT THE PACKAGE DOES
@@ -28,7 +29,8 @@ WHAT THE PACKAGE DOES
 - Checks the exact StrokedRecoverySite containers, local Docker connection,
   PostgreSQL 17, empty-database/checkpoint state, and scoped Windows firewall.
 - Privately opens and verifies the already checked database/files/source pair.
-- Moves only this recovery project's containers to an internal Docker network,
+- Keeps this recovery project's app containers on an internal Docker network,
+  and exposes four fixed services through a localhost-only TCP proxy. It
   checks local-only Auth mail routing, and stops app services during import.
 - Enables authenticator verification in the still-empty local copy if its
   default disables it, saves a private config backup, restarts only this local
@@ -184,3 +186,49 @@ These tests do not replace the Surface website/Auth/browser recovery drill.
 Extract this version into a fresh folder. With Docker Desktop open, run the
 extracted Run-Website-Restore.cmd as administrator. Startup must show v1.4.
 The existing private checkpoint is resumed; no new backup is required.
+
+VERSION 1.5 INTERNAL-NETWORK PORT ACCESS AND INTERRUPTED RESTART
+
+Docker does not publish host ports for internal-only containers. Version1.4
+correctly isolated the app services, but then expected direct published ports
+for the CLI readiness checks and browser. That was a design error in the test.
+Version1.5 uses a dedicated, digest-pinned HAProxy container. Only that proxy
+joins a normal bridge; the app services remain on the internal bridge. Four
+fixed TCP forwards publish only127.0.0.1 ports54321/54322/54323/54324 for API,
+database, Studio and local Mailpit. No dynamic destination or internet proxy
+is configured. The proxy runs nonroot/read-only, drops all capabilities, uses
+no-new-privileges, and mounts only its fixed configuration read-only.
+
+The existing Windows firewall is retained. Proxy identity, exact image digest,
+command, labels, mounts, networks and loopback bindings are checked. The proxy
+gets no Docker socket, owner archives, account records or application secrets.
+It is stopped when the test stops and removed with a successfully completed
+clone. Incomplete recovery retains the stopped proxy/config and checkpoint.
+The normal proxy bridge itself permits outbound routing for the proxy process;
+this is not a claim of total network isolation of the entire Docker engine.
+
+An interrupted, explicitly recorded pre-import CLI restart may recreate the
+local service containers. The existing labeled local database volume must
+match; no original archive/volume is deleted. A replacement database ID is
+accepted only after complete metadata proves PostgreSQL17, zero users, zero
+app tables, no outgoing/scheduler extension and no restore marker. Imported
+or unexpected nonempty copies are refused. Unneeded analytics, Vector, Edge
+Functions, pooler and imgproxy are excluded from this local core-site restart.
+MFA verification remains enabled; it is not bypassed.
+
+The independent real-Docker fixture reproduced the unreachable published
+port without the proxy, then passed actual SupabaseCLI3.2.0 cold startup,
+PostgreSQL readiness, Auth TOTP verification enabled and Auth/Mail HTTP access
+through the proxy. Additional final CI checks exercise the shipped guarded
+volume-preserving restart, container replacement and WindowsPowerShell5.1
+checkpoint guards. This is component evidence; the Surface import/browser
+recovery is still required. The owner-specific original CLI error was not
+retained byv1.4, so its exact text cannot be retrospectively established.
+
+Technical reference: Docker maintainer explanation and supported proxy pattern
+https://github.com/moby/moby/discussions/53256
+
+Extract into a fresh folder; startup must showv1.5. The package can resume the
+interrupted pre-import startup. Safe reports now identify the CLI stop/start
+step and fixed error categories/service names. CLI output remains in private
+local files for diagnosis; it is never copied into the report or clipboard.

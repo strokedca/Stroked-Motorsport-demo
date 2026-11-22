@@ -3,7 +3,15 @@ param([string]$Package=(Join-Path $PSScriptRoot 'local-website'))
 $ErrorActionPreference='Stop'
 . (Join-Path $Package 'Local-Core.ps1')
 . (Join-Path $Package 'Proxy-Tools.ps1')
-function Invoke-LocalDocker([string[]]$Arguments){$r=@(& docker @Arguments 2>&1);if($LASTEXITCODE -ne 0){throw ('Fixture Docker failed: '+($Arguments[0..([Math]::Min(1,$Arguments.Count-1))] -join ' ')+': '+($r -join "`n"))};return ($r -join "`n")}
+function Invoke-LocalDocker([string[]]$Arguments,[int]$TimeoutSeconds=30){$r=@(& docker @Arguments 2>&1);if($LASTEXITCODE -ne 0){throw ('Fixture Docker failed: '+($Arguments[0..([Math]::Min(1,$Arguments.Count-1))] -join ' ')+': '+($r -join "`n"))};return ($r -join "`n")}
+function Invoke-QuietNative([string]$Program,[string[]]$Arguments,[int]$TimeoutSeconds=30){
+    # Only the endpoint/native runner changes for Linux; the restart helper,
+    # stop/start arguments, proxy, volume guard and CLI are the shipped code.
+    $r=@(& $Program @Arguments 2>&1);$code=$LASTEXITCODE
+    if($script:NativePrivateLogPrefix){[IO.File]::WriteAllText($script:NativePrivateLogPrefix+'-fixture.txt',($r -join "`n"))}
+    if($code -ne 0){throw ('Actual fixture CLI failed during '+$Arguments[0])}
+    return ($r -join "`n")
+}
 function Assert-True([bool]$Value,[string]$Message){if(-not $Value){throw $Message}}
 $root=Join-Path ([IO.Path]::GetTempPath()) ('stroked-proxy-ci-'+[guid]::NewGuid().ToString('N'))
 $null=New-Item -ItemType Directory -Path $root
@@ -49,8 +57,15 @@ try{
     $auth=Get-ContainerValues (Get-DrillContainer 'supabase_auth_StrokedRecoverySite' -RequireRunning)
     Assert-True ($auth['GOTRUE_MFA_TOTP_VERIFY_ENABLED'] -ceq 'true') 'Actual Auth TOTP verification setting is not enabled.'
     foreach($row in @(Get-DrillContainers)){Assert-True (@($row.NetworkSettings.Networks.PSObject.Properties.Name).Count -eq 1 -and $row.NetworkSettings.Networks.PSObject.Properties.Name -ceq 'stroked-recovery-internal') 'A real app container has an external network.'}
+    $oldID=$db.Id
+    Invoke-DrillStackRestart $cli $work $root $Package
+    $db=Get-DrillContainer 'supabase_db_StrokedRecoverySite' -RequireRunning
+    Assert-True ($db.Id -cne $oldID) 'CLI restart did not exercise container replacement.'
+    foreach($url in @('http://127.0.0.1:54321/auth/v1/health','http://127.0.0.1:54324/api/v1/messages')){$r=Invoke-WebRequest $url -TimeoutSec 10;Assert-True ($r.StatusCode -eq 200) 'Real API not ready after shipped restart helper.'}
+    $auth=Get-ContainerValues (Get-DrillContainer 'supabase_auth_StrokedRecoverySite' -RequireRunning)
+    Assert-True ($auth['GOTRUE_MFA_TOTP_VERIFY_ENABLED'] -ceq 'true') 'TOTP setting was lost on actual CLI restart.'
     Stop-DrillProxy
-    Write-Host 'PASS: real proxy, localhost-only bindings, actual SupabaseCLI3.2.0 cold start, PostgreSQL readiness, Auth TOTP verification enabled and Auth/Mail HTTP through proxy; application containers internal-only.'
+    Write-Host 'PASS: real proxy, localhost-only bindings, actual SupabaseCLI3.2.0 cold start plus shipped guarded volume-preserving restart/container replacement, PostgreSQL readiness, TOTP verification enabled and Auth/Mail HTTP through proxy; app containers internal-only.'
 }finally{
     $names=(Invoke-LocalDocker @('ps','-aq','--filter','label=com.supabase.cli.project=StrokedRecoverySite')).Trim()
     foreach($id in @($names -split '\s+'|Where-Object {$_})) {try{$null=Invoke-LocalDocker @('stop','--timeout','5',$id);$null=Invoke-LocalDocker @('rm',$id)}catch{}}

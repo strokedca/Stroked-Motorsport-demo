@@ -17,6 +17,9 @@ jobs:
       - name: Reproduce owner array failure and test correction on Windows PowerShell 5.1
         shell: powershell
         run: ./scripts/recovery/Test-RecoveryDocker.ps1 -RequireWindows51
+      - name: Exercise guarded interrupted-startup checkpoint replacement
+        shell: powershell
+        run: ./scripts/recovery/Test-RecoveryStartup.ps1
   real-docker-network:
     runs-on: ubuntu-latest
     timeout-minutes: 10
