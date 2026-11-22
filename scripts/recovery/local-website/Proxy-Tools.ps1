@@ -86,3 +86,13 @@ function Confirm-DrillRestartMetadata($State,$Database,$Metadata) {
     if($Database.Name -cne '/supabase_db_StrokedRecoverySite' -or $Database.Config.Labels.'com.supabase.cli.project' -cne 'StrokedRecoverySite' -or [string]$Database.Id -cnotmatch '^[a-f0-9]{64}$'){throw 'Restart database identity differs.'}
     $State.ContainerID=$Database.Id;$State.LocalTOTPRestartRequested=$false
 }
+function Wait-DrillDatabaseReady {
+    $until=[DateTime]::UtcNow.AddSeconds(60)
+    do{
+        $row=Get-DrillContainer 'supabase_db_StrokedRecoverySite' -RequireRunning
+        if($row.State.Health.Status -ceq 'healthy'){return}
+        if($row.State.Health.Status -ceq 'unhealthy'){throw 'The local database health check is unhealthy.'}
+        Start-Sleep -Milliseconds 500
+    }while([DateTime]::UtcNow -lt $until)
+    throw 'The local database did not become ready in time.'
+}

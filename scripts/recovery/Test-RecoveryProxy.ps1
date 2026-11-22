@@ -53,12 +53,14 @@ try{
         throw 'Actual CLI3.2.0 cold start through loopback proxy failed.'
     }
     foreach($url in @('http://127.0.0.1:54321/auth/v1/health','http://127.0.0.1:54324/api/v1/messages')){$r=Invoke-WebRequest $url -TimeoutSec 10;Assert-True ($r.StatusCode -eq 200) 'Real Auth/Mail API unreachable through proxy.'}
+    Wait-DrillDatabaseReady
     $db=Get-DrillContainer 'supabase_db_StrokedRecoverySite' -RequireRunning
     $auth=Get-ContainerValues (Get-DrillContainer 'supabase_auth_StrokedRecoverySite' -RequireRunning)
     Assert-True ($auth['GOTRUE_MFA_TOTP_VERIFY_ENABLED'] -ceq 'true') 'Actual Auth TOTP verification setting is not enabled.'
     foreach($row in @(Get-DrillContainers)){Assert-True (@($row.NetworkSettings.Networks.PSObject.Properties.Name).Count -eq 1 -and $row.NetworkSettings.Networks.PSObject.Properties.Name -ceq 'stroked-recovery-internal') 'A real app container has an external network.'}
     $oldID=$db.Id
     Invoke-DrillStackRestart $cli $work $root $Package
+    Wait-DrillDatabaseReady
     $db=Get-DrillContainer 'supabase_db_StrokedRecoverySite' -RequireRunning
     Assert-True ($db.Id -cne $oldID) 'CLI restart did not exercise container replacement.'
     foreach($url in @('http://127.0.0.1:54321/auth/v1/health','http://127.0.0.1:54324/api/v1/messages')){$r=Invoke-WebRequest $url -TimeoutSec 10;Assert-True ($r.StatusCode -eq 200) 'Real API not ready after shipped restart helper.'}

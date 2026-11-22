@@ -76,6 +76,7 @@ try {
         if($state.IsolationApplied){Assert-DrillIsolation}
         if(-not $db.State.Running){$null=Invoke-LocalDocker @('start','supabase_db_StrokedRecoverySite')}
     }
+    Wait-DrillDatabaseReady
     $phase='Reading local database metadata';$local=Read-DrillMetadata
     if($resumedStartup){
         Confirm-DrillRestartMetadata $state $db $local
@@ -102,12 +103,13 @@ try {
     }
     $phase='Preparing isolated services and loopback proxy'
     $mutated=$true;$proxyTouched=$true
-    Stop-AllDrillContainers
-    $containers=@(Get-DrillContainers)
-    Set-DrillIsolation $containers
+    $needsMigration=@($containers|Where-Object {@($_.NetworkSettings.Networks.PSObject.Properties.Name).Count -ne 1 -or $_.NetworkSettings.Networks.PSObject.Properties.Name -cne 'stroked-recovery-internal'}).Count -ne 0
+    if($needsMigration){Stop-AllDrillContainers;$containers=@(Get-DrillContainers);Set-DrillIsolation $containers}else{Assert-DrillIsolation}
     $state.IsolationApplied=$true;Save-DrillCheckpoint
     Ensure-DrillProxy $run $package
-    $null=Invoke-LocalDocker @('start','supabase_db_StrokedRecoverySite')
+    $db=Get-DrillContainer 'supabase_db_StrokedRecoverySite'
+    if(-not $db.State.Running){$null=Invoke-LocalDocker @('start','supabase_db_StrokedRecoverySite')}
+    Wait-DrillDatabaseReady
     $report.Checks.LoopbackProxyConfigured=$true
     $report.Checks.ApplicationContainersInternalOnly=$true
     $report.SourceCommit=$state.SourceCommit
