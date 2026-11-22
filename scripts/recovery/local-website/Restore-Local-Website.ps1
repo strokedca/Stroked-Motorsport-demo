@@ -14,7 +14,7 @@ $reportPath=Join-Path $package ('Stroked-Website-Restore-'+[DateTime]::UtcNow.To
 $drillLock=$null;$lock=$null;$stage=$null;$keys=$null;$mutated=$false;$script:ActiveTestState=$null;$script:LastSQLState=$null;$script:LastDataExportIssue=$null;$script:LastNativeFailure=$null
 $phase='Starting';$state=@{};$resumedStartup=$false;$proxyTouched=$false;$script:StartupPhase=$null;$script:NativePrivateLogPrefix=$null
 $report=[ordered]@{
-    ReportType='Stroked isolated website recovery';Version='1.5';StartedUTC=[DateTime]::UtcNow.ToString('o')
+    ReportType='Stroked isolated website recovery';Version='1.6';StartedUTC=[DateTime]::UtcNow.ToString('o')
     LiveProjectContacted=$false;RealEmailDeliveryEnabled=$false;PaymentsEnabled=$false
     CoreWebsiteRecoveryVerified=$false;FullProviderRecoveryVerified=$false;Result='In progress'
     Checks=[ordered]@{}
@@ -29,7 +29,7 @@ function Save-DrillCheckpoint {
     }finally{if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}}
 }
 try {
-    Write-Host 'Stroked local website restore v1.5'
+    Write-Host 'Stroked local website restore v1.6'
     Write-Host '1/7 Checking the existing local recovery setup...'
     $phase='Checking administrator launch';Assert-DrillAdministrator
     $report.Checks.AdministratorLaunchConfirmed=$true
@@ -302,6 +302,48 @@ try {
     if($script:StartupPhase){$report.LocalStartupStep=$script:StartupPhase}
     $report.ErrorCode='LOCAL_WEBSITE_RECOVERY_DID_NOT_COMPLETE'
     $report.Failure=Get-DrillFailureSummary $_ $package
+    if($phase -ceq 'Restored database protections' -and $script:LastNativeFailure.SafeCheckID -cmatch '^DBP[0-9]{2}
+    if($script:LastDataExportIssue){$report.DataExportParser=$script:LastDataExportIssue}
+    if($script:LastSQLState -cmatch '^[0-9A-Z]{5}$'){$report.SQLState=$script:LastSQLState}
+    Write-Host ('Stopped at: '+$phase+'. Attach the generated JSON report; no passwords or private logs are needed.') -ForegroundColor Yellow
+    if($report.Failure.Detail){Write-Host $report.Failure.Detail -ForegroundColor Yellow}
+} finally {
+    if($script:ActiveTestState -and $keys -and -not $report.Checks.SyntheticAccountsRemoved){
+        try{Remove-DrillTestUsers $script:ActiveTestState $keys;$report.Checks.SyntheticAccountsRemoved=$true}catch{$report.Checks.SyntheticAccountCleanupNeedsReview=$true}
+    }
+    if($mutated -and $state.ImportAttempted){
+        try{$row=Get-DrillContainer 'supabase_db_StrokedRecoverySite';if($row.State.Running){$null=Invoke-LocalDocker @('exec','--user','root','supabase_db_StrokedRecoverySite','rm','-rf','/tmp/stroked-drill-sql')}}catch{$report.Checks.ContainerSQLCleanupNeedsReview=$true}
+    }
+    if($mutated -and -not $report.Checks.LocalServicesStopped){
+        try{Stop-AllDrillContainers;$report.Checks.LocalServicesStopped=$true}catch{$report.Checks.LocalServicesStopped=$false;if($script:LastNativeFailure){$report.CleanupNativeFailure=$script:LastNativeFailure}}
+    }
+    if($proxyTouched){try{Stop-DrillProxy;$report.Checks.LoopbackProxyStopped=$true}catch{$report.Checks.LoopbackProxyStopped=$false}}
+    if($stage -and (Test-Path -LiteralPath $stage)){
+        try{Remove-Item -LiteralPath $stage -Recurse -Force;$report.Checks.DecryptedTemporaryFilesRemoved=$true}catch{$report.Checks.DecryptedTemporaryFilesRemoved=$false}
+    }
+    if($lock){$lock.Dispose()}
+    if($drillLock){$drillLock.Dispose()}
+    if($report.Checks.LocalCloneRemoved -and $state.RunID){
+        $ownedRun=Join-Path $root ('website-drill-'+$state.RunID)
+        try{
+            if($state.RunFolder -cne $ownedRun -or ((Get-Item -LiteralPath $ownedRun).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Cleanup folder identity differs.'}
+            Remove-Item -LiteralPath $ownedRun -Recurse -Force
+            if(Test-Path -LiteralPath $statePath){$latest=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json;if($latest.RunID -ceq $state.RunID){Remove-Item -LiteralPath $statePath -Force}}
+            $report.Checks.LocalTemporaryWebsiteFilesRemoved=$true
+        }catch{$report.Checks.LocalTemporaryWebsiteFilesRemoved=$false}
+    }
+    $report.FinishedUTC=[DateTime]::UtcNow.ToString('o')
+    $null=Write-DrillSafeReport $report $reportPath
+    Write-Host ''
+    Write-Host 'Safe recovery report:' -ForegroundColor Green
+    Write-Host $reportPath
+    try {
+        Set-Clipboard -Value ([IO.File]::ReadAllText($reportPath)) -ErrorAction Stop
+        Write-Host 'Return to our chat and press Ctrl+V to paste the safe report.' -ForegroundColor Green
+    } catch {}
+    Write-Host 'The live site and original encrypted archives were not changed.'
+}
+){$report.Checks.DatabaseProtectionFailureCode=$script:LastNativeFailure.SafeCheckID}
     if($script:LastDataExportIssue){$report.DataExportParser=$script:LastDataExportIssue}
     if($script:LastSQLState -cmatch '^[0-9A-Z]{5}$'){$report.SQLState=$script:LastSQLState}
     Write-Host ('Stopped at: '+$phase+'. Attach the generated JSON report; no passwords or private logs are needed.') -ForegroundColor Yellow
