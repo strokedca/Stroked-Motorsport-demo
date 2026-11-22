@@ -56,7 +56,7 @@
             }
             if([IO.Path]::GetFileName($Program) -ieq 'supabase.exe' -and $Arguments[0] -cin @('start','stop','status')){$operation='Supabase '+$Arguments[0]}
             $script:LastNativeFailure=[ordered]@{Operation=$operation;ExitCode=[int]$proc.ExitCode}
-            if($operation -ceq 'Docker exec' -and $errorText -match '\bSTROKED_DRILL_CHECK_(DBP[0-9]{2})\b'){$script:LastNativeFailure.SafeCheckID=$Matches[1]}
+            if($errorText -match '\bSTROKED_DRILL_CHECK_(DBP[0-9]{2})\b'){$script:LastNativeFailure.SafeCheckID=$Matches[1]}
             if($operation -cmatch '^Docker (?:ps|inspect|network|start|stop|create|pull|volume)(?: |$)'){
                 $line=@($errorText -split '\r?\n'|Where-Object {$_.Trim()}|Select-Object -First 1) -join ''
                 $line=[regex]::Replace($line,'(?i)(AGE-SECRET-KEY-[A-Z0-9]+|sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)','[redacted]')
