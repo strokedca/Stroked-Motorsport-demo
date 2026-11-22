@@ -343,7 +343,7 @@ try {
     } catch {}
     Write-Host 'The live site and original encrypted archives were not changed.'
 }
-){$report.Checks.DatabaseProtectionFailureCode=$script:LastNativeFailure.SafeCheckID}
+    if($phase -ceq 'Restored database protections' -and $script:LastNativeFailure.SafeCheckID -cmatch '^(DBP0[1-8])$'){$report.Checks.DatabaseProtectionFailureCode=$script:LastNativeFailure.SafeCheckID}
     if($script:LastDataExportIssue){$report.DataExportParser=$script:LastDataExportIssue}
     if($script:LastSQLState -cmatch '^[0-9A-Z]{5}$'){$report.SQLState=$script:LastSQLState}
     Write-Host ('Stopped at: '+$phase+'. Attach the generated JSON report; no passwords or private logs are needed.') -ForegroundColor Yellow
