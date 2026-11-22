@@ -1,4 +1,4 @@
-STROKED LOCAL WEBSITE RESTORE - 1.5
+STROKED LOCAL WEBSITE RESTORE - 1.6
 Prepared November 22, 2026 for Whisky's existing Surface recovery setup.
 
 RUN ON THE SURFACE
@@ -187,6 +187,15 @@ Extract this version into a fresh folder. With Docker Desktop open, run the
 extracted Run-Website-Restore.cmd as administrator. Startup must show v1.4.
 The existing private checkpoint is resumed; no new backup is required.
 
+VERSION 1.6 SAFE LOCAL PROTECTION DIAGNOSTICS
+
+The restored database-protection verifier now tags each of its eight possible
+assertion failures with a fixed DBP01–DBP08 identifier. Only that allowlisted
+identifier may appear in the recovery JSON report; SQL output, account data,
+and private logs remain withheld. A resumed run uses the committed local import
+and rechecks it; it does not replay the import. The report identifies the failed
+protection check so the next repair is based on evidence.
+
 VERSION 1.5 INTERNAL-NETWORK PORT ACCESS AND INTERRUPTED RESTART
 
 Docker does not publish host ports for internal-only containers. Version1.4
@@ -228,7 +237,7 @@ retained byv1.4, so its exact text cannot be retrospectively established.
 Technical reference: Docker maintainer explanation and supported proxy pattern
 https://github.com/moby/moby/discussions/53256
 
-Extract into a fresh folder; startup must showv1.5. The package can resume the
+Extract into a fresh folder; startup must showv1.6. The package can resume the
 interrupted pre-import startup. Safe reports now identify the CLI stop/start
 step and fixed error categories/service names. CLI output remains in private
 local files for diagnosis; it is never copied into the report or clipboard.
