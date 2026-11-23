@@ -133,7 +133,7 @@ test('authenticated recovery keeps its session flow and enforces the existing tw
   const win=new Window({url:'https://stroked.ca/?auth=recovery',settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});
   try{
     const p=provider(win),updates=[],user={id:'offline-recovery-user',email:'offline@example.test'};
-    win.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{user}}}),getUser:async()=>({data:{user}}),onAuthStateChange:()=>({}),updateUser:async input=>{updates.push(input);return{error:null};}},rpc:async name=>({data:name.endsWith('public_events')||name.endsWith('my_events')?[]:name.endsWith('my_account')?{account_type:'rider',profile:{}}:false})})};
+    win.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:{user}}}),getUser:async()=>({data:{user}}),onAuthStateChange:()=>({}),mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal1',nextLevel:'aal1'},error:null})},updateUser:async input=>{updates.push(input);return{error:null};}},rpc:async name=>({data:name.endsWith('public_events')||name.endsWith('my_events')?[]:name.endsWith('my_account')?{account_type:'rider',profile:{}}:false})})};
     win.document.write(await read('index.html'));
     const sources=[...win.document.querySelectorAll('script:not([src])')].map(script=>script.textContent);
     for(const path of ['assets/stroked-actions.js','assets/stroked-config.js','assets/stroked-core.js'])sources.push(await read(path));
@@ -161,3 +161,4 @@ test('production packaging includes verification and permits only the documented
     assert.ok(html.indexOf('src="assets/stroked-auth-captcha.js')<html.indexOf('src="assets/stroked-live.js'));
   }finally{await rm(dir,{recursive:true,force:true});}
 });
+
