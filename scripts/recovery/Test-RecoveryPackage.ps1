@@ -7,7 +7,7 @@ $root=Join-Path ([IO.Path]::GetTempPath()) ('stroked-packaged-ci-'+[guid]::NewGu
 try{
     $null=New-Item -ItemType Directory -Path $root
     Expand-Archive -LiteralPath $ZipPath -DestinationPath $root
-    $package=Join-Path $root 'Stroked-Local-Website-Restore-v1.8'
+    $package=Join-Path $root 'Stroked-Local-Website-Restore-v1.9'
     $entry=Join-Path $package 'Restore-Local-Website.ps1'
     if(-not (Test-Path -LiteralPath $entry -PathType Leaf)){throw 'Versioned package root is missing.'}
     foreach($file in @(Get-ChildItem -LiteralPath $package -Filter '*.ps1')){
@@ -31,6 +31,7 @@ try{
     & (Join-Path $PSScriptRoot 'Test-RecoveryDocker.ps1') @argsForDocker
     & (Join-Path $PSScriptRoot 'Test-RecoveryStartup.ps1') -Package $package
     & (Join-Path $PSScriptRoot 'Test-RecoveryTableACLPlan.ps1') -Package $package
+    & (Join-Path $PSScriptRoot 'Test-RecoveryRoutineACLPlan.ps1') -Package $package
     Write-Host ('PACKAGE_SHA256='+(Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash.ToLowerInvariant())
     Write-Host ('PACKAGE_BYTES='+(Get-Item -LiteralPath $ZipPath).Length)
     Write-Host ('PASS: extracted ZIP scripts parse and pass shipped-helper regressions on PowerShell '+$PSVersionTable.PSVersion)

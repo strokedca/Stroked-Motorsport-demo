@@ -5,6 +5,8 @@ $ErrorActionPreference='Stop'
 . (Join-Path $Package 'Local-Core.ps1')
 . (Join-Path $Package 'Schema-Parser.ps1')
 . (Join-Path $Package 'Protected-Table-ACL.ps1')
+. (Join-Path $Package 'Import-Plan.ps1')
+. (Join-Path $Package 'Routine-ACL.ps1')
 $docker=(Get-Command docker -CommandType Application | Select-Object -First 1).Source
 $fixture='stroked-protection-ci-'+[guid]::NewGuid().ToString('N')
 $endpoint='unix:///var/run/docker.sock'
@@ -102,6 +104,45 @@ INSERT INTO public.event_admins VALUES('00000000-0000-0000-0000-000000000001');
     if(-not $failed -or $script:LastNativeFailure.SafeCheckID -cne 'DBP04' -or (Run-SQL "SELECT has_table_privilege('anon','public.events','SELECT');").Trim() -cne 'f'){throw 'Permissive archived ACL did not fail and roll back.'}
     $null=Run-SQL $verify
     Write-Host 'PASS: real dump ACL repair, idempotent resume, archived partial grants, service access, data/MFA preservation, foreign-checkpoint refusal and bad-archive rollback.'
+    # Exercise private, public and overloaded function ACLs from a real dump.
+    $null=Run-SQL @'
+CREATE FUNCTION public.fixture_overload(p_arg uuid) RETURNS uuid LANGUAGE sql AS 'SELECT p_arg';
+REVOKE ALL ON FUNCTION public.fixture_overload(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fixture_overload(uuid) TO service_role;
+CREATE FUNCTION public.fixture_overload(p_arg text) RETURNS text LANGUAGE sql AS 'SELECT p_arg';
+GRANT EXECUTE ON FUNCTION public.fixture_overload(text) TO authenticated;
+CREATE FUNCTION auth.fixture_managed() RETURNS boolean LANGUAGE sql AS 'SELECT true';
+GRANT EXECUTE ON FUNCTION auth.fixture_managed() TO anon;
+'@
+    $routineDump=Invoke-QuietNative $docker @('--host',$endpoint,'exec',$fixture,'pg_dump','-h','127.0.0.1','-U','postgres','-d','postgres','--schema-only','--no-owner','--schema=public') 60
+    $routinePath=Join-Path $sourceFolder 'routine-schema.sql'
+    [IO.File]::WriteAllText($routinePath,$routineDump,(New-Object Text.UTF8Encoding($false)))
+    $routineBlocks=@(Get-StrokedDumpBlocks $routinePath)
+    $replay=(@($routineBlocks|Where-Object {$_.Sql -match '(?is)^CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\b' -or ($_.Type -ceq 'ACL OR COMMENT' -and $_.Sql -match '(?is)^(?:GRANT|REVOKE)\b.+?\bON\s+FUNCTION\b')}).Sql -join "`n")
+    $null=Run-SQL 'DROP FUNCTION public.admin_pending_events(),public.get_pending_events(),public.is_event_admin(),public.stroked_live_v55_admin_events(),public.fixture_overload(uuid),public.fixture_overload(text); ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO anon,authenticated;'
+    $null=Run-SQL $replay
+    $failed=$false;try{$null=Run-SQL $verify}catch{$failed=$true}
+    if(-not $failed -or $script:LastNativeFailure.SafeCheckID -cne 'DBP05'){throw 'Real function dump plus local direct defaults did not reproduce DBP05.'}
+    Write-Host 'REPRODUCED: a real function dump removes PUBLIC execution but leaves local direct anon/authenticated defaults, failing DBP05.'
+    $routinePlan=New-DrillRoutineACLPlan $routinePath ('a'*32) ('b'*40)
+    $foreign=New-DrillRoutineACLPlan $routinePath ('c'*32) ('b'*40)
+    $failed=$false;try{$null=Run-SQL $foreign.SQL}catch{$failed=$true}
+    if(-not $failed -or $script:LastSQLState -cne 'PDB09' -or (Run-SQL "SELECT has_function_privilege('anon','public.is_event_admin()','EXECUTE');").Trim() -cne 't'){throw 'Routine checkpoint guard mutated a foreign clone.'}
+    $null=Run-SQL $routinePlan.SQL
+    $null=Run-SQL $routinePlan.SQL
+    $null=Run-SQL $verify
+    $kept=(Run-SQL "SELECT NOT has_function_privilege('anon','public.fixture_overload(uuid)','EXECUTE') AND NOT has_function_privilege('authenticated','public.fixture_overload(uuid)','EXECUTE') AND has_function_privilege('service_role','public.fixture_overload(uuid)','EXECUTE') AND has_function_privilege('anon','public.fixture_overload(text)','EXECUTE') AND has_function_privilege('authenticated','public.stroked_live_v55_admin_events()','EXECUTE') AND has_function_privilege('anon','auth.fixture_managed()','EXECUTE') AND public.fixture_overload('round-trip'::text)='round-trip' AND (SELECT count(*)=1 FROM public.events WHERE id=7) AND (SELECT count(*)=1 FROM auth.mfa_factors);").Trim()
+    if($kept -cne 't'){throw 'Routine replay changed intended private/public overloads, service/current-admin access, managed functions or record data.'}
+    [IO.File]::WriteAllText($routinePath,$routineDump+"`nGRANT EXECUTE ON FUNCTION public.is_event_admin() TO anon;",(New-Object Text.UTF8Encoding($false)))
+    $unsafe=New-DrillRoutineACLPlan $routinePath ('a'*32) ('b'*40)
+    $failed=$false;try{$null=Run-SQL $unsafe.SQL}catch{$failed=$true}
+    if(-not $failed -or $script:LastNativeFailure.SafeCheckID -cne 'DBP05' -or (Run-SQL "SELECT has_function_privilege('anon','public.is_event_admin()','EXECUTE');").Trim() -cne 'f'){throw 'Unsafe retired-RPC archive grants did not fail and roll back.'}
+    [IO.File]::WriteAllText($routinePath,$routineDump+"`nREVOKE EXECUTE ON FUNCTION public.stroked_live_v55_admin_events() FROM authenticated;",(New-Object Text.UTF8Encoding($false)))
+    $unsafe=New-DrillRoutineACLPlan $routinePath ('a'*32) ('b'*40)
+    $failed=$false;try{$null=Run-SQL $unsafe.SQL}catch{$failed=$true}
+    if(-not $failed -or $script:LastNativeFailure.SafeCheckID -cne 'DBP06' -or (Run-SQL "SELECT has_function_privilege('authenticated','public.stroked_live_v55_admin_events()','EXECUTE');").Trim() -cne 't'){throw 'Missing current-administrator archive grant did not fail and roll back.'}
+    $null=Run-SQL $verify
+    Write-Host 'PASS: real function dump repair, typed overloads, PUBLIC baseline, service/current-admin access, data/MFA preservation, repeated resume, foreign-marker refusal and DBP05/DBP06 rollback.'
     Write-Host 'PASS: baseline protection verifier and all eight isolated failure paths; fixed identifiers only, no owner records.'
 }finally{
     & $docker --host $endpoint rm -f -v $fixture > $null 2>&1

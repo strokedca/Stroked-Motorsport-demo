@@ -7,7 +7,7 @@ import hashlib
 from pathlib import Path
 import zipfile
 
-VERSION = "1.8"
+VERSION = "1.9"
 ROOT_NAME = f"Stroked-Local-Website-Restore-v{VERSION}"
 
 

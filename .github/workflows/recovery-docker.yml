@@ -23,11 +23,11 @@ jobs:
         run: |
           python scripts/recovery/Test-RecoveryPackage.py
           if ($LASTEXITCODE -ne 0) { throw 'Package canonicalization regression failed.' }
-          python scripts/recovery/Build-RecoveryPackage.py --output "$env:RUNNER_TEMP/Stroked-Local-Website-Restore-v1.8.zip"
+          python scripts/recovery/Build-RecoveryPackage.py --output "$env:RUNNER_TEMP/Stroked-Local-Website-Restore-v1.9.zip"
           if ($LASTEXITCODE -ne 0) { throw 'Delivery package build failed.' }
       - name: Reproduce duplicate-marker failure and test extracted delivery on Windows PowerShell 5.1
         shell: powershell
-        run: ./scripts/recovery/Test-RecoveryPackage.ps1 -ZipPath "$env:RUNNER_TEMP/Stroked-Local-Website-Restore-v1.8.zip" -RequireWindows51
+        run: ./scripts/recovery/Test-RecoveryPackage.ps1 -ZipPath "$env:RUNNER_TEMP/Stroked-Local-Website-Restore-v1.9.zip" -RequireWindows51
   real-docker-network:
     runs-on: ubuntu-latest
     timeout-minutes: 10

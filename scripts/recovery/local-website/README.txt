@@ -1,4 +1,4 @@
-STROKED LOCAL WEBSITE RESTORE - 1.8
+STROKED LOCAL WEBSITE RESTORE - 1.9
 Prepared November 22, 2026 for Whisky's existing Surface recovery setup.
 
 RUN ON THE SURFACE
@@ -187,6 +187,31 @@ Extract this version into a fresh folder. With Docker Desktop open, run the
 extracted Run-Website-Restore.cmd as administrator. Startup must show v1.4.
 The existing private checkpoint is resumed; no new backup is required.
 
+VERSION 1.9 ARCHIVED APPLICATION FUNCTION PERMISSIONS
+
+The owner v1.8 report confirms the table ACL replay fixed the extra local
+SELECT grants. The next unchanged verifier assertion, DBP05, found retired
+RPC permissions inconsistent with the required service-only access.
+
+This version also restores application function permissions from the verified
+schema archive. Only functions defined in allowed application schemas and
+referenced by archived function ACLs are reset, together with the four required
+retired/current administrator function identities. Existing local browser-role
+grants are cleared, PostgreSQL's ordinary PUBLIC EXECUTE baseline is restored,
+and the archive's explicit GRANT/REVOKE restrictions are replayed in order.
+A matching run/source marker and four zero-argument source definitions are
+required. DBP05 and DBP06 must pass in the same transaction before COMMIT.
+Source permissions that fail either gate are rolled back. Function bodies,
+records, MFA data, managed-schema functions and role memberships are preserved.
+The safe report adds fixed core function names and permission booleans.
+
+Tests reproduce DBP05 from a real pg_dump and broader local defaults, check
+private/public typed overloads and PostgreSQL's PUBLIC baseline, preserve
+service/current-admin and managed-function access, and cover repeat resumes,
+foreign markers and unsafe archive rollback for both DBP05 and DBP06.
+The real CLI fixture checks that PUBLIC revoke leaves direct local function
+defaults in place. Extracted Windows PowerShell 5.1 ZIP checks still apply.
+
 VERSION 1.8 ARCHIVED PROTECTED-TABLE PERMISSIONS
 
 The owner v1.7 run resumed the committed import and identified DBP04.
@@ -279,7 +304,7 @@ retained byv1.4, so its exact text cannot be retrospectively established.
 Technical reference: Docker maintainer explanation and supported proxy pattern
 https://github.com/moby/moby/discussions/53256
 
-Extract into a fresh folder; startup must show v1.8. The package can resume the
+Extract into a fresh folder; startup must show v1.9. The package can resume the
 interrupted pre-import startup. Safe reports now identify the CLI stop/start
 step and fixed error categories/service names. CLI output remains in private
 local files for diagnosis; it is never copied into the report or clipboard.

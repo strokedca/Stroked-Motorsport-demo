@@ -4,7 +4,7 @@
 param()
 $ErrorActionPreference='Stop'
 $package=$PSScriptRoot
-foreach($file in @('Local-Core.ps1','Schema-Parser.ps1','Archive-Reader.ps1','Import-Plan.ps1','Protected-Table-ACL.ps1','Website-Tools.ps1','Browser-Controller.ps1','Proxy-Tools.ps1')){. (Join-Path $package $file)}
+foreach($file in @('Local-Core.ps1','Schema-Parser.ps1','Archive-Reader.ps1','Import-Plan.ps1','Protected-Table-ACL.ps1','Routine-ACL.ps1','Website-Tools.ps1','Browser-Controller.ps1','Proxy-Tools.ps1')){. (Join-Path $package $file)}
 $project='StrokedRecoverySite'
 $root=Join-Path $env:LOCALAPPDATA 'StrokedBackup'
 $work=Join-Path $env:LOCALAPPDATA $project
@@ -14,7 +14,7 @@ $reportPath=Join-Path $package ('Stroked-Website-Restore-'+[DateTime]::UtcNow.To
 $drillLock=$null;$lock=$null;$stage=$null;$keys=$null;$mutated=$false;$script:ActiveTestState=$null;$script:LastSQLState=$null;$script:LastDataExportIssue=$null;$script:LastNativeFailure=$null
 $phase='Starting';$state=@{};$resumedStartup=$false;$proxyTouched=$false;$script:StartupPhase=$null;$script:NativePrivateLogPrefix=$null
 $report=[ordered]@{
-    ReportType='Stroked isolated website recovery';Version='1.8';StartedUTC=[DateTime]::UtcNow.ToString('o')
+    ReportType='Stroked isolated website recovery';Version='1.9';StartedUTC=[DateTime]::UtcNow.ToString('o')
     LiveProjectContacted=$false;RealEmailDeliveryEnabled=$false;PaymentsEnabled=$false
     CoreWebsiteRecoveryVerified=$false;FullProviderRecoveryVerified=$false;Result='In progress'
     Checks=[ordered]@{}
@@ -29,7 +29,7 @@ function Save-DrillCheckpoint {
     }finally{if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}}
 }
 try {
-    Write-Host 'Stroked local website restore v1.8'
+    Write-Host 'Stroked local website restore v1.9'
     Write-Host '1/7 Checking the existing local recovery setup...'
     $phase='Checking administrator launch';Assert-DrillAdministrator
     $report.Checks.AdministratorLaunchConfirmed=$true
@@ -244,6 +244,14 @@ try {
     $report.Checks.ProtectedTableACLReplayedFromVerifiedArchive=$true
     $report.Checks.ProtectedTableACLSourceStatementCount=$protectedACL.StatementCount
     $report.Checks.ProtectedTableGrantsAfter=Read-DrillProtectedTableGrants
+    $phase='Restored routine permissions'
+    $report.Checks.CoreRoutineGrantsBefore=@(Read-DrillCoreRoutineGrants)
+    $routineACL=New-DrillRoutineACLPlan (Join-Path $payload 'schema.sql') $state.RunID $state.SourceCommit
+    $null=Invoke-DrillSQL $routineACL.SQL 'supabase_admin'
+    $report.Checks.ApplicationRoutineACLReplayedFromVerifiedArchive=$true
+    $report.Checks.ApplicationRoutineACLIdentityCount=$routineACL.IdentityCount
+    $report.Checks.ApplicationRoutineACLSourceStatementCount=$routineACL.StatementCount
+    $report.Checks.CoreRoutineGrantsAfter=@(Read-DrillCoreRoutineGrants)
     $phase='Restored database protections'
     $core=[IO.File]::ReadAllText((Join-Path $package 'verify-core.sql'))
     $null=Invoke-DrillSQL $core 'supabase_admin'
@@ -309,7 +317,7 @@ try {
     if($script:StartupPhase){$report.LocalStartupStep=$script:StartupPhase}
     $report.ErrorCode='LOCAL_WEBSITE_RECOVERY_DID_NOT_COMPLETE'
     $report.Failure=Get-DrillFailureSummary $_ $package
-    if($phase -cin @('Restored table permissions','Restored database protections') -and $script:LastNativeFailure.SafeCheckID -cmatch '^DBP0[1-8]\b'){$report.Checks.DatabaseProtectionFailureCode=$script:LastNativeFailure.SafeCheckID}
+    if($phase -cin @('Restored table permissions','Restored routine permissions','Restored database protections') -and $script:LastNativeFailure.SafeCheckID -cmatch '^DBP0[1-8]\b'){$report.Checks.DatabaseProtectionFailureCode=$script:LastNativeFailure.SafeCheckID}
     if($script:LastDataExportIssue){$report.DataExportParser=$script:LastDataExportIssue}
     if($script:LastSQLState -cmatch '^[0-9A-Z]{5}$'){$report.SQLState=$script:LastSQLState}
     Write-Host ('Stopped at: '+$phase+'. Attach the generated JSON report; no passwords or private logs are needed.') -ForegroundColor Yellow
