@@ -38,3 +38,5 @@ button:disabled{opacity:.6;cursor:wait}
 @media(max-width:650px){.admin-section-nav{top:61px;gap:5px}.admin-section-nav button{font-size:12px;flex:1 1 43%;padding:7px}}
 
 .stroked-authenticator-qr{display:block;width:200px;height:200px;max-width:100%;padding:10px;background:#fff;margin:12px 0}#strokedAccountSecurity input[readonly]{font-family:monospace;letter-spacing:.03em}#strokedAccountSecurity form{margin-top:12px}
+
+.rider-join{margin:18px 0;border-left:4px solid #d2473d}.rider-join h2{margin-top:0}.traffic-table{overflow-x:auto}.traffic-table table{width:100%;border-collapse:collapse;font-size:14px}.traffic-table th,.traffic-table td{text-align:left;padding:9px;border-bottom:1px solid #526174}.traffic-table th{white-space:nowrap}.traffic-privacy{max-width:850px;margin:18px auto;text-align:left;font-size:14px}.traffic-privacy summary{cursor:pointer}.traffic-privacy input{width:auto;margin-right:6px}
