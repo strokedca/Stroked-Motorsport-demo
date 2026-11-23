@@ -112,8 +112,10 @@ Private failures expose a safe error category; full native diagnostics stay in
 the private local run folder. No bucket privacy or access policy is changed.
 
 It mirrors the public source repository, creates/verifies an all-ref Git bundle,
-downloads deployed Edge Function code and records a Supabase config pull under a
-separate remote-label block in a private local workspace. Cron definitions,
+downloads deployed Edge Function code from a separate freshly initialized CLI
+workspace and records a Supabase config pull under a remote-label block in its
+own private local workspace. Keeping function downloads separate prevents pulled
+hosted configuration from affecting local download validation. Cron definitions,
 extensions/publications, masked-settings reports and source refs are retained
 as confidential references. Config pull writes only the local temporary file;
 no configuration push, deployment or remote mutation runs.
