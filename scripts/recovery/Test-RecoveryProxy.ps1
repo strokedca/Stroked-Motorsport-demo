@@ -55,6 +55,9 @@ try{
     foreach($url in @('http://127.0.0.1:54321/auth/v1/health','http://127.0.0.1:54324/api/v1/messages')){$r=Invoke-WebRequest $url -TimeoutSec 10;Assert-True ($r.StatusCode -eq 200) 'Real Auth/Mail API unreachable through proxy.'}
     Wait-DrillDatabaseReady
     $db=Get-DrillContainer 'supabase_db_StrokedRecoverySite' -RequireRunning
+    $localDefaults=(Invoke-LocalDocker @('exec','supabase_db_StrokedRecoverySite','psql','-U','supabase_admin','-d','postgres','-X','-q','-A','-t','-v','ON_ERROR_STOP=1','-c',"BEGIN; CREATE TABLE public.stroked_acl_fixture(id integer); SELECT has_table_privilege('anon','public.stroked_acl_fixture','SELECT'),has_table_privilege('authenticated','public.stroked_acl_fixture','SELECT'); ROLLBACK;")).Trim()
+    Assert-True ($localDefaults -ceq 't|t') 'Supabase creation-default SELECT grants did not reproduce.'
+    Write-Host 'CONFIRMED: actual SupabaseCLI3.2.0 gives a table created as supabase_admin in public extra anon/authenticated SELECT grants.'
     $auth=Get-ContainerValues (Get-DrillContainer 'supabase_auth_StrokedRecoverySite' -RequireRunning)
     Assert-True ($auth['GOTRUE_MFA_TOTP_VERIFY_ENABLED'] -ceq 'true') 'Actual Auth TOTP verification setting is not enabled.'
     foreach($row in @(Get-DrillContainers)){Assert-True (@($row.NetworkSettings.Networks.PSObject.Properties.Name).Count -eq 1 -and $row.NetworkSettings.Networks.PSObject.Properties.Name -ceq 'stroked-recovery-internal') 'A real app container has an external network.'}
@@ -74,3 +77,4 @@ try{
     try{Stop-DrillProxy;$null=Invoke-LocalDocker @('rm','stroked_recovery_loopback_StrokedRecoverySite')}catch{}
     foreach($name in @('stroked-recovery-loopback','stroked-recovery-internal')){try{$null=Invoke-LocalDocker @('network','rm',$name)}catch{}}
 }
+

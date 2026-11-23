@@ -1,4 +1,4 @@
-STROKED LOCAL WEBSITE RESTORE - 1.7
+STROKED LOCAL WEBSITE RESTORE - 1.8
 Prepared November 22, 2026 for Whisky's existing Surface recovery setup.
 
 RUN ON THE SURFACE
@@ -187,6 +187,30 @@ Extract this version into a fresh folder. With Docker Desktop open, run the
 extracted Run-Website-Restore.cmd as administrator. Startup must show v1.4.
 The existing private checkpoint is resumed; no new backup is required.
 
+VERSION 1.8 ARCHIVED PROTECTED-TABLE PERMISSIONS
+
+The owner v1.7 run resumed the committed import and identified DBP04.
+The source security fix denies direct anon/authenticated SELECT on legacy
+public.events and on stroked_live_v55.admin_security. Supabase local creation
+defaults can add grants that a plain dump GRANT does not remove.
+
+After verifying the encrypted archive pair and existing clone checkpoint,
+this version resets browser-role table grants on exactly those two tables
+and replays their GRANT/REVOKE statements from the verified schema archive.
+The replay requires both table definitions and the matching run/source marker.
+It occurs in one transaction with a final DBP04 assertion; a permissive source
+ACL is refused and rolled back. Data, factors and role memberships are not
+replayed by this step. The original eight verifier conditions remain intact.
+The report records only before/after privilege booleans and a statement count.
+
+The tests reproduce DBP04 with a real pg_dump restored into broader defaults,
+then check archive ACL replay, repeat runs, partial write grants, service access,
+record/MFA preservation, foreign checkpoint refusal and bad-archive rollback.
+The actual CLI fixture separately checks Supabase's table creation defaults.
+The ZIP continues to be tested after extraction on Windows PowerShell 5.1.
+The exact owner-side local grant source remains to be confirmed from the next
+report; these independent fixtures do not read owner archives or account data.
+
 VERSION 1.7 PACKAGED WINDOWS SCRIPT AND SQLSTATE REPAIR
 
 The v1.6 ZIP had duplicate UTF-8 encoding markers on two PowerShell scripts.
@@ -255,7 +279,7 @@ retained byv1.4, so its exact text cannot be retrospectively established.
 Technical reference: Docker maintainer explanation and supported proxy pattern
 https://github.com/moby/moby/discussions/53256
 
-Extract into a fresh folder; startup must show v1.7. The package can resume the
+Extract into a fresh folder; startup must show v1.8. The package can resume the
 interrupted pre-import startup. Safe reports now identify the CLI stop/start
 step and fixed error categories/service names. CLI output remains in private
 local files for diagnosis; it is never copied into the report or clipboard.
