@@ -34,6 +34,7 @@ test('approved businesses rotate in one homepage banner with safe links and manu
   try{
     await tools.refreshPublic();
     assert.equal($('browse').firstElementChild,$('sv56BusinessBanner'));
+    assert.equal($('browse').querySelector('h2').textContent,'Find your next event','the app can still find the event search heading');
     assert.equal($('sv56BusinessBanner').hidden,false);
     assert.equal($('sv56BusinessControls').hidden,false);
     assert.equal(s.current(),'one');

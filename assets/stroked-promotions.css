@@ -24,7 +24,7 @@
 /* Approved business advertisements share one homepage banner. */
 .sv56-business-banner{margin:0 0 22px;border:1px solid #a45c50;border-radius:12px;overflow:hidden;background:linear-gradient(115deg,#33232a,#19232f);box-shadow:0 8px 28px #0003}
 .sv56-business-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid #835047;background:#241e25}
-.sv56-business-heading h2{margin:0;color:#ffd5c7;font-size:13px;letter-spacing:1px;text-transform:uppercase}.sv56-business-heading span{font-size:11px;color:#c6b9bb}
+.sv56-business-heading p{margin:0;color:#ffd5c7;font-size:13px;letter-spacing:1px;text-transform:uppercase;font-weight:700}.sv56-business-heading span{font-size:11px;color:#c6b9bb}
 .sv56-business-slide{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:center;min-height:250px}.sv56-business-text{grid-template-columns:minmax(0,1fr)}
 .sv56-business-copy{padding:24px;min-width:0;overflow-wrap:anywhere}.sv56-business-copy h3{font-size:clamp(24px,3.4vw,36px);line-height:1.15;margin:0 0 10px;color:#fff}.sv56-business-tagline{display:block;color:#ffd7c7;font-size:17px;line-height:1.4}
 .sv56-business-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;white-space:pre-wrap;line-height:1.5;color:#d0d6df;margin:10px 0 16px}.sv56-business-copy .btn{display:inline-block;text-decoration:none;margin-top:8px;min-height:44px}
