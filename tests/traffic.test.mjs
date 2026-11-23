@@ -110,6 +110,21 @@ test('traffic deduplicates retries and monthly visitors, separates visits, prote
     assert.equal(data.months[0].visitors, 2, 'monthly visitors are not the sum of daily visitors');
 
     await pg.exec('reset role');
+    const earlier = await read('supabase/migrations/20261123175000_earlier_traffic_activity.sql');
+    await pg.exec(earlier);
+    await pg.exec(earlier);
+    await actor(1, 'aal2');
+    const history = (await pg.query("select public.stroked_live_v55_admin_traffic_stats('2026-11-01') value")).rows[0].value;
+    assert.equal(history.historical_activity.length, 1, 'an import can be retried without duplication');
+    assert.equal(history.historical_activity[0].requests, 34);
+    assert.equal(history.historical_activity[0].browser_network_combinations, 15);
+    assert.deepEqual((await report()).rows[0].value.summary, {visitors:2, visits:3, page_views:4},
+      'earlier request logs never inflate browser-based totals');
+    await actor(2, 'aal2');
+    await assert.rejects(() => pg.query('select * from stroked_analytics.historical_activity'), /permission denied/);
+    await assert.rejects(report, /Administrator only/);
+
+    await pg.exec('reset role');
     await pg.query("update stroked_analytics.receipts set received_at=now()-interval '3 days'");
     await pg.query("update stroked_analytics.sessions set last_seen=now()-interval '3 days'");
     await pg.exec('select stroked_analytics.prune()');
@@ -132,8 +147,12 @@ test('browser tracking preserves a random identity and respects privacy, preview
     win.STROKED_CONFIG = {url:'https://example.test', publishableKey:'public-key', testing:false};
     win.fetch = async (url, options) => { calls.push({url, ...JSON.parse(options.body)}); return {status:204}; };
     win.eval(script);
+    const metrics = {month:'2026-11-01', timezone:'America/Halifax', tracking_started_at:'2026-11-23T16:46:31Z',
+      updated_at:'2026-11-23T17:00:00Z', summary:{visitors:2, visits:3, page_views:4}, days:[], months:[], sources:[],
+      historical_activity:[{window_start:'2026-11-23T12:00:00Z', window_end:'2026-11-23T16:46:31Z', requests:34,
+        browser_network_combinations:15, method:'Earlier request evidence can overlap with tracked visitors.'}]};
     const module = win.StrokedTraffic.mount({db:{auth:{getSession:async () => ({data:{session:null}})}},
-      rpc:async () => {}, config:win.STROKED_CONFIG});
+      rpc:async () => metrics, config:win.STROKED_CONFIG});
     await module.start();
     assert.equal(calls.length, 1);
     assert.equal(calls[0].path, '/');
@@ -146,6 +165,19 @@ test('browser tracking preserves a random identity and respects privacy, preview
     assert.equal(win.localStorage.getItem('stroked-traffic-excluded'), '1');
     assert.equal(win.localStorage.getItem('stroked-traffic-browser'), null);
     assert.equal(win.document.querySelector('.traffic-privacy input').checked, true);
+    win.document.dispatchEvent(new win.CustomEvent('stroked:open-admin-traffic'));
+    await settle();
+    const section = win.document.getElementById('sv58Traffic');
+    assert.deepEqual(Array.from(section.querySelectorAll('dd'), cell => cell.textContent), ['2', '3', '4']);
+    assert.match(section.textContent, /34 successful event-list requests across 15 browser\/IP combinations/);
+    let downloaded;
+    win.URL.createObjectURL = blob => { downloaded = blob; return 'blob:test'; };
+    win.document.addEventListener('click', event => { if (event.target.tagName === 'A') event.preventDefault(); });
+    Array.from(section.querySelectorAll('button')).find(button => button.textContent === 'Download CSV').click();
+    assert.match(await downloaded.text(), /"34","15"/);
+    module.setAccount(null);
+    assert.equal(section.querySelectorAll('dd').length, 0);
+    assert.doesNotMatch(section.textContent, /34 successful event-list requests/);
   } finally { await win.happyDOM.abort(); }
   for (const scenario of ['opt-out', 'privacy-signal', 'preview']) {
     const page = new Window({url:scenario === 'preview' ? 'https://branch.stroked-motorsport-demo.pages.dev/about.html' : 'https://stroked.ca/about.html'});
