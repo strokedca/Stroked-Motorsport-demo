@@ -134,6 +134,29 @@ test('traffic deduplicates retries and monthly visitors, separates visits, prote
     await pg.exec('reset role');
     await pg.query('update stroked_analytics.rate_limits set minute_hits=120');
     assert.equal(await record(15, 5), false, 'network burst limit prevents extra counted views');
+
+    await pg.exec('reset role');
+    await pg.exec('alter table auth.users add column created_at timestamptz default now(), add column deleted_at timestamptz, add column is_anonymous boolean default false');
+    await pg.exec(await read('supabase/migrations/20261112024007_admin_signup_stats.sql'));
+    const totalsMigration = await read('supabase/migrations/20261123200000_audience_totals.sql');
+    await pg.exec(totalsMigration);
+    await pg.exec(totalsMigration);
+    await pg.exec("insert into stroked_analytics.monthly values('2026-12-01',2,7,12),('2027-01-01',3,11,21)");
+    const audience = () => pg.query("select public.stroked_live_v55_admin_audience_stats('2026-11-01') value");
+    await actor(null);
+    await assert.rejects(audience, /permission denied/);
+    await actor(2, 'aal2');
+    await assert.rejects(audience, /Administrator only/);
+    await actor(1);
+    await assert.rejects(audience, /Administrator only/, 'totals require the same MFA as monthly reports');
+    await actor(1, 'aal2');
+    const totalReport = (await audience()).rows[0].value;
+    assert.deepEqual(totalReport.summary, {visitors:2, visits:3, page_views:4});
+    assert.deepEqual(totalReport.all_time, {visits:21, page_views:37});
+    assert.deepEqual(totalReport.years, [{year:2027,visits:11,page_views:21},{year:2026,visits:10,page_views:16}]);
+    assert.deepEqual(totalReport.members, {email_confirmed:2, registered:2});
+    assert.equal(totalReport.historical_activity[0].requests, 34);
+    assert.equal('visitors' in totalReport.all_time, false, 'monthly unique audiences are never added into a lifetime visitor claim');
   } finally { await pg.close(); }
 });
 
@@ -148,7 +171,10 @@ test('browser tracking preserves a random identity and respects privacy, preview
     win.fetch = async (url, options) => { calls.push({url, ...JSON.parse(options.body)}); return {status:204}; };
     win.eval(script);
     const metrics = {month:'2026-11-01', timezone:'America/Halifax', tracking_started_at:'2026-11-23T16:46:31Z',
-      updated_at:'2026-11-23T17:00:00Z', summary:{visitors:2, visits:3, page_views:4}, days:[], months:[], sources:[],
+      updated_at:'2026-11-23T17:00:00Z', summary:{visitors:2, visits:3, page_views:4}, days:[],
+      all_time:{visits:21,page_views:37}, members:{email_confirmed:5,registered:6},
+      years:[{year:2027,visits:11,page_views:21},{year:2026,visits:10,page_views:16}],
+      months:[{month:'2026-11-01',visitors:2,visits:3,page_views:4},{month:'2026-12-01',visitors:2,visits:7,page_views:12},{month:'2027-01-01',visitors:3,visits:11,page_views:21}], sources:[],
       historical_activity:[{window_start:'2026-11-23T12:00:00Z', window_end:'2026-11-23T16:46:31Z', requests:34,
         browser_network_combinations:15, method:'Earlier request evidence can overlap with tracked visitors.'}]};
     const module = win.StrokedTraffic.mount({db:{auth:{getSession:async () => ({data:{session:null}})}},
@@ -174,6 +200,24 @@ test('browser tracking preserves a random identity and respects privacy, preview
     win.URL.createObjectURL = blob => { downloaded = blob; return 'blob:test'; };
     win.document.addEventListener('click', event => { if (event.target.tagName === 'A') event.preventDefault(); });
     Array.from(section.querySelectorAll('button')).find(button => button.textContent === 'Download CSV').click();
+    assert.match(await downloaded.text(), /"34","15"/);
+    const view = Array.from(section.querySelectorAll('select')).find(select => select.options[0].textContent === 'Monthly');
+    view.value = 'year';
+    view.dispatchEvent(new win.Event('change'));
+    assert.deepEqual(Array.from(section.querySelectorAll('dd'), cell => cell.textContent), ['10', '16']);
+    const reportingYear = Array.from(section.querySelectorAll('select')).find(select => select !== view);
+    reportingYear.value = '2027';
+    reportingYear.dispatchEvent(new win.Event('change'));
+    assert.deepEqual(Array.from(section.querySelectorAll('dd'), cell => cell.textContent), ['11', '21']);
+    assert.doesNotMatch(section.textContent, /34 successful event-list requests/);
+    Array.from(section.querySelectorAll('button')).find(button => button.textContent === 'Download CSV').click();
+    assert.match(await downloaded.text(), /"Year","2027","","11","21"/);
+    assert.doesNotMatch(await downloaded.text(), /"Month","2026-11/);
+    view.value = 'all';
+    view.dispatchEvent(new win.Event('change'));
+    assert.deepEqual(Array.from(section.querySelectorAll('dd'), cell => cell.textContent), ['21', '37', '5']);
+    Array.from(section.querySelectorAll('button')).find(button => button.textContent === 'Download CSV').click();
+    assert.match(await downloaded.text(), /"All time","Since tracking began","","21","37"/);
     assert.match(await downloaded.text(), /"34","15"/);
     module.setAccount(null);
     assert.equal(section.querySelectorAll('dd').length, 0);
