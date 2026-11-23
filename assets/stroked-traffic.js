@@ -18,10 +18,25 @@
     if (content !== undefined) result.textContent = content;
     return result;
   }
-  const privacy = node('details');
+  const privacy = node('dialog');
+  privacy.id = 'strokedTrafficPrivacy';
   privacy.className = 'traffic-privacy';
-  privacy.append(node('summary', 'Visitor privacy'));
-  privacy.append(node('p', 'Stroked measures visits using a random browser identifier stored on this device for up to one year. Reports contain daily and monthly traffic totals and broad referral sources. Network addresses are briefly processed for rate limits and stored as a changing hash for up to two days. Server browser identifiers are removed within two calendar months. Aggregate history is retained for advertising reports.'));
+  privacy.setAttribute('aria-labelledby', 'strokedTrafficPrivacyHeading');
+  privacy.setAttribute('aria-describedby', 'strokedTrafficPrivacyNotice');
+  const privacyHeading = node('div');
+  privacyHeading.className = 'traffic-privacy-heading';
+  const privacyTitle = node('h2', 'Privacy information');
+  privacyTitle.id = 'strokedTrafficPrivacyHeading';
+  const privacyClose = node('button', 'Close');
+  privacyClose.type = 'button';
+  privacyClose.className = 'traffic-privacy-close';
+  privacyClose.setAttribute('autofocus', '');
+  privacyHeading.append(privacyTitle, privacyClose);
+  const privacyNotice = node('p', 'We use limited technical information to count site visits, understand traffic and prepare overall audience reports. These traffic reports do not include your name, email address or member account details.');
+  privacyNotice.id = 'strokedTrafficPrivacyNotice';
+  privacy.append(privacyHeading, privacyNotice);
+  privacy.append(node('p', 'The counter uses a random browser identifier stored on this device for up to one year. Reports contain daily and monthly totals and broad referral sources. Network addresses are briefly processed for rate limits and stored as changing hashes for up to two days. Server browser identifiers are removed within two calendar months. Aggregate history is retained for advertising reports.'));
+  privacy.append(node('p', 'If you have a member account, your account details are stored separately to operate your account.'));
   const privacyLabel = node('label');
   const optOut = node('input');
   optOut.type = 'checkbox';
@@ -29,16 +44,26 @@
   optOut.disabled = privacySignal;
   privacyLabel.append(optOut, ' Exclude this browser from traffic reports');
   privacy.append(privacyLabel);
+  privacy.append(node('p', 'This setting applies only to this browser on this device.'));
   if (privacySignal) privacy.append(node('p', 'Your browser privacy signal has disabled traffic measurement.'));
-  document.querySelector('footer')?.append(privacy);
+  const privacyLink = node('button', 'Privacy information');
+  privacyLink.type = 'button';
+  privacyLink.className = 'traffic-privacy-link';
+  privacyLink.setAttribute('aria-haspopup', 'dialog');
+  privacyLink.setAttribute('aria-controls', privacy.id);
+  document.querySelector('footer')?.append(privacyLink);
+  document.body.append(privacy);
+  privacyLink.addEventListener('click', () => { if (!privacy.open) privacy.showModal(); });
+  privacyClose.addEventListener('click', () => privacy.close());
+  privacy.addEventListener('close', () => privacyLink.focus());
 
   function excludeBrowser(value) {
     excluded = value;
-    optOut.checked = value || privacySignal;
     try {
       localStorage.setItem(excludeKey, value ? '1' : '0');
       if (value) localStorage.removeItem(browserKey);
     } catch { excluded = true; }
+    optOut.checked = excluded || privacySignal;
   }
   optOut.addEventListener('change', () => {
     excludeBrowser(optOut.checked);

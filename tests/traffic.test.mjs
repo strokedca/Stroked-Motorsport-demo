@@ -170,6 +170,30 @@ test('browser tracking preserves a random identity and respects privacy, preview
     win.STROKED_CONFIG = {url:'https://example.test', publishableKey:'public-key', testing:false};
     win.fetch = async (url, options) => { calls.push({url, ...JSON.parse(options.body)}); return {status:204}; };
     win.eval(script);
+    const privacy = win.document.querySelector('.traffic-privacy');
+    const privacyLink = win.document.querySelector('footer .traffic-privacy-link');
+    assert.equal(privacyLink.textContent, 'Privacy information');
+    assert.equal(win.document.querySelector('footer input'), null, 'the checkbox has moved out of the footer');
+    assert.equal(privacy.open, false);
+    privacyLink.click();
+    assert.equal(privacy.open, true);
+    assert.match(privacy.textContent, /limited technical information/);
+    assert.match(privacy.textContent, /random browser identifier/);
+    assert.match(privacy.textContent, /account details are stored separately/);
+    const choice = privacy.querySelector('input');
+    choice.checked = true;
+    choice.dispatchEvent(new win.Event('change'));
+    await win.StrokedTraffic.start();
+    assert.equal(calls.length, 0, 'the relocated choice still prevents collection');
+    assert.equal(win.localStorage.getItem('stroked-traffic-excluded'), '1');
+    privacy.querySelector('.traffic-privacy-close').click();
+    assert.equal(privacy.open, false);
+    assert.equal(win.document.activeElement, privacyLink);
+    privacyLink.click();
+    assert.equal(choice.checked, true, 'reopening keeps the saved choice');
+    choice.checked = false;
+    choice.dispatchEvent(new win.Event('change'));
+    privacy.querySelector('.traffic-privacy-close').click();
     const metrics = {month:'2026-11-01', timezone:'America/Halifax', tracking_started_at:'2026-11-23T16:46:31Z',
       updated_at:'2026-11-23T17:00:00Z', summary:{visitors:2, visits:3, page_views:4}, days:[],
       all_time:{visits:21,page_views:37}, members:{email_confirmed:5,registered:6},
@@ -235,6 +259,11 @@ test('browser tracking preserves a random identity and respects privacy, preview
       page.eval(script);
       await page.StrokedTraffic.start();
       assert.equal(page.localStorage.getItem('stroked-traffic-browser'), null);
+      page.document.querySelector('.traffic-privacy-link').click();
+      assert.equal(page.document.querySelector('.traffic-privacy').open, true);
+      const savedChoice = page.document.querySelector('.traffic-privacy input');
+      assert.equal(savedChoice.checked, scenario !== 'preview');
+      assert.equal(savedChoice.disabled, scenario === 'privacy-signal');
     } finally { await page.happyDOM.abort(); }
   }
 });
