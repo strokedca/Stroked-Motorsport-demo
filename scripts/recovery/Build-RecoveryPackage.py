@@ -22,7 +22,12 @@ def build(source: Path, output: Path) -> str:
     output = output.resolve()
     if source in output.parents:
         raise ValueError("Output ZIP must be outside the source folder")
-    files = sorted(p for p in source.rglob("*") if p.is_file())
+    # Path's default ordering differs on Windows and Linux. Choose one
+    # explicit order so the tested ZIP hash identifies the delivered bytes.
+    files = sorted(
+        (p for p in source.rglob("*") if p.is_file()),
+        key=lambda p: (p.relative_to(source).as_posix().casefold(), p.relative_to(source).as_posix()),
+    )
     if not files or not (source / "Restore-Local-Website.ps1").is_file():
         raise ValueError("Recovery package source is incomplete")
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -22,6 +22,7 @@ with tempfile.TemporaryDirectory(prefix="stroked-package-test-") as tmp:
     assert clean == repaired, "Leading encoding markers changed final package bytes"
     with zipfile.ZipFile(tmp / "repaired.zip") as archive:
         assert archive.testzip() is None
+        assert archive.namelist() == sorted(archive.namelist(), key=lambda n: (n.casefold(), n))
         for name in archive.namelist():
             if name.endswith(".ps1"):
                 raw = archive.read(name)
