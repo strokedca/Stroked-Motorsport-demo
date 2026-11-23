@@ -22,6 +22,8 @@
           <label>Email address<input name="email" type="email" autocomplete="username" required maxlength="254" autocapitalize="none" spellcheck="false"></label>
           <label id="sv55PasswordWrap">Password<input name="password" type="password" autocomplete="current-password" required minlength="1"></label>
           <label id="sv55ConfirmWrap" hidden>Confirm password<input name="confirm_password" type="password" autocomplete="new-password" minlength="12"></label>
+          <label id="sv63RememberWrap" class="check"><input id="sv63Remember" name="keep_signed_in" type="checkbox" checked>Keep me signed in on this device</label>
+          <p id="sv63RememberHelp" class="account-help">Stay signed in when you reopen Stroked on this device.</p>
           <p id="sv61PasswordHelp" class="account-help" hidden>Use at least 12 characters for your new password.</p>
           <section id="sv61AuthCaptcha" class="auth-captcha" aria-label="Human verification" hidden></section>
           <div class="actions"><button id="sv55AuthSubmit" type="submit">Sign in</button><button id="sv53ResetPassword" type="button" class="secondary">Forgot password?</button><button id="sv55Resend" type="button" class="secondary">Resend confirmation email</button><button id="sv53AuthBack" type="button" class="secondary">Back</button></div>
@@ -114,6 +116,7 @@
     const signup=mode==='signup', reset=mode==='reset';
     el('sv53AuthHeading').textContent=signup?'Create your '+requestedType+' account':reset?'Reset your password':'Sign in to Stroked';
     el('sv55NameFields').hidden=!signup;el('sv55ConfirmWrap').hidden=!signup;el('sv55PasswordWrap').hidden=reset;
+    el('sv63RememberWrap').hidden=reset;el('sv63RememberHelp').hidden=reset;
     for (const name of ['first_name','last_name','confirm_password']) {form.elements.namedItem(name).required=signup;form.elements.namedItem(name).disabled=!signup;}
     form.elements.namedItem('password').required=!reset;form.elements.namedItem('password').disabled=reset;
     form.elements.namedItem('password').minLength=signup?12:1;el('sv61PasswordHelp').hidden=!signup;
@@ -150,7 +153,19 @@
   function busy(target, value) {target.querySelectorAll('button').forEach(b=>b.disabled=value);}
   const connected = Boolean(window.supabase?.createClient && config?.url && config?.publishableKey);
   if (!connected) {message('Account service could not load. Check your connection and reload.',true);busy(form,true);return;}
-  const db=window.supabase.createClient(config.url,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});
+  const authStorage = core.createAuthStorage(window, config.url);
+  function rememberHelp() {
+    el('sv63Remember').disabled = !authStorage.canRemember;
+    el('sv63RememberHelp').textContent = !authStorage.canRemember
+      ? 'This browser is blocking saved sign-ins. You can sign in for this page.'
+      : el('sv63Remember').checked
+        ? 'Stay signed in when you reopen Stroked on this device.'
+        : 'Sign-in lasts for this browser tab.';
+  }
+  el('sv63Remember').checked = authStorage.remember;
+  el('sv63Remember').addEventListener('change', rememberHelp);
+  rememberHelp();
+  const db=window.supabase.createClient(config.url,config.publishableKey,{auth:{persistSession:true,storage:authStorage.storage,storageKey:authStorage.storageKey,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});
   async function rpc(name,args={}) {const {data,error}=await db.rpc(config.rpcPrefix+name,args);if(error)throw error;return data;}
   const promotionTools=window.StrokedPromotions?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
   const pricingTools=window.StrokedPricing?.mount({rpc,config,openAccount,getAccount:()=>account,getMyEvents:()=>myRows,promotions:promotionTools});
@@ -293,10 +308,15 @@
     catch(e){alert('Report was not sent: '+failure(e));}
     finally{sendingReport=false;}
   };
+  function checkedUser(result) {
+    const error = result.error;
+    if (error && error.name !== 'AuthSessionMissingError' && ![400, 401, 403].includes(error.status)) throw error;
+    return error ? null : result.data?.user || null;
+  }
   async function refreshAccount() {
     const epoch=++authEpoch;
-    const {data,error}=await db.auth.getUser();if(epoch!==authEpoch)return;
-    user=error?null:data?.user;account=null;updateAccountView();
+    const result=await db.auth.getUser();if(epoch!==authEpoch)return;
+    user=checkedUser(result);account=null;updateAccountView();
     if(!user)return;
     try {
       const [own,rows]=await Promise.all([rpc('my_account'),rpc('my_events')]);if(epoch!==authEpoch)return;
@@ -320,12 +340,14 @@
         const {error}=await authCaptcha.run(options=>db.auth.resetPasswordForEmail(email,{redirectTo:authReturnUrl('recovery'),...options}));if(error)throw error;
         message('If an account uses that email, a password reset link has been sent.');return;
       }
+      authStorage.setRemember(el('sv63Remember').checked);
       const result=await authCaptcha.run(options=>mode==='signup'?db.auth.signUp({email,password,options:{emailRedirectTo:authReturnUrl(),...options,data:{first_name:String(values.get('first_name')).trim(),last_name:String(values.get('last_name')).trim(),account_type:requestedType,...signupRsvp()}}}):db.auth.signInWithPassword({email,password,options}));
       if(result.error)throw result.error;
+      el('sv63Remember').checked=authStorage.remember;rememberHelp();
       form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';
       if(!result.data.session&&resumeDraft){message('Check your email. Open the confirmation link to finish your RSVP for this event. Already registered? Choose Sign in.');return;}
       if(!result.data.session){message('Check your email and use the newest confirmation link. Then return here to sign in. If you already have an account, choose Sign in.');return;}
-      recovery=false;await refreshAccount();message('Signed in.');
+      recovery=false;await refreshAccount();message(authStorage.canRemember?'Signed in.':'Signed in for this page. This browser could not save your sign-in.');
       if(resumeDraft) await finishSignupRsvp(resumeDraft);
     }catch(e){message(failure(e),true);}finally{busy(form,false);}
   });
@@ -362,7 +384,7 @@
     }catch(err){message(failure(err),true);}finally{code.value='';busy(f,false);}
   });
   el('sv5Logout').onclick=async()=>{
-    el('sv5Logout').disabled=true;try{const {error}=await db.auth.signOut();if(error)throw error;++authEpoch;user=null;account=null;recovery=false;form.reset();form.hidden=true;updateAccountView();message('Signed out.');if(el('detailsDialog').open)await loadMyRsvp();}catch(e){message(failure(e),true);}finally{el('sv5Logout').disabled=false;}
+    el('sv5Logout').disabled=true;try{const {error}=await db.auth.signOut();if(error)throw error;++authEpoch;user=null;account=null;recovery=false;form.reset();el('sv63Remember').checked=authStorage.remember;rememberHelp();form.hidden=true;updateAccountView();message('Signed out.');if(el('detailsDialog').open)await loadMyRsvp();}catch(e){message(failure(e),true);}finally{el('sv5Logout').disabled=false;}
   };
   el('sv55BecomeOrganizer').onclick=async()=>{
     const b=el('sv55BecomeOrganizer');b.disabled=true;try{await rpc('become_organizer');await refreshAccount();message('Organizer tools enabled. Complete your public profile before posting an event.');}catch(e){message(failure(e),true);}finally{b.disabled=false;}
@@ -433,7 +455,7 @@
     const epoch=++detailEpoch,id=selectedId,e=state.events.find(x=>x.id===id);if(!core.eventId(e))return;const status=el('sv55RsvpStatus'),f=el('rsvpForm');busy(f,true);el('sv55RemoveRsvp').hidden=true;el('strokedEmailUpdates').checked=false;el('rsvpStatus').value='Going';el('rsvpGuests').value='0';
     status.dataset.state='info';f.querySelector('button[type="submit"]').textContent='Save RSVP';
     const available=e.date>=core.day()&&e.status!=='Cancelled';f.style.display='block';f.querySelector('button[type="submit"]').hidden=!available;
-    try{const {data}=await db.auth.getUser();if(epoch!==detailEpoch||selectedId!==id)return;user=data?.user||null;showGuestChoices(!user && available);f.querySelector('button[type="submit"]').hidden=!available||!user;if(!user){status.textContent=available?'Sign in or create a free account to save an RSVP.':'This event is not accepting new RSVPs.';return;}const mine=await rpc(config.testing?'my_rsvp':'alerts_my_rsvp',{p_event_id:core.eventId(e)});if(epoch!==detailEpoch||selectedId!==id)return;if(mine){el('strokedEmailUpdates').checked=Boolean(mine.email_updates);el('rsvpStatus').value=mine.response==='going'?'Going':'Interested';el('rsvpGuests').value=mine.guests||0;el('sv55RemoveRsvp').hidden=false;status.dataset.state='saved';f.querySelector('button[type="submit"]').textContent='Update RSVP';status.textContent=(mine.response==='going'?"You’re going"+(mine.guests?' with '+mine.guests+' additional '+(mine.guests===1?'person':'people'):''):"You’re interested")+'. Saved on Stroked.'+(available?' You can update or remove your RSVP.':' This event is not accepting RSVPs; you can remove your saved response.');}else status.textContent=available?'Choose Going or Interested, then save your RSVP.':'This event is not accepting new RSVPs.';}finally{if(epoch===detailEpoch&&selectedId===id){busy(f,false);toggleGuests();}}
+    try{const result=await db.auth.getUser();if(epoch!==detailEpoch||selectedId!==id)return;user=checkedUser(result);showGuestChoices(!user && available);f.querySelector('button[type="submit"]').hidden=!available||!user;if(!user){status.textContent=available?'Sign in or create a free account to save an RSVP.':'This event is not accepting new RSVPs.';return;}const mine=await rpc(config.testing?'my_rsvp':'alerts_my_rsvp',{p_event_id:core.eventId(e)});if(epoch!==detailEpoch||selectedId!==id)return;if(mine){el('strokedEmailUpdates').checked=Boolean(mine.email_updates);el('rsvpStatus').value=mine.response==='going'?'Going':'Interested';el('rsvpGuests').value=mine.guests||0;el('sv55RemoveRsvp').hidden=false;status.dataset.state='saved';f.querySelector('button[type="submit"]').textContent='Update RSVP';status.textContent=(mine.response==='going'?"You’re going"+(mine.guests?' with '+mine.guests+' additional '+(mine.guests===1?'person':'people'):''):"You’re interested")+'. Saved on Stroked.'+(available?' You can update or remove your RSVP.':' This event is not accepting RSVPs; you can remove your saved response.');}else status.textContent=available?'Choose Going or Interested, then save your RSVP.':'This event is not accepting new RSVPs.';}finally{if(epoch===detailEpoch&&selectedId===id){busy(f,false);toggleGuests();}}
   }
   async function persistRsvp(event, value, email) {
     const saved = await rpc(config.testing ? 'save_rsvp' : 'alerts_save_rsvp', {
@@ -484,12 +506,38 @@
   document.addEventListener('submit',e=>{if(e.target===el('rsvpForm')){e.preventDefault();e.stopImmediatePropagation();saveRsvp();}else if(e.target===el('eventForm')){e.preventDefault();e.stopImmediatePropagation();submitEvent();}},true);
   el('sv5Refresh').onclick=async()=>{el('sv5Refresh').disabled=true;try{await Promise.all([refreshAccount(),refreshPublic()]);message('Updated.');}catch(e){message(failure(e),true);}finally{el('sv5Refresh').disabled=false;}};
   db.auth.onAuthStateChange((event)=>{if(event==='PASSWORD_RECOVERY')recovery=true;clearTimeout(refreshTimer);refreshTimer=setTimeout(async()=>{try{await refreshAccount();if(recovery)openAccount();if(el('detailsDialog').open&&state.events.find(e=>e.id===selectedId)?.strokedLive)await loadMyRsvp();}catch(e){message(failure(e),true);}},0);});
-  window.addEventListener('pageshow',()=>refreshPublic().catch(()=>{}));
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshPublic().catch(()=>{});});
-  async function start(){
+  let resumePromise = null, resumeRetry;
+  function resumeSite(retry = true) {
+    if (document.visibilityState === 'hidden') return;
+    if (resumePromise) return resumePromise;
+    clearTimeout(resumeRetry);
+    resumePromise = (async () => {
+      try {
+        const {error} = await db.auth.getSession();
+        if (error) throw error;
+        await refreshAccount();
+        if (user && !recovery) message('Your account is ready.');
+        if (el('detailsDialog').open) await loadMyRsvp();
+      } catch (error) {
+        message('Reconnecting to your account. ' + failure(error), true);
+        if (retry && navigator.onLine !== false) resumeRetry = setTimeout(() => resumeSite(false), 1500);
+      }
+      await refreshPublic().catch(() => {});
+    })().finally(() => { resumePromise = null; });
+    return resumePromise;
+  }
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) resumeSite();
+    else refreshPublic().catch(() => {});
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') resumeSite();
+  });
+  window.addEventListener('online', () => resumeSite());
+  async function start(retry=true){
     changeFilters();
     let confirmedDraft=null;
-    try{const {data,error}=await db.auth.getSession();if(error)throw error;confirmedDraft=confirmedRsvp(data.session);await refreshAccount();if(hasAuthLink&&!callbackHandled){callbackHandled=true;const clean=new URL(location.href);clean.hash='';for(const k of ['auth','code','error','error_code','error_description'])clean.searchParams.delete(k);history.replaceState({},'',clean.pathname+clean.search);openAccount();if(authLinkError)message('Confirmation link: '+authLinkError+'. Request a new confirmation email.',true);else if(recovery&&!user)message('The reset link is invalid or expired. Request a new reset email.',true);else if(recovery)message('Choose and confirm your new password.');else message(user?'Email confirmed. You are signed in.':'Email link processed. Sign in to continue.');}else message(user?'Your account is ready.':'Sign in or create a free account.');}catch(e){message('Account connection: '+failure(e),true);}
+    try{const {data,error}=await db.auth.getSession();if(error)throw error;confirmedDraft=confirmedRsvp(data.session);await refreshAccount();if(hasAuthLink&&!callbackHandled){callbackHandled=true;const clean=new URL(location.href);clean.hash='';for(const k of ['auth','code','error','error_code','error_description'])clean.searchParams.delete(k);history.replaceState({},'',clean.pathname+clean.search);openAccount();if(authLinkError)message('Confirmation link: '+authLinkError+'. Request a new confirmation email.',true);else if(recovery&&!user)message('The reset link is invalid or expired. Request a new reset email.',true);else if(recovery)message('Choose and confirm your new password.');else message(user?'Email confirmed. You are signed in.':'Email link processed. Sign in to continue.');}else message(user?'Your account is ready.':'Sign in or create a free account.');}catch(e){message('Account connection: '+failure(e),true);if(retry&&navigator.onLine!==false)resumeRetry=setTimeout(()=>start(false),1500);}
     traffic?.start();
     if(confirmedDraft&&user){try{await finishSignupRsvp(confirmedDraft);}catch(e){message('Unable to finish your RSVP: '+failure(e),true);}return;}
     await refreshPublic().catch(()=>{});if(initialUrl.searchParams.get('alerts')==='1'){openAccount('rider');if(el('strokedFollowing'))el('strokedFollowing').open=true;}

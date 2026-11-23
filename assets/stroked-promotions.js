@@ -15,7 +15,8 @@ window.StrokedPromotions = Object.freeze({
       <form id="sv56PromotionForm" class="sv5Card"><h3 id="sv56PromotionFormHeading">Add a promotion</h3>
       <div class="grid"><label>Related approved event (optional)<select id="sv56PromotionEvent" name="event_id"><option value="">Separate announcement</option></select></label><label>Promotion type<select name="kind"><option>Local event</option><option>Charity event</option><option>Community announcement</option><option>Business advertisement</option></select></label></div>
       <label>Promotion title<input name="title" minlength="3" maxlength="100" required></label><label>Short headline<input name="tagline" maxlength="160"></label>
-      <label>Details<textarea name="description" maxlength="1600" rows="4"></textarea></label><label>Event or charity website (optional)<input name="link" type="url" maxlength="500" placeholder="https://"></label>
+      <p id="sv56BusinessBannerHelp" class="account-help" hidden>Active business advertisements rotate in the banner above the event search. Each business can have its own website link. Use a wide cover image and a short headline for the banner.</p>
+      <label>Details<textarea name="description" maxlength="1600" rows="4"></textarea></label><label>Event, charity or business website (optional)<input name="link" type="url" maxlength="500" placeholder="https://"></label>
       <div class="sv56-upgrade-options"><label class="sv56-upgrade"><span><input name="featured" type="checkbox" checked> <strong>Featured Event</strong></span><small>Highlight this promotion and give its linked event priority in relevant listings.</small><strong class="sv56-free">Free admin option</strong></label>
       <label class="sv56-upgrade"><span><input name="enhanced" type="checkbox"> <strong>Enhanced Event Page</strong></span><small>Add a photo gallery to this promotion and its linked event page.</small><strong class="sv56-free">Free admin option</strong></label>
       <label class="sv56-upgrade"><span><input name="spotlight" type="checkbox"> <strong>Sponsor Spotlight</strong></span><small>Display a sponsor name, optional logo and website link prominently.</small><strong class="sv56-free">Free admin option</strong></label></div>
@@ -35,6 +36,11 @@ window.StrokedPromotions = Object.freeze({
     const board=document.createElement('section');board.id='sv56PromotionBoard';board.className='sv56-promotion-board';board.hidden=true;board.setAttribute('aria-label','Event board promotions');
     board.innerHTML='<h2>Event Board Promotions</h2><div id="sv56PublicPromotions" class="sv56-public-promotions"></div>';
     $('calendarViewDetails').after(board);
+    const businessBanner=document.createElement('section');businessBanner.id='sv56BusinessBanner';businessBanner.className='sv56-business-banner';businessBanner.hidden=true;businessBanner.setAttribute('aria-label','Featured businesses');businessBanner.setAttribute('aria-roledescription','carousel');
+    businessBanner.innerHTML='<div class="sv56-business-heading"><p>Featured businesses</p><span>Advertisement</span></div><div id="sv56BusinessSlides"></div><div id="sv56BusinessControls" class="sv56-business-controls" hidden><button type="button" id="sv56BusinessPrevious" class="secondary" aria-label="Previous business">‹</button><div id="sv56BusinessDots" class="sv56-business-dots" aria-label="Choose a business"></div><button type="button" id="sv56BusinessNext" class="secondary" aria-label="Next business">›</button><span id="sv56BusinessCount"></span><button type="button" id="sv56BusinessPause" class="secondary">Pause rotation</button></div><p id="sv56BusinessStatus" class="sv56-business-status" role="status" aria-live="polite"></p>';
+    $('browse').prepend(businessBanner);
+    const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    let businessRows=[],businessIndex=0,businessSignature='',businessTimer,businessPaused=!!reducedMotion?.matches,businessHover=false,businessFocus=false;
     const form=$('sv56PromotionForm'), field=name=>form.elements.namedItem(name);
     const categoryInputs=()=>Array.from(form.querySelectorAll('[name=promotion_category]'));
     function categoryControls(){categoryInputs().forEach(i=>i.disabled=field('all_categories').checked);}
@@ -48,8 +54,8 @@ window.StrokedPromotions = Object.freeze({
     function image(path,alt){const src=imageUrl(path);if(!src)return null;const img=node('img');img.src=src;img.alt=alt;img.loading='lazy';return img;}
     function status(text,error=false){$('sv56PromotionStatus').textContent=text;$('sv56PromotionStatus').classList.toggle('account-error',error);}
     function busy(value){form.querySelectorAll('button').forEach(b=>b.disabled=value);}
-    function optionsChanged(){const enhanced=field('enhanced').checked,spotlight=field('spotlight').checked;$('sv56GalleryFields').hidden=!enhanced;$('sv56SponsorFields').hidden=!spotlight;field('sponsor_name').required=spotlight;field('sponsor_name').disabled=!spotlight;}
-    for(const key of ['enhanced','spotlight'])field(key).addEventListener('change',optionsChanged);
+    function optionsChanged(){const enhanced=field('enhanced').checked,spotlight=field('spotlight').checked;$('sv56GalleryFields').hidden=!enhanced;$('sv56SponsorFields').hidden=!spotlight;field('sponsor_name').required=spotlight;field('sponsor_name').disabled=!spotlight;$('sv56BusinessBannerHelp').hidden=field('kind').value!=='Business advertisement';}
+    for(const key of ['kind','enhanced','spotlight'])field(key).addEventListener('change',optionsChanged);
     function mediaPreview(){const target=$('sv56MediaPreview');target.replaceChildren();for(const path of [media.cover,...media.photos,media.sponsor_image]){const img=image(path,'Current promotion image');if(img)target.append(img);}}
     function newPromotion(){booking=null;editingId=null;media={cover:'',photos:[],sponsor_image:''};form.reset();categoryControls();field('start_date').min='';field('end_date').readOnly=false;field('start_date').value=today();$('sv56PromotionFormHeading').textContent='Add a promotion';form.querySelector('button[type="submit"]').textContent='Publish promotion — no charge';optionsChanged();mediaPreview();status('');}
     $('sv56NewPromotion').onclick=newPromotion;
@@ -73,7 +79,53 @@ window.StrokedPromotions = Object.freeze({
     function stateLabel(p){const day=today();return !p.active?'Hidden':p.end_date&&p.end_date<day?'Ended':p.start_date>day?'Scheduled':'Visible';}
     function renderAdmin(){const target=$('sv56PromotionList');target.replaceChildren();if(!managerRows.length)target.append(node('p','No promotions yet. Add your first promotion above.'));for(const row of managerRows){const card=node('article');card.className='sv5Card';card.append(node('h3',row.payload.title),node('p',row.payload.kind+' · '+stateLabel(row.payload)+' · No charge'));const names=[['featured','Featured Event'],['enhanced','Enhanced Event Page'],['spotlight','Sponsor Spotlight']].filter(([key])=>row.payload[key]).map(([,label])=>label);card.append(node('p','Categories: '+(targets(row.payload).join(', ')||'All categories')));if(names.length)card.append(node('p',names.join(' · ')));card.append(node('p','Categories: '+(targets(row.payload).join(', ')||'All categories')));const actions=node('div');actions.className='actions';const change=node('button','Edit');change.type='button';change.onclick=()=>edit(row);const visibility=node('button',row.payload.active?'Hide':'Publish');visibility.type='button';visibility.className='secondary';visibility.onclick=async()=>{if(!getAccount()?.is_admin)return;visibility.disabled=true;try{await rpc('save_promotion',{p_id:row.id,p_payload:{...row.payload,active:!row.payload.active}});await Promise.all([refreshAdmin(),refreshPublic()]);status('Promotion '+(row.payload.active?'hidden':'published')+' — no charge.');}catch(e){status(e.message||'Could not update promotion.',true);}finally{visibility.disabled=false;}};actions.append(change,visibility);card.append(actions);target.append(card);}}
     async function refreshAdmin(){if(!administrator)return;const generation=epoch;try{const rows=await rpc('admin_promotions');if(generation!==epoch||!administrator)return;managerRows=Array.isArray(rows)?rows:[];renderAdmin();}catch(e){if(generation===epoch)status('Promotion tools could not load. Please try Refresh.',true);}}
-    function visibleRows(){const day=today();return publicRows.filter(r=>!(document.body.dataset.strokedAdvertising==='paused'&&r.payload?.kind==='Business advertisement')&&r.payload?.active&&r.payload.start_date<=day&&(!r.payload.end_date||r.payload.end_date>=day)).sort((a,b)=>Number(b.payload.featured)-Number(a.payload.featured));}
+    function activeRows(){const day=today();return publicRows.filter(r=>r.payload?.active&&r.payload.start_date<=day&&(!r.payload.end_date||r.payload.end_date>=day)).sort((a,b)=>Number(b.payload.featured)-Number(a.payload.featured));}
+    function visibleRows(){return activeRows().filter(r=>!(document.body.dataset.strokedAdvertising==='paused'&&r.payload.kind==='Business advertisement'));}
+    function scheduleBusinessRotation(){
+      clearTimeout(businessTimer);
+      $('sv56BusinessPause').textContent=businessPaused?'Start rotation':'Pause rotation';
+      if(businessRows.length<2||businessPaused||businessHover||businessFocus||document.visibilityState==='hidden')return;
+      businessTimer=setTimeout(()=>{showBusiness(businessIndex+1);scheduleBusinessRotation();},6000);
+    }
+    function showBusiness(index,announce=false){
+      if(!businessRows.length)return;
+      businessIndex=(index+businessRows.length)%businessRows.length;
+      Array.from($('sv56BusinessSlides').children).forEach((slide,i)=>{slide.hidden=i!==businessIndex;});
+      Array.from($('sv56BusinessDots').children).forEach((dot,i)=>{dot.setAttribute('aria-current',String(i===businessIndex));});
+      $('sv56BusinessCount').textContent=(businessIndex+1)+' / '+businessRows.length;
+      if(announce)$('sv56BusinessStatus').textContent=businessRows[businessIndex].payload.title+' — business '+(businessIndex+1)+' of '+businessRows.length;
+    }
+    function moveBusiness(index){showBusiness(index,true);scheduleBusinessRotation();}
+    $('sv56BusinessPrevious').onclick=()=>moveBusiness(businessIndex-1);
+    $('sv56BusinessNext').onclick=()=>moveBusiness(businessIndex+1);
+    $('sv56BusinessPause').onclick=()=>{businessPaused=!businessPaused;scheduleBusinessRotation();};
+    businessBanner.addEventListener('mouseenter',()=>{businessHover=true;scheduleBusinessRotation();});
+    businessBanner.addEventListener('mouseleave',()=>{businessHover=false;scheduleBusinessRotation();});
+    businessBanner.addEventListener('focusin',()=>{businessFocus=true;scheduleBusinessRotation();});
+    businessBanner.addEventListener('focusout',event=>{if(businessBanner.contains(event.relatedTarget))return;businessFocus=false;scheduleBusinessRotation();});
+    document.addEventListener('visibilitychange',scheduleBusinessRotation);
+    reducedMotion?.addEventListener('change',event=>{if(event.matches)businessPaused=true;scheduleBusinessRotation();});
+    function renderBusinesses(rows){
+      const signature=JSON.stringify(rows.map(r=>[r.id,r.payload]));
+      if(signature===businessSignature)return;
+      const selectedId=businessRows[businessIndex]?.id;
+      businessSignature=signature;businessRows=rows;businessIndex=Math.max(0,rows.findIndex(r=>r.id===selectedId));
+      clearTimeout(businessTimer);if(!rows.length)businessHover=false;
+      const slides=$('sv56BusinessSlides'),dots=$('sv56BusinessDots');slides.replaceChildren();dots.replaceChildren();$('sv56BusinessStatus').textContent='';
+      businessBanner.hidden=!rows.length;$('sv56BusinessControls').hidden=rows.length<2;
+      for(const [index,row] of rows.entries()){
+        const p=row.payload,slide=node('article');slide.className='sv56-business-slide';slide.dataset.promotionId=row.id;slide.setAttribute('role','group');slide.setAttribute('aria-roledescription','slide');slide.setAttribute('aria-label',(index+1)+' of '+rows.length);
+        const copy=node('div');copy.className='sv56-business-copy';copy.append(node('h3',p.title));
+        if(p.tagline){const line=node('strong',p.tagline);line.className='sv56-business-tagline';copy.append(line);}
+        if(p.description){const description=node('p',p.description);description.className='sv56-business-description';copy.append(description);}
+        const href=https(p.link);if(href){const link=node('a','Visit business website');link.className='btn';link.href=href;link.target='_blank';link.rel='noopener noreferrer';copy.append(link);}
+        slide.append(copy);const art=image(p.cover,p.title+' advertisement')||image(p.sponsor_image,p.sponsor_name||p.title);
+        if(art){art.className='sv56-business-art';slide.append(art);}else slide.classList.add('sv56-business-text');
+        slides.append(slide);
+        const dot=node('button');dot.type='button';dot.className='sv56-business-dot';dot.setAttribute('aria-label','Show business '+(index+1)+': '+p.title);dot.onclick=()=>moveBusiness(index);dots.append(dot);
+      }
+      businessFocus=businessBanner.contains(document.activeElement);showBusiness(businessIndex);scheduleBusinessRotation();
+    }
     function addGallery(target,p){if(!p.enhanced||!p.photos?.length)return;const gallery=node('div');gallery.className='sv56-gallery';for(const path of p.photos){const img=image(path,p.title+' — event photo');if(img)gallery.append(img);}if(gallery.childElementCount)target.append(gallery);}
     function addSponsor(target,p){if(!p.spotlight||!p.sponsor_name)return;const box=node('section');box.className='sv56-sponsor';box.append(node('small','Sponsor Spotlight'));const img=image(p.sponsor_image,p.sponsor_name+' logo');if(img)box.append(img);box.append(node('strong',p.sponsor_name));const href=https(p.sponsor_link);if(href){const a=node('a','Visit sponsor website');a.href=href;a.target='_blank';a.rel='noopener noreferrer';box.append(a);}target.append(box);}
     function decorateEventDetail(event){
@@ -84,7 +136,7 @@ window.StrokedPromotions = Object.freeze({
       if(extra.childElementCount)target.append(extra);
     }
     function enhanceEventCards(){const cards=$('cards');for(const card of cards.querySelectorAll('article.card')){const action=card.querySelector('button[data-stroked-click^="openEvent"]'),eventId=action?.getAttribute('data-stroked-click')?.match(/openEvent\('live-([^']+)'\)/)?.[1];const featured=visibleRows().some(r=>r.payload.event_id===eventId&&r.payload.featured&&matches(r.payload,getEvents().find(e=>e.id==='live-'+eventId)?.categories||[]));card.classList.toggle('sv56-featured-event',featured);card.querySelector('.sv56-featured-flag')?.remove();if(featured){const flag=node('small','Featured Event');flag.className='sv56-featured-flag';card.prepend(flag);}}const children=Array.from(cards.children);for(const card of children.filter(c=>c.classList.contains('sv56-featured-event')).concat(children.filter(c=>!c.classList.contains('sv56-featured-event'))))cards.append(card);}
-    function renderPublic(){const target=$('sv56PublicPromotions');target.replaceChildren();const selectedCategory=$('filterCat')?.value||'';const rows=visibleRows().filter(r=>matches(r.payload,selectedCategory?[selectedCategory]:[]));board.hidden=!rows.length;for(const row of rows){const p=row.payload,card=node('article');card.className='sv56-public-promotion'+(p.featured?' sv56-featured-promotion':'');card.dataset.promotionId=row.id;const cover=image(p.cover,p.title+' poster');if(cover){cover.className='sv56-promotion-cover';card.append(cover);}const body=node('div');body.className='sv56-promotion-body';const kind=node('small',(p.featured?(p.kind==='Business advertisement'?'Featured business · ':'Featured Event · '):'')+p.kind);kind.className='sv56-kind';body.append(kind,node('h3',p.title));if(p.tagline)body.append(node('strong',p.tagline));if(p.description)body.append(node('p',p.description));addGallery(body,p);addSponsor(body,p);const related=getEvents().find(e=>e.id==='live-'+p.event_id);if(related){const b=node('button','View event / RSVP');b.type='button';b.onclick=()=>openEvent(related.id);body.append(b);}else{const href=https(p.link);if(href){const a=node('a',p.kind==='Business advertisement'?'Visit business website':'Event / charity details');a.href=href;a.target='_blank';a.rel='noopener noreferrer';body.append(a);}}card.append(body);target.append(card);}enhanceEventCards();const selected=getSelectedEvent();if(selected&&$('detailsDialog').open)decorateEventDetail(selected);}
+    function renderPublic(){const target=$('sv56PublicPromotions');target.replaceChildren();const selectedCategory=$('filterCat')?.value||'',categoryMatch=p=>matches(p,selectedCategory?[selectedCategory]:[]);renderBusinesses(activeRows().filter(r=>r.payload.kind==='Business advertisement'&&categoryMatch(r.payload)));const rows=visibleRows().filter(r=>r.payload.kind!=='Business advertisement'&&categoryMatch(r.payload));board.hidden=!rows.length;for(const row of rows){const p=row.payload,card=node('article');card.className='sv56-public-promotion'+(p.featured?' sv56-featured-promotion':'');card.dataset.promotionId=row.id;const cover=image(p.cover,p.title+' poster');if(cover){cover.className='sv56-promotion-cover';card.append(cover);}const body=node('div');body.className='sv56-promotion-body';const kind=node('small',(p.featured?'Featured Event · ':'')+p.kind);kind.className='sv56-kind';body.append(kind,node('h3',p.title));if(p.tagline)body.append(node('strong',p.tagline));if(p.description)body.append(node('p',p.description));addGallery(body,p);addSponsor(body,p);const related=getEvents().find(e=>e.id==='live-'+p.event_id);if(related){const b=node('button','View event / RSVP');b.type='button';b.onclick=()=>openEvent(related.id);body.append(b);}else{const href=https(p.link);if(href){const a=node('a','Event / charity details');a.href=href;a.target='_blank';a.rel='noopener noreferrer';body.append(a);}}card.append(body);target.append(card);}enhanceEventCards();const selected=getSelectedEvent();if(selected&&$('detailsDialog').open)decorateEventDetail(selected);}
     async function refreshPublic(){try{const rows=await rpc('public_promotions');publicRows=Array.isArray(rows)?rows:[];renderPublic();}catch{publicRows=[];renderPublic();}}
     function validateFile(file){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)throw Error('Use JPEG, PNG or WebP images up to 5 MB each.');}
     async function upload(file){validateFile(file);const extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type],path=environment+'/'+crypto.randomUUID()+'.'+extension;const {error}=await db.storage.from(bucket).upload(path,file,{contentType:file.type,cacheControl:'3600',upsert:false});if(error)throw error;return path;}
