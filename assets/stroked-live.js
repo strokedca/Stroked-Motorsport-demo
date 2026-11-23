@@ -41,6 +41,7 @@
             <section id="sv58Reports" hidden><h3>Reported event information</h3><div id="sv57Reports"></div></section>
             <section id="sv58Promotions" hidden></section><section id="sv58Payments" hidden></section>
             <section id="sv58Signups" hidden aria-labelledby="sv56SignupHeading"><h3 id="sv56SignupHeading">Site signups</h3><p class="account-help">Counts registered accounts, including administrator and test accounts. Visitors without accounts are not included. Each account is counted once.</p><p id="sv56SignupStatus" role="status" aria-live="polite"></p><dl id="sv56SignupCounts" class="signup-stats"></dl></section>
+            <section id="sv58Traffic" hidden><h3>Site traffic</h3><p>Reload the page to load traffic reporting.</p></section>
             <section id="sv58Members" hidden><h3>Members</h3><p class="account-help">Private administrator view. Blocking stops account actions, including event submissions, RSVPs and reports. Public event browsing stays available.</p><label for="sv59MemberSearch">Find a member</label><input id="sv59MemberSearch" type="search" maxlength="160" placeholder="Name, email or organization"><label for="sv59MemberFilter">Account status</label><select id="sv59MemberFilter"><option value="all">All members</option><option value="active">Active</option><option value="blocked">Blocked</option><option value="unconfirmed">Email unconfirmed</option></select><button id="sv59FindMembers" type="button">Search members</button><p id="sv59MemberStatus" role="status"></p><div id="sv59MemberList"></div><div id="sv59MemberPages" class="actions"></div></section><section id="sv58Announcements" hidden></section><section id="sv58Other" hidden><h3>Rejected listings</h3><div id="sv58OtherList"></div></section>
           </section>
         </div>
@@ -125,6 +126,24 @@
     void authCaptcha.show(mode);
   }
   el('sv53ShowSignup').onclick=()=>choose('signup');el('sv53ShowLogin').onclick=()=>choose('login');
+  const join = document.createElement('section');
+  join.className = 'panel rider-join';
+  join.id = 'strokedRiderJoin';
+  join.setAttribute('aria-label', 'Join Stroked');
+  join.append(text('h2', 'Find a ride worth joining?'),
+    text('p', 'Create a free rider account to save your Going or Interested RSVPs and follow events and organizers.'));
+  const joinActions = text('div', '');
+  joinActions.className = 'actions';
+  const joinButton = text('button', 'Create a free rider account');
+  joinButton.type = 'button';
+  joinButton.onclick = () => { openAccount('rider'); choose('signup'); };
+  const signInButton = text('button', 'Sign in');
+  signInButton.type = 'button';
+  signInButton.className = 'secondary';
+  signInButton.onclick = () => { openAccount('rider'); choose('login'); };
+  joinActions.append(joinButton, signInButton);
+  join.append(joinActions);
+  el('eventListHeading').before(join);
   el('sv60ChooseSignup').onclick=()=>choose('signup');el('sv60ChooseLogin').onclick=()=>choose('login');
   el('sv53ResetPassword').onclick=()=>choose('reset');
   el('sv53AuthBack').onclick=()=>{authCaptcha.clear();form.hidden=true;el('sv53Welcome').hidden=false;form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';};
@@ -138,11 +157,14 @@
   const engagement=window.StrokedEngagement?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
   const announcements=window.StrokedAnnouncements?.mount({rpc,config});
   const security=window.StrokedSecurity?.mount({db,rpc,config,onVerified:refreshAccount,getAccount:()=>account});
+  const traffic=window.StrokedTraffic?.mount({db,rpc,config});
   function updateAccountView() {
     security?.setIdentity(user?.id||null);
     const signed=Boolean(user), organizer=Boolean(account?.account_type==='organizer'||account?.is_admin);
     promotionTools?.setAccount(account,signed);engagement?.setAccount(account,signed);announcements?.setAccount(account,signed);
     pricingTools?.setAccount(account,signed);
+    traffic?.setAccount(account);
+    join.hidden = signed;
     const adminHelp=el('strokedAdminHelp');
     if(signed&&account?.is_admin===true){
       if(!adminHelp){
@@ -192,7 +214,7 @@
       }
     }catch{if(epoch===authEpoch&&account?.is_admin)target.append(text('p','Reports could not load. Choose Refresh to try again.'));}
   }
-  const adminSections=[['Pending','Waiting for approval'],['Approved','Approved listings'],['Requests','Changes'],['Reports','Reports'],['Promotions','Promotions'],['Payments','Payments'],['Signups','Signups'],['Members','Members'],['Announcements','Email announcements'],['Other','Rejected listings']];
+  const adminSections=[['Pending','Waiting for approval'],['Approved','Approved listings'],['Requests','Changes'],['Reports','Reports'],['Promotions','Promotions'],['Payments','Payments'],['Signups','Signups'],['Traffic','Site traffic'],['Members','Members'],['Announcements','Email announcements'],['Other','Rejected listings']];
   let selectedAdminSection='Pending',approvedRows=[],approvedPage=0;
   function selectAdminSection(key){
     selectedAdminSection=key;
@@ -207,6 +229,9 @@
   const organizerTools=document.createElement('details');organizerTools.id='sv58OrganizerTools';organizerTools.open=true;organizerTools.append(text('summary','My events & organizer profile'));el('sv55Organizer').before(organizerTools);organizerTools.append(el('sv55Organizer'));
   const myBookings=el('strokedMyBookings');if(myBookings){const extra=document.createElement('details');extra.id='sv58MyBookings';extra.open=true;extra.append(text('summary','My promotion bookings'));myBookings.before(extra);extra.append(myBookings);}
   document.addEventListener('stroked:open-admin-promotions',()=>{if(account?.is_admin)selectAdminSection('Promotions');});
+  el('sv58TabTraffic').addEventListener('click',()=>{
+    if(account?.is_admin)document.dispatchEvent(new CustomEvent('stroked:open-admin-traffic'));
+  });
   function renderApproved(){
     const query=el('sv58ApprovedSearch').value.trim().toLowerCase(),rows=approvedRows.filter(row=>[row.payload?.name,row.payload?.club,row.payload?.city,row.payload?.startLocation].some(value=>String(value||'').toLowerCase().includes(query)));
     const pages=Math.max(1,Math.ceil(rows.length/10));approvedPage=Math.min(approvedPage,pages-1);
@@ -465,6 +490,7 @@
     changeFilters();
     let confirmedDraft=null;
     try{const {data,error}=await db.auth.getSession();if(error)throw error;confirmedDraft=confirmedRsvp(data.session);await refreshAccount();if(hasAuthLink&&!callbackHandled){callbackHandled=true;const clean=new URL(location.href);clean.hash='';for(const k of ['auth','code','error','error_code','error_description'])clean.searchParams.delete(k);history.replaceState({},'',clean.pathname+clean.search);openAccount();if(authLinkError)message('Confirmation link: '+authLinkError+'. Request a new confirmation email.',true);else if(recovery&&!user)message('The reset link is invalid or expired. Request a new reset email.',true);else if(recovery)message('Choose and confirm your new password.');else message(user?'Email confirmed. You are signed in.':'Email link processed. Sign in to continue.');}else message(user?'Your account is ready.':'Sign in or create a free account.');}catch(e){message('Account connection: '+failure(e),true);}
+    traffic?.start();
     if(confirmedDraft&&user){try{await finishSignupRsvp(confirmedDraft);}catch(e){message('Unable to finish your RSVP: '+failure(e),true);}return;}
     await refreshPublic().catch(()=>{});if(initialUrl.searchParams.get('alerts')==='1'){openAccount('rider');if(el('strokedFollowing'))el('strokedFollowing').open=true;}
   }
