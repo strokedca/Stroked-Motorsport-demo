@@ -140,17 +140,20 @@
     const totals = node('dl');
     totals.className = 'signup-stats';
     const daily = node('div'), monthly = node('div'), referrals = node('div');
+    const historical = node('section');
+    historical.hidden = true;
     for (const target of [daily, monthly, referrals]) target.className = 'traffic-table';
-    section.append(controls, status, totals, node('h4', 'Daily traffic'), daily,
+    section.append(controls, status, totals, historical, node('h4', 'Daily traffic'), daily,
       node('h4', 'Monthly history'), monthly, node('h4', 'Visit sources for selected month'), referrals);
-    section.append(node('p', 'All dates use PEI time. The first day and current day or month may be partial. Monthly visitors are deduplicated across that month. Historical totals begin on the tracking start date shown above.'));
+    section.append(node('p', 'All dates use PEI time. The first day and current day or month may be partial. Monthly visitors are deduplicated across that month. Daily and monthly browser totals begin on the tracking start date shown above. Earlier activity is available from the request logs shown here.'));
     const labels = {direct:'Direct / unreported', facebook:'Facebook', instagram:'Instagram',
       google:'Google', bing:'Bing', other:'Other websites', internal:'Internal return'};
 
     function clear() {
       report = null;
       download.disabled = true;
-      for (const target of [totals, daily, monthly, referrals]) target.replaceChildren();
+      for (const target of [totals, daily, monthly, referrals, historical]) target.replaceChildren();
+      historical.hidden = true;
     }
     async function load() {
       if (!administrator || settings.testing || !month.reportValidity()) return;
@@ -174,9 +177,19 @@
         table(daily, headings, values(value.days));
         table(monthly, ['Month', ...headings.slice(1)], values(value.months));
         table(referrals, ['Source', 'Visits'], value.sources.map(row => [labels[row.source] || 'Other websites', row.visits]));
+        historical.hidden = !value.historical_activity?.length;
+        if (!historical.hidden) {
+          historical.append(node('h4', 'Earlier activity from request logs'));
+          for (const entry of value.historical_activity) {
+            const local = stamp => new Date(stamp).toLocaleString('en-CA', {timeZone:'America/Halifax'});
+            historical.append(node('p', local(entry.window_start) + ' to ' + local(entry.window_end) + ' PEI time'),
+              node('p', Number(entry.requests).toLocaleString() + ' successful event-list requests across ' + Number(entry.browser_network_combinations).toLocaleString() + ' browser/IP combinations.'),
+              node('p', entry.method));
+          }
+        }
         const started = value.tracking_started_at;
         status.textContent = started ? 'Recording since ' + new Date(started).toLocaleString('en-CA', {timeZone:'America/Halifax'}) + ' PEI time. Updated ' + new Date(value.updated_at).toLocaleTimeString('en-CA', {timeZone:'America/Halifax'}) + '.' : 'Tracking is enabled. Waiting for the first eligible visitor.';
-        download.disabled = !started;
+        download.disabled = !started && historical.hidden;
       } catch {
         if (epoch === generation) {
           clear();
@@ -195,6 +208,13 @@
         ['Method', 'Distinct browser estimates. Visits restart after 30 minutes of inactivity. Current periods may be partial.'],
         [], ['Visit source for ' + report.month, 'Visits']);
       for (const row of report.sources) rows.push([labels[row.source] || 'Other websites', row.visits]);
+      if (report.historical_activity?.length) {
+        rows.push([], ['Earlier request-log activity'], ['Window start (PEI time)', 'Window end (PEI time)', 'Successful event-list requests', 'Distinct browser/IP combinations', 'Method']);
+        for (const row of report.historical_activity) {
+          const local = stamp => new Date(stamp).toLocaleString('en-CA', {timeZone:'America/Halifax'});
+          rows.push([local(row.window_start), local(row.window_end), row.requests, row.browser_network_combinations, row.method]);
+        }
+      }
       const csv = rows.map(row => row.map(value => '"' + String(value).replaceAll('"', '""') + '"').join(',')).join('\r\n');
       const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'}));
       const link = node('a');
