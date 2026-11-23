@@ -118,9 +118,13 @@ if($RequireWindows51){
     Assert-Throws {Invoke-QuietNative $child @('-NoLogo','-NoProfile','-NonInteractive','-Command',"[Console]::Error.WriteLine('PRIVATE_NATIVE_SENTINEL');exit 17")} 'Nonzero native exit accepted.'
     Assert-True ($script:LastNativeFailure.ExitCode -eq 17) 'Safe numeric native exit was lost.'
     Assert-True (($script:LastNativeFailure|ConvertTo-Json) -notmatch 'PRIVATE_NATIVE_SENTINEL') 'Native stderr entered report metadata.'
-    $assertionCommand="[Console]::Error.WriteLine('ERROR: P0001: STROKED_DRILL_CHECK_DBP03 PRIVATE_OUTPUT_SENTINEL');exit 3"
+    $assertionCommand="[Console]::Error.WriteLine('ERROR: PDB03');[Console]::Error.WriteLine('PRIVATE_OUTPUT_SENTINEL');exit 3"
     Assert-Throws {Invoke-QuietNative $child @('-NoLogo','-NoProfile','-NonInteractive','-Command',$assertionCommand)} 'Database assertion failure was accepted.'
     Assert-True ($script:LastNativeFailure.SafeCheckID -ceq 'DBP03') 'Safe database protection identifier was not captured.'
     Assert-True (($script:LastNativeFailure|ConvertTo-Json) -notmatch 'PRIVATE_OUTPUT_SENTINEL') 'Private SQL output entered report metadata.'
+    $unknownCommand="[Console]::Error.WriteLine('ERROR: PDB99');exit 3"
+    Assert-Throws {Invoke-QuietNative $child @('-NoLogo','-NoProfile','-NonInteractive','-Command',$unknownCommand)} 'Unknown database error was accepted.'
+    Assert-True (-not $script:LastNativeFailure.SafeCheckID) 'An unknown SQLSTATE became a safe protection identifier.'
 }
 Write-Host ('PASS: PowerShell '+$PSVersionTable.PSVersion+'; flat zero/one/twelve objects, scalar checkpoint ID, individual network/cleanup targets, resume, scope guards and safe failures.')
+

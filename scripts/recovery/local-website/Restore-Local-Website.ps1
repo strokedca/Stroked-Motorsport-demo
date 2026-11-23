@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 # Owner-run local restore. No hosted credentials, production commands or paid services.
 [CmdletBinding()]
 param()
@@ -14,7 +14,7 @@ $reportPath=Join-Path $package ('Stroked-Website-Restore-'+[DateTime]::UtcNow.To
 $drillLock=$null;$lock=$null;$stage=$null;$keys=$null;$mutated=$false;$script:ActiveTestState=$null;$script:LastSQLState=$null;$script:LastDataExportIssue=$null;$script:LastNativeFailure=$null
 $phase='Starting';$state=@{};$resumedStartup=$false;$proxyTouched=$false;$script:StartupPhase=$null;$script:NativePrivateLogPrefix=$null
 $report=[ordered]@{
-    ReportType='Stroked isolated website recovery';Version='1.6';StartedUTC=[DateTime]::UtcNow.ToString('o')
+    ReportType='Stroked isolated website recovery';Version='1.7';StartedUTC=[DateTime]::UtcNow.ToString('o')
     LiveProjectContacted=$false;RealEmailDeliveryEnabled=$false;PaymentsEnabled=$false
     CoreWebsiteRecoveryVerified=$false;FullProviderRecoveryVerified=$false;Result='In progress'
     Checks=[ordered]@{}
@@ -29,7 +29,7 @@ function Save-DrillCheckpoint {
     }finally{if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}}
 }
 try {
-    Write-Host 'Stroked local website restore v1.6'
+    Write-Host 'Stroked local website restore v1.7'
     Write-Host '1/7 Checking the existing local recovery setup...'
     $phase='Checking administrator launch';Assert-DrillAdministrator
     $report.Checks.AdministratorLaunchConfirmed=$true
@@ -343,3 +343,4 @@ try {
     } catch {}
     Write-Host 'The live site and original encrypted archives were not changed.'
 }
+

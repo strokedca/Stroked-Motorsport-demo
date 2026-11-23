@@ -14,12 +14,16 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Reproduce owner array failure and test correction on Windows PowerShell 5.1
+      - name: Regress duplicate markers and build the deterministic delivery ZIP
         shell: powershell
-        run: ./scripts/recovery/Test-RecoveryDocker.ps1 -RequireWindows51
-      - name: Exercise guarded interrupted-startup checkpoint replacement
+        run: |
+          python scripts/recovery/Test-RecoveryPackage.py
+          if ($LASTEXITCODE -ne 0) { throw 'Package canonicalization regression failed.' }
+          python scripts/recovery/Build-RecoveryPackage.py --output "$env:RUNNER_TEMP/Stroked-Local-Website-Restore-v1.7.zip"
+          if ($LASTEXITCODE -ne 0) { throw 'Delivery package build failed.' }
+      - name: Reproduce duplicate-marker failure and test extracted delivery on Windows PowerShell 5.1
         shell: powershell
-        run: ./scripts/recovery/Test-RecoveryStartup.ps1
+        run: ./scripts/recovery/Test-RecoveryPackage.ps1 -ZipPath "$env:RUNNER_TEMP/Stroked-Local-Website-Restore-v1.7.zip" -RequireWindows51
   real-docker-network:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -30,6 +34,9 @@ jobs:
       - name: Exercise isolated fixture containers on real Docker
         shell: pwsh
         run: ./scripts/recovery/Test-RecoveryDockerIntegration.ps1
+      - name: Exercise eight real PostgreSQL verifier failures through sqlstate-only native reporting
+        shell: pwsh
+        run: ./scripts/recovery/Test-RecoveryProtection.ps1
 
   actual-supabase-startup:
     runs-on: ubuntu-latest
@@ -41,3 +48,4 @@ jobs:
       - name: Reproduce internal-only port loss and exercise real Supabase cold start through fixed-target proxy
         shell: pwsh
         run: ./scripts/recovery/Test-RecoveryProxy.ps1
+

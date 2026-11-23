@@ -1,4 +1,4 @@
-STROKED LOCAL WEBSITE RESTORE - 1.6
+STROKED LOCAL WEBSITE RESTORE - 1.7
 Prepared November 22, 2026 for Whisky's existing Surface recovery setup.
 
 RUN ON THE SURFACE
@@ -187,7 +187,25 @@ Extract this version into a fresh folder. With Docker Desktop open, run the
 extracted Run-Website-Restore.cmd as administrator. Startup must show v1.4.
 The existing private checkpoint is resumed; no new backup is required.
 
-VERSION 1.6 SAFE LOCAL PROTECTION DIAGNOSTICS
+VERSION 1.7 PACKAGED WINDOWS SCRIPT AND SQLSTATE REPAIR
+
+The v1.6 ZIP had duplicate UTF-8 encoding markers on two PowerShell scripts.
+That prevented the main script from parsing before any recovery code ran.
+The package builder now removes duplicate leading markers and writes exactly
+one UTF-8 marker plus Windows line endings for every PowerShell script.
+Windows PowerShell 5.1 tests extract the final ZIP, reproduce the old failure,
+parse every delivered script, and exercise the extracted helper files.
+A deterministic ZIP hash ties those tests to the delivered bytes.
+
+The eight protection assertions use distinct PDB01-PDB08 SQLSTATE codes.
+This preserves the private sqlstate-only error format while allowing the
+safe report to identify DBP01-DBP08. The previous v1.6 message-based tags
+could not work with sqlstate-only output. A disposable PostgreSQL fixture
+checks the passing verifier and each of its eight distinct failure paths.
+The protection conditions are unchanged. A committed local import resumes;
+the actual failed owner protection assertion remains unknown until this run.
+
+VERSION 1.6 SAFE LOCAL PROTECTION DIAGNOSTICS (SUPERSEDED BY 1.7)
 
 The restored database-protection verifier now tags each of its eight possible
 assertion failures with a fixed DBP01–DBP08 identifier. Only that allowlisted
@@ -237,7 +255,8 @@ retained byv1.4, so its exact text cannot be retrospectively established.
 Technical reference: Docker maintainer explanation and supported proxy pattern
 https://github.com/moby/moby/discussions/53256
 
-Extract into a fresh folder; startup must showv1.6. The package can resume the
+Extract into a fresh folder; startup must show v1.7. The package can resume the
 interrupted pre-import startup. Safe reports now identify the CLI stop/start
 step and fixed error categories/service names. CLI output remains in private
 local files for diagnosis; it is never copied into the report or clipboard.
+

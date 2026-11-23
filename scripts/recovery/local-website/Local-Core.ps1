@@ -1,8 +1,8 @@
-﻿function Invoke-QuietNative {
+function Invoke-QuietNative {
     param([string]$Program,[string[]]$Arguments,[int]$TimeoutSeconds=30,[string]$InputText=$null)
     # A typed string parameter coerces $null to ''. Only the bound-parameter
     # table distinguishes omitted stdin from an explicitly supplied empty input.
-    $script:LastNativeFailure=$null
+    $script:LastNativeFailure=$null;$script:LastSQLState=$null
     $hasInput=$PSBoundParameters.ContainsKey('InputText')
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName=$Program
@@ -56,7 +56,9 @@
             }
             if([IO.Path]::GetFileName($Program) -ieq 'supabase.exe' -and $Arguments[0] -cin @('start','stop','status')){$operation='Supabase '+$Arguments[0]}
             $script:LastNativeFailure=[ordered]@{Operation=$operation;ExitCode=[int]$proc.ExitCode}
-            if($errorText -match '\bSTROKED_DRILL_CHECK_(DBP[0-9]{2})\b'){$script:LastNativeFailure.SafeCheckID=$Matches[1]}
+            # VERBOSITY=sqlstate deliberately omits the exception message. Only
+            # our eight fixed PostgreSQL codes may identify a protection check.
+            if($script:LastSQLState -cmatch '^PDB0[1-8]$'){$script:LastNativeFailure.SafeCheckID='DBP'+$script:LastSQLState.Substring(3,2)}
             if($operation -cmatch '^Docker (?:ps|inspect|network|start|stop|create|pull|volume)(?: |$)'){
                 $line=@($errorText -split '\r?\n'|Where-Object {$_.Trim()}|Select-Object -First 1) -join ''
                 $line=[regex]::Replace($line,'(?i)(AGE-SECRET-KEY-[A-Z0-9]+|sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)','[redacted]')
@@ -391,3 +393,4 @@ function Invoke-DrillHTTP {
     } finally{if($response){$response.Dispose()}}
 }
 function ConvertTo-DrillJSONBytes($Value){return [Text.Encoding]::UTF8.GetBytes(($Value | ConvertTo-Json -Depth 15 -Compress))}
+
