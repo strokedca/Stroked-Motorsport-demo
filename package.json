@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite": "^0.5.17",
     "happy-dom": "^21.0.4"
   },
   "name": "stroked-events-v55-testing",
