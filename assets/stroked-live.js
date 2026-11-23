@@ -26,7 +26,7 @@
           <section id="sv61AuthCaptcha" class="auth-captcha" aria-label="Human verification" hidden></section>
           <div class="actions"><button id="sv55AuthSubmit" type="submit">Sign in</button><button id="sv53ResetPassword" type="button" class="secondary">Forgot password?</button><button id="sv55Resend" type="button" class="secondary">Resend confirmation email</button><button id="sv53AuthBack" type="button" class="secondary">Back</button></div>
         </form>
-        <form id="sv55Recovery" hidden><h3>Choose a new password</h3><p>Use at least 12 characters for your new password.</p><label>New password<input name="password" type="password" minlength="12" autocomplete="new-password" required></label><label>Confirm new password<input name="confirm_password" type="password" minlength="12" autocomplete="new-password" required></label><button type="submit">Save new password</button></form>
+        <form id="sv55Recovery" hidden><h3>Choose a new password</h3><p>Use at least 12 characters for your new password.</p><label>New password<input name="password" type="password" minlength="12" autocomplete="new-password" required></label><label>Confirm new password<input name="confirm_password" type="password" minlength="12" autocomplete="new-password" required></label><label id="sv62RecoveryMfa" hidden>Authenticator code<input name="authenticator_code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"><span class="account-help">Use the current six-digit code from your existing authenticator.</span></label><button type="submit">Save new password</button></form>
         <div id="sv5SignedIn" hidden><div class="actions"><button id="sv5Post" type="button" hidden>Post an event</button><button id="sv55BecomeOrganizer" type="button" class="secondary" hidden>Set up an organizer account</button><button id="sv5Refresh" type="button" class="secondary">Refresh</button><button id="sv5Logout" type="button" class="secondary">Sign out</button></div>
           <section id="sv55Organizer" hidden><h3>My organizer profile</h3><p class="account-help">Only the public contact details you supply below appear on your approved events. Your login email stays private.</p>
             <form id="sv53ProfileForm" class="sv5Card"><label>Club / organization name<input name="organization" maxlength="100" required minlength="2"></label><div class="grid"><label>City / town<input name="city" maxlength="80"></label><label>Province / state<input name="region" maxlength="80"></label></div><label>Public contact email<input name="public_email" type="email" maxlength="160"></label><label>Website / Facebook URL<input name="website" type="url" maxlength="300" placeholder="https://"></label><button type="submit">Save organizer profile</button></form>
@@ -122,6 +122,7 @@
     el('sv53Welcome').hidden=signed||recovery||!form.hidden;form.hidden=signed||recovery||form.hidden;
     if(form.hidden)authCaptcha.clear();
     el('sv5SignedIn').hidden=!signed||recovery;el('sv55Recovery').hidden=!signed||!recovery;
+    if(!signed||!recovery){el('sv62RecoveryMfa').hidden=true;el('sv55Recovery').elements.namedItem('authenticator_code').required=false;el('sv55Recovery').elements.namedItem('authenticator_code').value='';}
     el('sv55Organizer').hidden=!organizer;el('sv5Admin').hidden=!account?.is_admin;
     el('sv58OrganizerTools').hidden=!organizer;
     if(el('sv58OrganizerTools').dataset.admin!==String(Boolean(account?.is_admin))){el('sv58OrganizerTools').open=!account?.is_admin;el('sv58OrganizerTools').dataset.admin=String(Boolean(account?.is_admin));if(el('sv58MyBookings'))el('sv58MyBookings').open=!account?.is_admin;}
@@ -278,7 +279,29 @@
     e.preventDefault();const f=e.currentTarget;if(f.querySelector('button').disabled)return;const values=new FormData(f),password=String(values.get('password')||'');
     if(password!==values.get('confirm_password')){message('The passwords do not match.',true);return;}
     if(password.length<12){message('Use at least 12 characters for your new password.',true);return;}
-    busy(f,true);try{const {error}=await db.auth.updateUser({password});if(error)throw error;f.reset();recovery=false;updateAccountView();message('Password updated.');}catch(err){message(failure(err),true);}finally{busy(f,false);}
+    const expectedUserId=user?.id,code=f.elements.namedItem('authenticator_code');
+    const sameIdentity=()=>{if(!recovery||!expectedUserId||user?.id!==expectedUserId)throw Error('Your sign-in changed. Open the newest reset link again.');};
+    busy(f,true);try{
+      sameIdentity();
+      const assurance=await db.auth.mfa.getAuthenticatorAssuranceLevel();if(assurance.error)throw assurance.error;sameIdentity();
+      if(!assurance.data?.currentLevel||!assurance.data?.nextLevel)throw Error('Your security check could not finish. Refresh and try again.');
+      if(assurance.data.nextLevel==='aal2'&&assurance.data.currentLevel!=='aal2'){
+        const listed=await db.auth.mfa.listFactors();if(listed.error)throw listed.error;sameIdentity();
+        const factor=listed.data?.totp?.find(item=>item.status==='verified');
+        if(!factor)throw Error('A verified authenticator is required. Contact the account owner if it is unavailable.');
+        el('sv62RecoveryMfa').hidden=false;code.required=true;
+        const entered=code.value.trim();
+        if(!/^[0-9]{6}$/.test(entered)){message('Enter your six-digit authenticator code, then save the new password.');code.focus();return;}
+        const challenge=await db.auth.mfa.challenge({factorId:factor.id});if(challenge.error)throw challenge.error;sameIdentity();
+        const verified=await db.auth.mfa.verify({factorId:factor.id,challengeId:challenge.data.id,code:entered});if(verified.error)throw verified.error;sameIdentity();
+        const confirmed=await db.auth.mfa.getAuthenticatorAssuranceLevel();if(confirmed.error)throw confirmed.error;sameIdentity();
+        if(confirmed.data?.currentLevel!=='aal2')throw Error('Authenticator verification did not finish. Try a fresh code.');
+      }
+      const current=await db.auth.getUser();if(current.error)throw current.error;sameIdentity();
+      if(current.data?.user?.id!==expectedUserId)throw Error('Your sign-in changed. Open the newest reset link again.');
+      const {error}=await db.auth.updateUser({password});if(error)throw error;sameIdentity();
+      f.reset();recovery=false;updateAccountView();message('Password updated.');
+    }catch(err){message(failure(err),true);}finally{code.value='';busy(f,false);}
   });
   el('sv5Logout').onclick=async()=>{
     el('sv5Logout').disabled=true;try{const {error}=await db.auth.signOut();if(error)throw error;++authEpoch;user=null;account=null;recovery=false;form.reset();form.hidden=true;updateAccountView();message('Signed out.');if(el('detailsDialog').open)await loadMyRsvp();}catch(e){message(failure(e),true);}finally{el('sv5Logout').disabled=false;}
@@ -383,3 +406,4 @@
   }
   start();
 })();
+
