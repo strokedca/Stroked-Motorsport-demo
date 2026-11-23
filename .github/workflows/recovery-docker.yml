@@ -10,6 +10,10 @@ jobs:
   windows-powershell-51:
     runs-on: windows-latest
     timeout-minutes: 10
+    env:
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: "false"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:

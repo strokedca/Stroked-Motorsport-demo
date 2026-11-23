@@ -37,6 +37,10 @@ def build(source: Path, output: Path) -> str:
             data = path.read_bytes()
             if path.suffix.lower() == ".ps1":
                 data = windows_script_bytes(data)
+            elif path.suffix.lower() == ".cmd":
+                # cmd.exe expects no encoding marker. Normalize checkout
+                # differences without touching the archived browser SDK.
+                data = windows_script_bytes(data)[len(codecs.BOM_UTF8):]
             archive.writestr(info, data)
     digest = hashlib.sha256(output.read_bytes()).hexdigest()
     print(f"PACKAGE_SHA256={digest}")

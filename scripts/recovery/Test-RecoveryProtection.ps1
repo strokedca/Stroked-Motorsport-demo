@@ -3,7 +3,7 @@
 param([string]$Package=(Join-Path $PSScriptRoot 'local-website'))
 $ErrorActionPreference='Stop'
 . (Join-Path $Package 'Local-Core.ps1')
-$docker=(Get-Command docker -CommandType Application).Source
+$docker=(Get-Command docker -CommandType Application | Select-Object -First 1).Source
 $fixture='stroked-protection-ci-'+[guid]::NewGuid().ToString('N')
 $endpoint='unix:///var/run/docker.sock'
 function Run-SQL([string]$SQL){
