@@ -71,7 +71,7 @@ test('root deployment and generated build share browser protections and integrit
   for(const value of ["frame-ancestors 'none'","object-src 'none'","base-uri 'self'",'X-Frame-Options: DENY','Strict-Transport-Security: max-age=31536000','X-Content-Type-Options: nosniff','Permissions-Policy: camera=(), microphone=(), geolocation=()'])assert.ok(headers.includes(value),value);
   for(const page of ['index.html','unsubscribe.html']){
    const html=await readFile(join(dir,page),'utf8');
-   assert.match(html,/@supabase\/supabase-js@2\.95\.3\/dist\/umd\/supabase.min.js" integrity="sha384-[A-Za-z0-9+/]+" crossorigin="anonymous"/);
+   assert.match(html,/@supabase\/supabase-js@2\.110\.1\/dist\/umd\/supabase.min.js" integrity="sha384-[A-Za-z0-9+/]+" crossorigin="anonymous"/);
    assert.doesNotMatch(html,/@supabase\/supabase-js@2["/]/);
   }
  }finally{await rm(dir,{recursive:true,force:true});}

@@ -9,7 +9,7 @@
     "assets/stroked-actions.js": "399dd47eaac68d491c4cc6f70be6d5c2960d31a1edfc285bbeb5ad652bad36e0",
     "assets/stroked-app.js": "56b84f808c6c18f47a584e91f6d53cc152e2a11850d51b9bcba600446499e4b7",
     "assets/stroked-app.css": "de52a6387dca07c752a1734e4199bb9ba805bc8dcccff1896140bf40fb947e8d",
-    "index.html": "aa6b2b45f0f6364bcc4f30ebd09a48303fd0274768cdbf8687a6d9dc77fc5890",
+    "index.html": "a995055474d16f11f7af17c0f5911bbaeeb7a40d8b5fe9de6a68faf6375c9c62",
     "events-logo-1.png": "7315576883420cd5653372e3c82f1357e0af5d03663ce4803ce6598db3bc20a7",
     "clothing-apparel-logo.png": "54484e08625253ddd8e624bedffda5562212dda4e25d706780a2cde4ad61448b",
     "assets/stroked-config.js": "dc46f828cc7533623930a707b5d09f882075f3c92c6e616bcfc6888d7f5b84e6",
@@ -18,7 +18,7 @@
     "assets/stroked-engagement.js": "ed1639d180c39e301c0b9d79beafd55cf15b838583c9786f27cf531c0f67c1d2",
     "assets/stroked-announcements.js": "84d3efea6f3eb0167f71e8e88a14ab5fefe077f44f4a7b5ece101b7eff2d18f8",
     "assets/stroked-unsubscribe.js": "808598eaba40752e0984cb87a2703960a2614cf9710d62b33122ab7af88d1849",
-    "unsubscribe.html": "c29837e3400cf33e0c446cb578810da3a921ed1a7bd1c8911e1e9c5f4890b608",
+    "unsubscribe.html": "8fcb98042e8c747ef84965283cc133042b154baa8d82ca015e97215aa2de7480",
     "assets/stroked-live.css": "e14605454256135142d23876b4c80bc33b7f5e19fc879a4c30f434385b575f54",
     "assets/stroked-payments-config.js": "fae5bf593eccceda8598b533ce4681762298a8e0d71f615ba6994a3b0ac270fb",
     "assets/stroked-support.js": "3e7060c6d125f6c3a8647cb487c71b3cfad99e7862f6f02f1bbd3db2072ef98f",
@@ -40,6 +40,6 @@
     "contact.html": "225355d12a926a18d8473de51a040a43a2841b3110cda98f621a05d48e8a8fc6",
     "robots.txt": "01938262823c7b0ced06b5ecdfd52874273cc6d9fcb6918a336a92e10fd272ec",
     "sitemap.xml": "c43bfdc9416908b19d5f0947c2ce73f85a5f7e350d0b0a5bb169985d7507f3ad",
-    "_headers": "56c9493cd47f8f017260ac833c38664b019e48cc4295dc6145188b11b0922d6f"
+    "_headers": "d059cfc91f7c7eac5335cb9bca7ac9af01ba42d557527e03f9a49935271aec17"
   }
 }
