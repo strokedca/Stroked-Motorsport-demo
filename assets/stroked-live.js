@@ -60,8 +60,21 @@
   const hasAuthLink = initialUrl.searchParams.has('auth') || initialUrl.searchParams.has('code') || hash.has('access_token') || hash.has('error');
   const authLinkError = hash.get('error_description') || initialUrl.searchParams.get('error_description');
   recovery = initialUrl.searchParams.get('auth') === 'recovery' || hash.get('type') === 'recovery';
-  const message = (text, error = false) => {el('sv5Message').textContent=text;el('sv5Message').classList.toggle('account-error',error);};
+  function positionAccountMessage() {
+    const notice=el('sv5Message');
+    notice.classList.toggle('auth-submit-status',!form.hidden);
+    if(form.hidden)el('sv5Identity').before(notice);
+    else el('sv55AuthSubmit').closest('.actions').before(notice);
+    return notice;
+  }
+  const message = (text, error = false) => {
+    const notice=positionAccountMessage();notice.textContent=text;notice.classList.toggle('account-error',error);
+    if(error&&panel.open&&!form.hidden)notice.scrollIntoView?.({block:'nearest'});
+  };
   const failure = e => e?.code==='PGRST202'?(config.testing?'The testing account and event services still need to be enabled.':'Account services are temporarily unavailable. Please try again later.'):String(e?.message || e || 'Please try again.').slice(0,400);
+  const loginFailure = e => e?.code==='invalid_credentials'||/invalid login credentials/i.test(String(e?.message||''))
+    ? 'Email or password not accepted. Check your email and current password, including any autofilled details, or choose Forgot password.'
+    : failure(e);
   function authReturnUrl(kind) {
     const url=new URL(location.href);
     if(resumeEvent&&core.eventId({id:resumeEvent,strokedLive:true}))url.searchParams.set('event',resumeEvent);
@@ -113,6 +126,7 @@
   panel.addEventListener('cancel',()=>authCaptcha.clear());
   function choose(next) {
     mode=next; el('sv53Welcome').hidden=true;form.hidden=false;
+    positionAccountMessage();
     const signup=mode==='signup', reset=mode==='reset';
     el('sv53AuthHeading').textContent=signup?'Create your '+requestedType+' account':reset?'Reset your password':'Sign in to Stroked';
     el('sv55NameFields').hidden=!signup;el('sv55ConfirmWrap').hidden=!signup;el('sv55PasswordWrap').hidden=reset;
@@ -149,7 +163,7 @@
   el('eventListHeading').before(join);
   el('sv60ChooseSignup').onclick=()=>choose('signup');el('sv60ChooseLogin').onclick=()=>choose('login');
   el('sv53ResetPassword').onclick=()=>choose('reset');
-  el('sv53AuthBack').onclick=()=>{authCaptcha.clear();form.hidden=true;el('sv53Welcome').hidden=false;form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';};
+  el('sv53AuthBack').onclick=()=>{authCaptcha.clear();form.hidden=true;positionAccountMessage();el('sv53Welcome').hidden=false;form.elements.namedItem('password').value='';form.elements.namedItem('confirm_password').value='';};
   function busy(target, value) {target.querySelectorAll('button').forEach(b=>b.disabled=value);}
   const connected = Boolean(window.supabase?.createClient && config?.url && config?.publishableKey);
   if (!connected) {message('Account service could not load. Check your connection and reload.',true);busy(form,true);return;}
@@ -189,6 +203,7 @@
       }
     }else adminHelp?.remove();
     el('sv53Welcome').hidden=signed||recovery||!form.hidden;form.hidden=signed||recovery||form.hidden;
+    positionAccountMessage();
     if(form.hidden)authCaptcha.clear();
     el('sv5SignedIn').hidden=!signed||recovery;el('sv55Recovery').hidden=!signed||!recovery;
     if(!signed||!recovery){el('sv62RecoveryMfa').hidden=true;el('sv55Recovery').elements.namedItem('authenticator_code').required=false;el('sv55Recovery').elements.namedItem('authenticator_code').value='';}
@@ -349,7 +364,7 @@
       if(!result.data.session){message('Check your email and use the newest confirmation link. Then return here to sign in. If you already have an account, choose Sign in.');return;}
       recovery=false;await refreshAccount();message(authStorage.canRemember?'Signed in.':'Signed in for this page. This browser could not save your sign-in.');
       if(resumeDraft) await finishSignupRsvp(resumeDraft);
-    }catch(e){message(failure(e),true);}finally{busy(form,false);}
+    }catch(e){message(mode==='login'?loginFailure(e):failure(e),true);}finally{busy(form,false);}
   });
   el('sv55Resend').onclick=async()=>{
     const email=form.elements.namedItem('email').value.trim();if(!email||!form.elements.namedItem('email').checkValidity()){message('Enter a valid email address first.',true);return;}
