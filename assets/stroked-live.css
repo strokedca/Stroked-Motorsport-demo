@@ -13,6 +13,7 @@ button:disabled{opacity:.6;cursor:wait}
 .account-body .sv5Card h3{margin:0 0 10px}.account-body .sv5Card p{margin:8px 0}
 .sv55-event-information{margin:10px 0}.sv55-event-information summary{min-height:44px;padding:10px 0;cursor:pointer;font-weight:600}
 #sv5Message{min-height:24px;white-space:pre-line;color:#d2e8ff;scroll-margin-top:88px}
+#sv5Message.auth-submit-status{margin:12px 0;padding:12px;border-left:3px solid #80b8dc;border-radius:6px;background:#172b3c;line-height:1.5}#sv5Message.auth-submit-status.account-error{border-left-color:#f18b7e;background:#34242b}#sv5Message.auth-submit-status:empty{display:none}
 .account-help{font-size:14px;color:#bbc9d9}.account-error{color:#ffb8ad!important}
 .auth-captcha{margin:16px 0;max-width:100%;overflow-x:auto}.auth-captcha p{font-size:14px;min-height:21px}
 .signup-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin:12px 0 22px}

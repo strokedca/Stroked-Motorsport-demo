@@ -91,7 +91,7 @@ test('all four Auth requests require a fresh proof and keep redirects and signup
   const win=new Window({url:'https://stroked.ca/',settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});
   try{
     const p=provider(win),calls=[];
-    const record=method=>async(...args)=>{calls.push({method,args});return {data:{session:null},error:method==='signInWithPassword'?{message:'Incorrect email or password'}:null};};
+    const record=method=>async(...args)=>{calls.push({method,args});return {data:{session:null},error:method==='signInWithPassword'?{code:'invalid_credentials',message:'Invalid login credentials'}:null};};
     win.supabase={createClient:()=>({auth:{
       getSession:async()=>({data:{session:null}}),getUser:async()=>({data:{user:null}}),onAuthStateChange:()=>({}),
       signUp:record('signUp'),signInWithPassword:record('signInWithPassword'),resetPasswordForEmail:record('resetPasswordForEmail'),resend:record('resend')
@@ -114,6 +114,11 @@ test('all four Auth requests require a fresh proof and keep redirects and signup
     assert.equal(form.checkValidity(),true,'existing shorter passwords remain valid for sign-in');
     await submit();assert.equal(calls.length,1);p.last().callback('login-proof');await submit();
     assert.equal(calls[1].method,'signInWithPassword');assert.equal(calls[1].args[0].options.captchaToken,'login-proof');
+    assert.equal($('sv5Message').parentElement,form,'sign-in feedback stays inside the visible form on phones');
+    assert.match($('sv5Message').textContent,/Email or password not accepted/);
+    assert.match($('sv5Message').textContent,/autofilled details/);
+    assert.equal(form.hidden,false);assert.equal($('sv55AuthSubmit').disabled,false,'a rejected password allows correction and retry');
+    assert.equal(form.elements.namedItem('password').value,'oldpass');
     await submit();assert.equal(calls.length,2,'failed sign-in consumes its proof');
     $('sv55Resend').click();await settle();assert.equal(calls.length,2);
     p.last().callback('resend-proof');$('sv55Resend').click();await settle();
@@ -123,6 +128,7 @@ test('all four Auth requests require a fresh proof and keep redirects and signup
     p.last().callback('reset-proof');await submit();assert.equal(calls[3].method,'resetPasswordForEmail');
     assert.equal(calls[3].args[1].captchaToken,'reset-proof');assert.equal(calls[3].args[1].redirectTo,'https://stroked.ca/?auth=recovery');
     p.last().callback('discard-on-back');$('sv53AuthBack').click();assert.equal($('sv61AuthCaptcha').hidden,true);
+    assert.equal(form.contains($('sv5Message')),false,'Back keeps account feedback out of a hidden form');
     $('sv53ShowLogin').click();await settle();await submit();assert.equal(calls.length,4);
     p.last().callback('discard-on-close');$('sv5Close').click();await settle();$('sv5Open').click();await settle();await submit();assert.equal(calls.length,4);
     assert.equal($('sv55Recovery').elements.namedItem('password').minLength,12);
