@@ -3,7 +3,7 @@
   "mode": "production",
   "rpcPrefix": "stroked_live_v55_",
   "files": {
-    "assets/stroked-claims.js": "9a16a01ab50a98961d5e6926d023af7fd6861443f0c99322130f9f69546df9fe",
+    "assets/stroked-claims.js": "3a401f2359a1ad6cc94943439fc387dc97b5f19456a9663540ac75cbd0968f57",
     "assets/stroked-event-page.css": "bdc80180b5ac746dc7a2465b827887547674caf60689854269f43af67e8a229f",
     "assets/stroked-event-page.js": "ae2767a73620899be7c7f16ac716e63bc57932ddf88d8e950b6e00b890003e94",
     "assets/stroked-intro.css": "1e35a629f3a7cf1a0de9f21d84b4cd35e070e31929f3c337d6da5033d56df3ac",
@@ -17,7 +17,7 @@
     "assets/stroked-actions.js": "79513a20e5aa485c8cd64a2b5efa8fae4b5a797ed6a05047df696a251c9889ac",
     "assets/stroked-app.js": "f6cbe5fcdf0b0ff5be48e23b08257da085463ee94b1344073667c8ed926f144c",
     "assets/stroked-app.css": "caca68299ab2a09eab87204637615effaaa76a0941ac0fed70c38b8426ff3705",
-    "index.html": "a2bd3b9a0b29673f86f8f04b5a5ff6d6ba2c316f4e43cbd6897157de70258225",
+    "index.html": "556fe8563064ec63b1b114082eb0a32e564a5d62d3bd34271fd67ee6e484475f",
     "events-logo-1.png": "7315576883420cd5653372e3c82f1357e0af5d03663ce4803ce6598db3bc20a7",
     "clothing-apparel-logo.png": "54484e08625253ddd8e624bedffda5562212dda4e25d706780a2cde4ad61448b",
     "assets/stroked-config.js": "dc46f828cc7533623930a707b5d09f882075f3c92c6e616bcfc6888d7f5b84e6",

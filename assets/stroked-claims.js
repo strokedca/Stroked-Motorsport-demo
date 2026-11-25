@@ -24,8 +24,8 @@ window.StrokedClaims={mount({rpc,config,getAccount,getUser,getEvents,getMyEvents
   pendingEvent=event.id;
   if(!isOrganizer()){requestOrganizer(event);return;}
   if(owns(event)){clearIntent();openMyEvents();return;}
-  if(mine.some(r=>r.event_id===eventId(event)&&r.status==='pending')){openMyEvents();own.open=true;return;}
-  activeEvent=event.id;form.reset();status.textContent='';$('strokedClaimEventName').textContent=event.name;
+  if(mine.some(r=>r.event_id===eventId(event)&&r.status==='pending')){clearIntent();openMyEvents();own.open=true;return;}
+  pendingEvent=null;activeEvent=event.id;form.reset();status.textContent='';$('strokedClaimEventName').textContent=event.name;
   form.elements.namedItem('organization').value=getAccount()?.profile?.organization||event.club||'';
   $('sv5Panel')?.close();if(!dialog.open)dialog.showModal();
  }
