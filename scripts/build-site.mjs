@@ -35,6 +35,17 @@ export async function buildSite({mode='testing',outDir=join(root,'dist')}={}){
     config=replaceOnce(config,/testing: (?:true|false)/,'testing: '+(mode==='testing'));
     contents.set('assets/stroked-config.js',Buffer.from(config));
   }
+  // Version every first-party script and stylesheet by its actual built bytes.
+  // Zone cache rules may otherwise keep an old script alongside new HTML.
+  for(const [path,bytes] of contents){
+    if(!path.endsWith('.html'))continue;
+    const html=bytes.toString('utf8').replace(/\b(src|href)="(\/?assets\/[^"?#]+\.(?:js|css))(?:\?[^\"]*)?"/g,(whole,attribute,url)=>{
+      const asset=contents.get(url.replace(/^\//,''));
+      if(!asset)return whole;
+      return attribute+'="'+url+'?v='+createHash('sha256').update(asset).digest('hex').slice(0,12)+'"';
+    });
+    contents.set(path,Buffer.from(html));
+  }
   contents.set('robots.txt',mode==='production'?await readFile(join(root,'robots.txt')):Buffer.from('User-agent: *\nDisallow: /\n'));
   if(mode==='production')contents.set('sitemap.xml',await readFile(join(root,'sitemap.xml')));
   contents.set('_routes.json',Buffer.from(JSON.stringify({version:1,include:['/events/*','/sitemap.xml'],exclude:[]})+'\n'));
