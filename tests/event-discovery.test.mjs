@@ -15,6 +15,7 @@ test('public event pages render dates, safe metadata, source and RSVP links befo
   const html=await response.text();
   assert.match(html,/June 30, 2027 – July 4, 2027/);
   assert.match(html,/href="https:\/\/example.test\/schedule"/);
+  assert.match(html,/stroked-traffic\.js\?v=[a-f0-9]{12}/);
   assert.match(html,new RegExp('href="/\\?event=live-'+id+'"'));
   const win=new Window();win.document.write(html);
   const data=JSON.parse(win.document.querySelector('script[type="application/ld+json"]').textContent);
