@@ -185,7 +185,7 @@
   const pricingTools=window.StrokedPricing?.mount({rpc,config,openAccount,getAccount:()=>account,getMyEvents:()=>myRows,promotions:promotionTools});
   const engagement=window.StrokedEngagement?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
   const announcements=window.StrokedAnnouncements?.mount({rpc,config});
-  const claims=window.StrokedClaims?.mount({rpc,config,getAccount:()=>account,getUser:()=>user,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId),
+  const claims=window.StrokedClaims?.mount({rpc,config,getAccount:()=>account,getUser:()=>user,getEvents:()=>state.events,getMyEvents:()=>myRows,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId),
     requestOrganizer:event=>{resumeEvent=event.id;const url=new URL(location.href);url.searchParams.set('event',event.id);url.searchParams.set('claim','1');history.replaceState({},'',url.pathname+url.search);openAccount('organizer');message('Sign in to an organizer account to request management of '+event.name+'. If you have a rider account, choose Set up an organizer account.');},
     refreshAll:async()=>{await Promise.all([refreshAccount(),refreshPublic()]);},
     openMyEvents:()=>{openAccount('organizer');el('sv58OrganizerTools').open=true;el('sv55Organizer').scrollIntoView({block:'start'});}});
