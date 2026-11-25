@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {buildSite,siteFiles} from '../scripts/build-site.mjs';
+import {eventAssetVersions} from '../lib/event-asset-versions.mjs';
 
 test('entry pages use content-specific asset URLs, including different preview configuration',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'stroked-cache-'));
@@ -18,6 +19,7 @@ test('entry pages use content-specific asset URLs, including different preview c
           const url=new URL(match[1],'https://stroked.ca/'),path=url.pathname.slice(1);
           const expected=createHash('sha256').update(await readFile(join(dir,path))).digest('hex').slice(0,12);
           assert.equal(url.searchParams.get('v'),expected,file+': '+path);
+          if(mode==='production'&&eventAssetVersions[path])assert.equal(eventAssetVersions[path],expected,'event worker uses the same release');
           if(file==='index.html'&&path==='assets/stroked-config.js')configurations.push(expected);
         }
         assert.doesNotMatch(html,/\b(?:src|href)="\/?assets\/[^"?]+\.(?:js|css)"/,'no unversioned first-party code remains');
