@@ -9,6 +9,7 @@
   changeDate:(...args)=>changeDate(...args),
   changeDateRange:(...args)=>changeDateRange(...args),
   changeEventYear:(...args)=>changeEventYear(...args),
+  changeVehicleCategory:(...args)=>changeVehicleCategory(...args),
   changeProvinceSelection:(...args)=>changeProvinceSelection(...args),
   deletePromotion:(...args)=>deletePromotion(...args),
   editEvent:(...args)=>editEvent(...args),
