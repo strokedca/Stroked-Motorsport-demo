@@ -1,8 +1,9 @@
 /* Organizer claims are reviewed by an administrator; they never transfer access on submission. */
-window.StrokedClaims={mount({rpc,config,getAccount,getUser,getEvents,getSelectedEvent,requestOrganizer,refreshAll,openMyEvents}){
+window.StrokedClaims={mount({rpc,config,getAccount,getUser,getEvents,getMyEvents=()=>[],getSelectedEvent,requestOrganizer,refreshAll,openMyEvents}){
  if(config.testing)return {setAccount(){},refresh(){},decorateDetail(){},resumeLink(){}};
  const $=id=>document.getElementById(id),make=(tag,value)=>{const n=document.createElement(tag);if(value!==undefined)n.textContent=String(value);return n;};
  const eventId=event=>/^live-[a-f0-9-]{36}$/.test(event?.id||'')?event.id.slice(5):null;
+ const owns=event=>Boolean(getUser()&&getAccount()&&getMyEvents().some(row=>row.id===eventId(event)));
  const note=(target,value)=>{target.textContent=value;},isOrganizer=()=>Boolean(getUser()&&(getAccount()?.account_type==='organizer'||getAccount()?.is_admin));
  let identity=null,epoch=0,mine=[],reviews=[],pendingEvent=null,activeEvent=null,intentConsumed=false,loading=false;
  const own=make('details');own.id='strokedMyEventClaims';own.className='sv5Card';own.hidden=true;
@@ -22,6 +23,7 @@ window.StrokedClaims={mount({rpc,config,getAccount,getUser,getEvents,getSelected
   if(!eventId(event)||event.claimable!==true)return;
   pendingEvent=event.id;
   if(!isOrganizer()){requestOrganizer(event);return;}
+  if(owns(event)){clearIntent();openMyEvents();return;}
   if(mine.some(r=>r.event_id===eventId(event)&&r.status==='pending')){openMyEvents();own.open=true;return;}
   activeEvent=event.id;form.reset();status.textContent='';$('strokedClaimEventName').textContent=event.name;
   form.elements.namedItem('organization').value=getAccount()?.profile?.organization||event.club||'';
@@ -30,6 +32,7 @@ window.StrokedClaims={mount({rpc,config,getAccount,getUser,getEvents,getSelected
  function decorateDetail(event){
   $('eventExtraActions')?.querySelector('[data-event-claim]')?.remove();$('detailBody')?.querySelector('[data-event-managed]')?.remove();
   if(!eventId(event))return;
+  if(owns(event)){const button=make('button','Manage my event');button.type='button';button.className='secondary';button.dataset.eventClaim='';button.onclick=openMyEvents;$('eventExtraActions')?.append(button);return;}
   if(event.organizerManaged){const p=make('p','This listing is maintained by an approved organizer. Changes are reviewed by Stroked.');p.dataset.eventManaged='';$('detailBody')?.append(p);return;}
   if(event.claimable!==true)return;
   const pending=mine.some(r=>r.event_id===eventId(event)&&r.status==='pending'),button=make('button',pending?'View my claim request':'Claim this event');button.type='button';button.className='secondary';button.dataset.eventClaim='';button.onclick=()=>{if(pending){openMyEvents();own.open=true;}else show(event);};$('eventExtraActions')?.append(button);
