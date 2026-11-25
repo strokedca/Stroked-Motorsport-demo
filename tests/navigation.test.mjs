@@ -38,7 +38,7 @@ test('bottom Calendar opens a month, browses both directions and restores Explor
     win.navigationTest.move(-1);assert.equal($('calendarTitle').textContent,first);
     win.document.querySelector('[data-destination="browse"]').click();
     assert.equal(win.document.body.classList.contains('app-calendar-mode'),false);assert.equal($('filterDateRange').value,originalRange);
-    assert.equal(win.document.querySelector('[data-destination="clothing"]').textContent,'Clothing');
+    assert.equal(win.document.querySelector('[data-destination="following"]').textContent,'Following');
   }finally{win.happyDOM.abort();}
 });
 
@@ -78,7 +78,7 @@ test('event details use public profile contact when the event contact is blank',
     assert.doesNotMatch($('detailBody').textContent,/Organizer contact: Not supplied/);
     assert.ok($('evName').closest('form'));
     assert.equal($('evName').closest('details'),null);
-    assert.equal($('evLocation').closest('details'),null);
+    assert.equal($('evLocation').closest('details').id,'optionalEventDetails');assert.equal($('evTime').value,'');assert.ok($('evEndDate'));
     assert.equal($('evRain').closest('details').open,false);
     assert.equal($('eventSponsorRows').closest('details').open,false);
     assert.ok($('cards').compareDocumentPosition($('calendarViewDetails'))&4,'event cards precede the optional calendar');

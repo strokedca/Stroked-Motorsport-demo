@@ -6,8 +6,11 @@
   const excludeKey = 'stroked-traffic-excluded';
   const privacySignal = navigator.globalPrivacyControl === true || ['1', 'yes'].includes(navigator.doNotTrack);
   const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
-  let ready = !['/', '/index.html'].includes(location.pathname);
+  let ready = !['/', '/index.html'].includes(location.pathname) && !document.body.dataset.publicEvent;
   let db = null, sent = false, excluded = false, eventId = null;
+  const recentActions = new Map();
+  const campaigns = new Set(['facebook-launch','ark-clubs','peisa','atvans','quad-nb','snowmobile-nb','moto-canada','cma','event-share']);
+  let attribution = null;
   try {
     if (new URLSearchParams(location.search).get('traffic') === 'off') localStorage.setItem(excludeKey, '1');
     excluded = localStorage.getItem(excludeKey) === '1';
@@ -35,8 +38,8 @@
   const privacyNotice = node('p', 'We use limited technical information to count site visits, understand traffic and prepare overall audience reports. These traffic reports do not include your name, email address or member account details.');
   privacyNotice.id = 'strokedTrafficPrivacyNotice';
   privacy.append(privacyHeading, privacyNotice);
-  privacy.append(node('p', 'The counter uses a random browser identifier stored on this device for up to one year. Reports contain daily and monthly totals and broad referral sources. Network addresses are briefly processed for rate limits and stored as changing hashes for up to two days. Server browser identifiers are removed within two calendar months. Aggregate history is retained for advertising reports.'));
-  privacy.append(node('p', 'If you have a member account, your account details are stored separately to operate your account.'));
+  privacy.append(node('p', 'The counter uses a random browser identifier stored on this device for up to one year. Reports contain daily and monthly totals, event opens, share-button clicks and broad sources or recognized campaign labels. We do not store full referral URLs or arbitrary campaign text. Network addresses are briefly processed for rate limits and stored as changing hashes for up to two days. Server browser identifiers are removed within two calendar months. Aggregate history is retained for advertising reports.'));
+  privacy.append(node('p', 'If you have a member account, your account details are stored separately to operate your account. Aggregate counts of verified account setups and saved RSVPs help us understand how the site is used; these counts do not identify members.'));
   const privacyLabel = node('label');
   const optOut = node('input');
   optOut.type = 'checkbox';
@@ -79,7 +82,7 @@
       return JSON.parse(localStorage.getItem(browserKey)).id;
     } catch { return null; }
   }
-  function source() {
+  function referrerSource() {
     if (!document.referrer) return 'direct';
     try {
       const host = new URL(document.referrer).hostname.toLowerCase();
@@ -91,13 +94,23 @@
     } catch { return 'direct'; }
     return 'other';
   }
-  async function start() {
-    if (!ready || !live || excluded || privacySignal || navigator.webdriver || sent || document.visibilityState === 'hidden') return;
-    const visitor = visitorId();
-    if (!visitor) return;
-    sent = true;
-    eventId ||= crypto.randomUUID();
-    const body = JSON.stringify({event_id:eventId, visitor_id:visitor, path:location.pathname, source:source()});
+  function campaignSource() {
+    if (attribution) return attribution;
+    const query = new URLSearchParams(location.search), raw = query.get('utm_source');
+    const known = new Set(['facebook','instagram','google','bing','direct']);
+    const name = String(raw || '').toLowerCase();
+    const candidate = String(query.get('utm_campaign') || '').toLowerCase();
+    attribution = {source:raw ? (known.has(name) ? name : 'other') : referrerSource(), campaign:candidate ? (campaigns.has(candidate) ? candidate : 'other') : '', expires:Date.now()+30*60000};
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('stroked-campaign') || 'null');
+      if (!raw && !candidate && ['internal','direct'].includes(attribution.source) && saved?.expires>Date.now() && ['direct','facebook','instagram','google','bing','other','internal'].includes(saved.source) && (campaigns.has(saved.campaign)||['','other'].includes(saved.campaign))) attribution=saved;
+      sessionStorage.setItem('stroked-campaign',JSON.stringify(attribution));
+    } catch { /* Attribution is optional. */ }
+    return attribution;
+  }
+  function eligible() { return ready && live && !excluded && !privacySignal && !navigator.webdriver && document.visibilityState!=='hidden'; }
+  async function transmit(payload) {
+    const body = JSON.stringify(payload);
     const headers = {'Content-Type':'application/json', apikey:config.publishableKey};
     try {
       if (db) {
@@ -105,16 +118,26 @@
         if (data?.session?.access_token) headers.Authorization = 'Bearer ' + data.session.access_token;
       }
       if (excluded) return;
-      const send = () => fetch(config.url + '/functions/v1/stroked-site-traffic', {
-        method:'POST', headers, body, keepalive:true, credentials:'omit'
-      });
-      try {
-        const response = await send();
-        if (response.status < 500) return;
-      } catch { /* Retry the same receipt once after a transient failure. */ }
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const send = () => fetch(config.url + '/functions/v1/stroked-site-traffic', {method:'POST',headers,body,keepalive:true,credentials:'omit'});
+      try { const response=await send();if(response.status<500)return; } catch { /* Retry one receipt. */ }
+      await new Promise(resolve=>setTimeout(resolve,1000));
       if (!excluded) await send();
-    } catch { /* Traffic measurement must never interrupt browsing or accounts. */ }
+    } catch { /* Measurement must never interrupt the site. */ }
+  }
+  async function action(name,target) {
+    if (!eligible() || !['event_open','share_click'].includes(name) || !uuid.test(target)) return;
+    const key=name+':'+target,previous=recentActions.get(key)||0;
+    if (Date.now()-previous<5000) return;
+    const visitor=visitorId();if(!visitor)return;
+    recentActions.set(key,Date.now());
+    const entry=campaignSource();
+    return transmit({kind:'action',action:name,target_id:target,event_id:crypto.randomUUID(),visitor_id:visitor,path:location.pathname,source:entry.source,campaign:entry.campaign});
+  }
+  async function start() {
+    if (!eligible() || sent) return;
+    const visitor=visitorId();if(!visitor)return;
+    sent=true;eventId ||= crypto.randomUUID();
+    return transmit({event_id:eventId,visitor_id:visitor,path:location.pathname,source:campaignSource().source});
   }
 
   function table(target, headings, rows) {
@@ -141,7 +164,7 @@
     db = client;
     const section = document.getElementById('sv58Traffic');
     if (!section) return {start:begin};
-    let administrator = false, generation = 0, report = null;
+    let administrator = false, generation = 0, report = null, engagement = null;
     section.replaceChildren(node('h3', 'Site traffic'));
     section.append(node('p', 'Private audience report. Visitors estimate distinct browsers. A visit starts after 30 minutes of inactivity. Page views include reloads. Known bots, signed-in administrators, excluded browsers and previews are filtered. Privacy tools and storage blocking can reduce coverage.'));
     const controls = node('div');
@@ -180,6 +203,7 @@
     const totals = node('dl');
     totals.className = 'signup-stats';
     const daily = node('div'), monthly = node('div'), referrals = node('div'), annual = node('div');
+    const activity = node('section');activity.id='strokedEngagementReport';
     const historical = node('section');
     historical.hidden = true;
     for (const target of [daily, monthly, referrals, annual]) target.className = 'traffic-table';
@@ -190,13 +214,13 @@
     const memberHelp = node('p', 'Email-confirmed member totals include administrator and test accounts.');
     memberHelp.hidden = true;
     section.append(controls, status, totals, memberHelp, historical, dailyHeading, daily,
-      annualHeading, annual, monthlyHeading, monthly, sourceHeading, referrals);
+      annualHeading, annual, monthlyHeading, monthly, sourceHeading, referrals, activity);
     section.append(node('p', 'All dates use PEI time. New months and years keep their own totals, and all-time visits continue accumulating. The first day and current periods may be partial. Monthly visitors are deduplicated within each month. A person may appear in several monthly audiences. Recording begins on the tracking start date shown above. Earlier activity is available from the request logs shown here.'));
     const labels = {direct:'Direct / unreported', facebook:'Facebook', instagram:'Instagram',
       google:'Google', bing:'Bing', other:'Other websites', internal:'Internal return'};
 
     function clear() {
-      report = null;
+      report = null;engagement=null;activity.replaceChildren();
       download.disabled = true;
       for (const target of [totals, daily, monthly, referrals, annual, historical]) target.replaceChildren();
       historical.hidden = true;
@@ -217,6 +241,26 @@
       if (view.value === 'all') return report.all_time;
       return report.years.find(row => String(row.year) === year.value) || {visits:0, page_views:0};
     }
+    const actionLabels={event_open:'Event opens',share_click:'Share-button clicks',account_setup:'Verified account setups',rsvp_save:'RSVP saves'};
+    function activityRows() {
+      if(!engagement)return [];
+      const prefix=view.value==='month'?month.value:view.value==='year'?year.value:'';
+      return engagement.days.filter(row=>!prefix||row.day.startsWith(prefix));
+    }
+    function renderActivity() {
+      activity.replaceChildren(node('h4','Event activity & conversions'));
+      if(!engagement){activity.append(node('p','Activity report could not load. Refresh traffic to retry.'));return;}
+      activity.append(node('p','Recording since '+new Date(engagement.started_at).toLocaleString('en-CA',{timeZone:'America/Halifax'})+' PEI time. Opens and share-button clicks are actions, not unique people or confirmed social posts. Account setups count first verified account setup; RSVP saves count new or changed responses. Administrator activity is excluded.'));
+      const rows=activityRows(),sum=name=>rows.filter(row=>row.action===name).reduce((total,row)=>total+Number(row.total),0);
+      const totals=node('div');totals.className='traffic-table';table(totals,['Metric','Count'],Object.entries(actionLabels).map(([key,label])=>[label,sum(key)]));activity.append(totals);
+      const events=new Map(),sources=new Map();
+      for(const row of rows){if(row.event_id){let item=events.get(row.event_id);if(!item){item={name:row.event_name,event_open:0,share_click:0,rsvp_save:0};events.set(row.event_id,item);}item[row.action]=(item[row.action]||0)+Number(row.total);}
+        if(['event_open','share_click'].includes(row.action)){const key=row.source+'|'+row.campaign;let item=sources.get(key);if(!item){item={source:row.source,campaign:row.campaign,event_open:0,share_click:0};sources.set(key,item);}item[row.action]+=Number(row.total);}}
+      const eventTable=node('div'),sourceTable=node('div');eventTable.className=sourceTable.className='traffic-table';
+      table(eventTable,['Event','Opens','Share clicks','RSVP saves'],[...events.values()].sort((a,b)=>b.event_open-a.event_open).map(row=>[row.name,row.event_open,row.share_click,row.rsvp_save]));
+      table(sourceTable,['Source','Campaign','Opens','Share clicks'],[...sources.values()].map(row=>[labels[row.source]||row.source,row.campaign||'Unlabelled',row.event_open,row.share_click]));
+      activity.append(node('h4','Event activity for selected period'),eventTable,node('h4','Sources & campaigns for event activity'),sourceTable,node('p','Use recognized campaign links for Facebook launch, ARK clubs, PEISA, ATVANS, Quad NB, Snowmobile NB, Moto Canada or CMA. Browser privacy settings and storage blocking reduce measured coverage.'));
+    }
     function renderReport() {
       label.hidden = view.value !== 'month';
       yearLabel.hidden = view.value !== 'year';
@@ -224,6 +268,7 @@
       annualHeading.hidden = annual.hidden = view.value === 'month';
       memberHelp.hidden = view.value !== 'all';
       if (!report) return;
+      renderActivity();
       totals.replaceChildren();
       const numbers = selectedTotals();
       const period = view.value === 'month' ? 'this month' : view.value === 'year' ? 'in ' + year.value : 'since tracking began';
@@ -268,7 +313,10 @@
       refresh.disabled = true;
       status.textContent = 'Loading traffic report…';
       try {
-        const value = await rpc('admin_audience_stats', {p_month:month.value + '-01'});
+        const [audience,actions] = await Promise.allSettled([rpc('admin_audience_stats',{p_month:month.value+'-01'}),rpc('admin_engagement_stats')]);
+        if(audience.status!=='fulfilled')throw Error('Audience report unavailable');
+        const value=audience.value;
+        engagement=actions.status==='fulfilled'&&actions.value?.started_at&&Array.isArray(actions.value.days)?actions.value:null;
         if (epoch !== generation || !administrator) return;
         if (!value?.summary || !value.all_time || !value.members || !Array.isArray(value.years) || !Array.isArray(value.days) || !Array.isArray(value.months)) throw Error('Invalid report');
         report = value;
@@ -325,7 +373,8 @@
           rows.push([local(row.window_start), local(row.window_end), row.requests, row.browser_network_combinations, row.method]);
         }
       }
-      const csv = rows.map(row => row.map(value => '"' + String(value).replaceAll('"', '""') + '"').join(',')).join('\r\n');
+      if(engagement){rows.push([],['Event activity recording started',engagement.started_at],['PEI date','Action','Event','Source','Campaign','Count']);for(const row of activityRows())rows.push([row.day,actionLabels[row.action]||row.action,row.event_name,labels[row.source]||row.source,row.campaign,row.total]);}
+      const csv = rows.map(row => row.map(value => '"' + String(typeof value==='string'&&/^[=+@-]/.test(value)?"'"+value:value).replaceAll('"', '""') + '"').join(',')).join('\r\n');
       const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'}));
       const link = node('a');
       link.href = url;
@@ -354,8 +403,8 @@
       }
     };
   }
-  window.StrokedTraffic = Object.freeze({mount, start:begin});
-  if (!['/', '/index.html'].includes(location.pathname)) start();
+  window.StrokedTraffic = Object.freeze({mount, start:begin, action});
+  if (ready) start();
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') start();
   });

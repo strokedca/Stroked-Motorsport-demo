@@ -3,6 +3,8 @@ const paths = new Set(['/', '/index.html', '/about.html', '/how-it-works.html',
   '/motorsports.html', '/clothing-apparel.html', '/contact.html']);
 const sources = new Set(['direct', 'facebook', 'instagram', 'google', 'bing', 'other', 'internal']);
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
+const eventPath = /^\/events\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\/?$/i;
+const campaigns = new Set(['','facebook-launch','ark-clubs','peisa','atvans','quad-nb','snowmobile-nb','moto-canada','cma','event-share','other']);
 const bots = /bot|crawl|spider|slurp|facebookexternalhit|headless|preview|lighthouse|pagespeed|curl|wget|python|httpclient|go-http-client|axios|node\.js/i;
 
 async function smallJson(request) {
@@ -38,7 +40,7 @@ export async function networkHash(key, address, date) {
   return Array.from(new Uint8Array(signature), value => value.toString(16).padStart(2, '0')).join('');
 }
 
-export async function handleTraffic(request, {apiKey, rateKey, record, userForToken, now = () => new Date()}) {
+export async function handleTraffic(request, {apiKey, rateKey, record, recordAction, userForToken, now = () => new Date()}) {
   const origin = request.headers.get('origin');
   const headers = {'Cache-Control':'no-store', Vary:'Origin'};
   if (!liveOrigins.has(origin)) return new Response(null, {status:403, headers});
@@ -59,9 +61,11 @@ export async function handleTraffic(request, {apiKey, rateKey, record, userForTo
   let data;
   try {
     data = await smallJson(request);
-    if (!uuid.test(data.event_id) || !uuid.test(data.visitor_id) || !paths.has(data.path) || !sources.has(data.source)) {
+    if (!uuid.test(data.event_id) || !uuid.test(data.visitor_id) || !(paths.has(data.path) || eventPath.test(data.path)) || !sources.has(data.source)) {
       throw Error('Invalid record');
     }
+    if (data.kind !== undefined && data.kind !== 'action') throw Error('Invalid kind');
+    if (data.kind === 'action' && (!['event_open','share_click'].includes(data.action) || !uuid.test(data.target_id) || !campaigns.has(data.campaign))) throw Error('Invalid action');
   } catch {
     return new Response(null, {status:400, headers});
   }
@@ -79,8 +83,12 @@ export async function handleTraffic(request, {apiKey, rateKey, record, userForTo
     }
     const date = new Intl.DateTimeFormat('en-CA', {timeZone:'America/Halifax',
       year:'numeric', month:'2-digit', day:'2-digit'}).format(now());
-    await record({p_event_id:data.event_id, p_visitor_id:data.visitor_id,
-      p_network_hash:await networkHash(rateKey, address, date), p_source:data.source, p_user_id:userId});
+    const values = {p_event_id:data.event_id, p_visitor_id:data.visitor_id,
+      p_network_hash:await networkHash(rateKey, address, date), p_source:data.source, p_user_id:userId};
+    if (data.kind === 'action') {
+      if (!recordAction) throw Error('Action collector unavailable');
+      await recordAction({...values,p_action:data.action,p_target_id:data.target_id,p_campaign:data.campaign});
+    } else await record(values);
     return new Response(null, {status:204, headers});
   } catch {
     return new Response(null, {status:503, headers});

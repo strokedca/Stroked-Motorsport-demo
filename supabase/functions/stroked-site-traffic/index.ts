@@ -11,6 +11,15 @@ function backendKey() {
   catch { return null; }
 }
 
+async function collect(name: string, body: unknown) {
+  const key = backendKey();
+  if (!key) throw Error('Collector unavailable');
+  const headers: Record<string, string> = {'Content-Type':'application/json', apikey:key};
+  if (!key.startsWith('sb_secret_')) headers.Authorization = 'Bearer ' + key;
+  const response = await fetch(url + '/rest/v1/rpc/' + name, {method:'POST',headers,body:JSON.stringify(body)});
+  if (!response.ok) throw Error('Collector unavailable');
+}
+
 Deno.serve((request: Request) => handleTraffic(request, {
   apiKey,
   rateKey:backendKey(),
@@ -21,14 +30,6 @@ Deno.serve((request: Request) => handleTraffic(request, {
     if (!response.ok) return null;
     return (await response.json()).id || null;
   },
-  record:async (body: unknown) => {
-    const key = backendKey();
-    if (!key) throw Error('Collector unavailable');
-    const headers: Record<string, string> = {'Content-Type':'application/json', apikey:key};
-    if (!key.startsWith('sb_secret_')) headers.Authorization = 'Bearer ' + key;
-    const response = await fetch(url + '/rest/v1/rpc/stroked_record_site_visit', {
-      method:'POST', headers, body:JSON.stringify(body)
-    });
-    if (!response.ok) throw Error('Collector unavailable');
-  }
+  record:(body: unknown) => collect('stroked_record_site_visit',body),
+  recordAction:(body: unknown) => collect('stroked_record_event_action',body)
 }));
