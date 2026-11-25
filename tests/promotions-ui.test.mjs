@@ -35,13 +35,16 @@ test('invalid dates and insecure destination links cannot publish',async()=>{
 });
 
 test('linked free upgrades feature the event and add its gallery and sponsor presentation',async()=>{
-  const id='40000000-0000-4000-8000-000000000009',event={id:'live-'+id,name:'Approved ride'};
+  const id='40000000-0000-4000-8000-000000000009',event={id:'live-'+id,name:'Approved ride',date:'2099-06-30',endDate:'2099-07-04'};
   const row={id:'40000000-0000-4000-8000-000000000001',payload:{event_id:id,kind:'Charity event',title:'Charity ride',description:'Community fundraiser',featured:true,enhanced:true,spotlight:true,sponsor_name:'Local shop',sponsor_link:'https://example.test',photos:['production/'+id+'.jpg'],start_date:'2000-01-01',end_date:'',active:true}};
   const s=setup({initialRows:[row],events:[event]}),{win,tools}=s;try{
     const cards=win.document.getElementById('cards');cards.innerHTML='<article class="card" id="ordinary">Ordinary event</article><article class="card" id="featured"><button data-stroked-click="openEvent(\'live-'+id+'\')">Open</button></article>';
     await tools.refreshPublic();assert.equal(cards.firstElementChild.id,'featured');assert.match(cards.firstElementChild.textContent,/Featured Event/);
     tools.decorateEventDetail(event);const detail=win.document.getElementById('detailBody');assert.match(detail.textContent,/Local shop/);assert.equal(detail.querySelectorAll('.sv56-gallery img').length,1);assert.match(detail.querySelector('img').src,/storage\/v1\/object\/public\/stroked-promotion-images\/production\//);
     tools.decorateEventDetail(event);assert.equal(detail.querySelectorAll('.sv56-event-promotion').length,1,'reopening a linked event does not duplicate upgrade content');
+    event.status='Cancelled';tools.renderPublic();assert.equal(win.document.getElementById('sv56PromotionBoard').hidden,true,'cancelled event promotions are hidden');
+    event.status='Scheduled';event.date='2000-01-01';event.endDate='2000-01-02';tools.renderPublic();assert.equal(win.document.getElementById('sv56PromotionBoard').hidden,true,'past promotions are hidden');
+    event.endDate=s.day;tools.renderPublic();assert.equal(win.document.getElementById('sv56PromotionBoard').hidden,false,'ongoing multi-day event stays eligible');
   }finally{win.happyDOM.abort();}
 });
 

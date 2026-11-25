@@ -3,6 +3,11 @@
   const video = document.getElementById('strokedIntroVideo');
   if (!video) return;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const phone = window.matchMedia('(max-width:650px)');
+  const toggle = document.getElementById('strokedIntroToggle');
+  const section = video.closest('.stroked-intro');
+  let expanded = false;
+  section.classList.add('stroked-intro--ready');
   let visible = false;
   let userPaused = false;
   let automaticPause = false;
@@ -15,7 +20,7 @@
     video.pause();
   }
   function resumeAutomatically() {
-    if (!visible || document.hidden || motion.matches || userPaused) return;
+    if (!visible || document.hidden || motion.matches || userPaused || (phone.matches && !expanded)) return;
     const result = video.play();
     result?.catch(() => { /* Native controls remain available if autoplay is blocked. */ });
   }
@@ -24,6 +29,20 @@
     else userPaused = true;
   });
   video.addEventListener('play', () => { userPaused = false; });
+  toggle?.addEventListener('click', () => {
+    expanded = !expanded;
+    section.classList.toggle('stroked-intro--expanded', expanded);
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.textContent = expanded ? 'Close intro video' : 'Watch intro · 30 sec';
+    if (expanded) {
+      userPaused = false;
+      video.play()?.catch(() => {});
+    } else pauseAutomatically();
+  });
+  phone.addEventListener?.('change', () => {
+    if (phone.matches && !expanded) pauseAutomatically();
+    else resumeAutomatically();
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pauseAutomatically();
     else resumeAutomatically();

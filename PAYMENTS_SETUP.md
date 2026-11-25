@@ -8,7 +8,7 @@ The owner approved the duration prices and confirmed on 2026-11-12 that Stroked 
 
 Standard Stripe Payments handles Stroked's own one-time services. There are no subscriptions, automatic renewals, ticket sales, organizer transfers, split payments or Connect accounts in this integration.
 
-The Stripe catalog contains six products and sixteen hosted Payment Links: nine event upgrade durations, six business advertising durations and one customer-chosen site-support amount. All prices are CAD. The approved amounts are in PROMOTION_PRICING.md, the frontend catalog and the private database catalog.
+The Stripe catalog contains six products and sixteen hosted Payment Links: nine event upgrade durations, six business advertising durations and one customer-chosen site-support amount. All prices are CAD. The approved amounts are in the frontend catalog and the private database catalog. Internal pricing notes are kept separately.
 
 The compact Donation button opens the live site-support checkout. This is described as a voluntary tip for Stroked's free event-listing service, used for hosting, email and upkeep. No charitable tax receipt is issued. The suggested amount is CA$10 and the minimum is CA$1; the visitor chooses the final amount. No paid placement or extra access is included.
 
