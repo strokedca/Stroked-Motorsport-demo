@@ -185,13 +185,17 @@
   const pricingTools=window.StrokedPricing?.mount({rpc,config,openAccount,getAccount:()=>account,getMyEvents:()=>myRows,promotions:promotionTools});
   const engagement=window.StrokedEngagement?.mount({db,rpc,config,openAccount,getAccount:()=>account,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId)});
   const announcements=window.StrokedAnnouncements?.mount({rpc,config});
+  const claims=window.StrokedClaims?.mount({rpc,config,getAccount:()=>account,getUser:()=>user,getEvents:()=>state.events,getSelectedEvent:()=>state.events.find(e=>e.id===selectedId),
+    requestOrganizer:event=>{resumeEvent=event.id;const url=new URL(location.href);url.searchParams.set('event',event.id);url.searchParams.set('claim','1');history.replaceState({},'',url.pathname+url.search);openAccount('organizer');message('Sign in to an organizer account to request management of '+event.name+'. If you have a rider account, choose Set up an organizer account.');},
+    refreshAll:async()=>{await Promise.all([refreshAccount(),refreshPublic()]);},
+    openMyEvents:()=>{openAccount('organizer');el('sv58OrganizerTools').open=true;el('sv55Organizer').scrollIntoView({block:'start'});}});
   const security=window.StrokedSecurity?.mount({db,rpc,config,onVerified:refreshAccount,getAccount:()=>account});
   const traffic=window.StrokedTraffic?.mount({db,rpc,config});
   function updateAccountView() {
     security?.setIdentity(user?.id||null);
     const signed=Boolean(user), organizer=Boolean(account?.account_type==='organizer'||account?.is_admin);
     promotionTools?.setAccount(account,signed);engagement?.setAccount(account,signed);announcements?.setAccount(account,signed);
-    pricingTools?.setAccount(account,signed);
+    pricingTools?.setAccount(account,signed);claims?.setAccount(account,user);
     traffic?.setAccount(account);
     join.hidden = signed;
     const adminHelp=el('strokedAdminHelp');
@@ -338,7 +342,7 @@
       account=own;myRows=Array.isArray(rows)?rows:[];updateAccountView();await security?.refresh();if(epoch!==authEpoch)return;
       if(account?.is_admin)await refreshSignupStats(epoch);if(epoch!==authEpoch)return;
       for(const [k,v] of Object.entries(own?.profile||{})){const input=el('sv53ProfileForm').elements.namedItem(k);if(input)input.value=v||'';}
-      renderMine();await engagement?.refresh();await announcements?.refresh();
+      renderMine();await engagement?.refresh();await announcements?.refresh();await claims?.refresh();
       await pricingTools?.refresh();
       if(account?.is_admin){const [queue,requests]=await Promise.all([rpc('admin_events'),rpc('admin_requests')]);if(epoch!==authEpoch)return;renderQueue(queue||[],requests||[]);await promotionTools?.refreshAdmin();await refreshReports(epoch);await refreshMembers(epoch);}
     } catch(e){if(epoch===authEpoch){message('Account details could not load: '+failure(e),true);throw e;}}
@@ -457,14 +461,14 @@
   render=function(){demoRender();promotionTools?.renderPublic();if(!state.events.length&&countsReady){const box=text('div','');box.className='panel';box.append(text('h3','No events listed yet'),text('p','Be the first to share a ride or motorsports event. Basic listings and RSVPs are free.'));const post=text('button','Post an event');post.id='sv55EmptyPost';post.type='button';post.onclick=()=>el('tabAdd').click();box.append(post);el('cards').replaceChildren(box);}el('cards').querySelectorAll('article.card').forEach(c=>{const button=c.querySelector('button[data-stroked-click^="openEvent"]'),id=button?.getAttribute('data-stroked-click')?.match(/openEvent\('([^']+)'\)/)?.[1],event=state.events.find(e=>e.id===id);if(!event?.strokedLive)return;button.textContent='View approved event';const badge=text('small',config.testing?'Approved event · Testing data':'Approved organizer event');badge.className='sv54-flag';c.prepend(badge);});engagement?.decorateCards();const id=initialUrl.searchParams.get('event');if(!deepLinkOpened&&id&&state.events.some(e=>e.id===id)){deepLinkOpened=true;queueMicrotask(()=>openEvent(id));}};
   async function refreshPublic(){
     if(publicPromise)return publicPromise;
-    publicPromise=(async()=>{try{const rows=await rpc('public_events');totals=new Map((rows||[]).map(r=>[r.id,core.totals(r.counts)]));state.events=state.events.filter(e=>!e.strokedLive).concat((rows||[]).filter(r=>core.uuid.test(r.id)).map(r=>normalize({...r.payload,id:'live-'+r.id,strokedLive:true,publicOrganizer:r.organizer||null,rsvps:[],sponsors:r.payload?.sponsors||[],changes:[],upgrades:[]})));countsReady=true;await promotionTools?.refreshPublic();publicStatus.textContent=config.testing?'Testing release: approved events and RSVPs use separate testing data.':'';render();updateLiveStats();}catch(e){countsReady=false;totals=new Map();publicStatus.textContent=config.testing?'Testing release: account and event services are not ready. The sample events below are still available.':'Approved events are temporarily unavailable. Please reload to try again.';render();updateLiveStats();message('Calendar connection: '+failure(e),true);throw e;}finally{publicPromise=null;}})();return publicPromise;
+    publicPromise=(async()=>{try{const rows=await rpc('public_events');totals=new Map((rows||[]).map(r=>[r.id,core.totals(r.counts)]));state.events=state.events.filter(e=>!e.strokedLive).concat((rows||[]).filter(r=>core.uuid.test(r.id)).map(r=>normalize({...r.payload,id:'live-'+r.id,strokedLive:true,claimable:r.claimable===true,organizerManaged:r.organizer_managed===true,publicOrganizer:r.organizer||null,rsvps:[],sponsors:r.payload?.sponsors||[],changes:[],upgrades:[]})));countsReady=true;await promotionTools?.refreshPublic();publicStatus.textContent=config.testing?'Testing release: approved events and RSVPs use separate testing data.':'';render();updateLiveStats();}catch(e){countsReady=false;totals=new Map();publicStatus.textContent=config.testing?'Testing release: account and event services are not ready. The sample events below are still available.':'Approved events are temporarily unavailable. Please reload to try again.';render();updateLiveStats();message('Calendar connection: '+failure(e),true);throw e;}finally{publicPromise=null;}})();return publicPromise;
   }
   const demoOpen=openEvent;
   openEvent=function(id){showGuestChoices(false);demoOpen(id);const e=state.events.find(x=>x.id===id);if(!e)return;++detailEpoch;el('rsvpForm').querySelector('button[type="submit"]').hidden=false;el('rsvpStatus').value='Going';el('rsvpGuests').value='0';el('sv55RemoveRsvp').hidden=true;let status=el('sv55RsvpStatus');if(!status){status=text('p','');status.id='sv55RsvpStatus';status.setAttribute('role','status');status.setAttribute('aria-live','polite');el('rsvpForm').append(status);}status.textContent='';const live=core.eventId(e);if(!live){busy(el('rsvpForm'),false);const mine=e.rsvps.find(r=>r.viewerId==='local-viewer');if(mine){el('rsvpStatus').value=mine.status;el('rsvpGuests').value=mine.guests||0;el('sv55RemoveRsvp').hidden=false;}toggleGuests();status.textContent='Sample event: your RSVP stays in this browser.';return;}
     window.StrokedTraffic?.action('event_open',live);
     const info=text('p','These are Stroked RSVPs, not total event attendance. Check the organizer’s registration requirements.');el('detailBody').append(info);const org=e.publicOrganizer,primaryContact=e.organizerContact||org?.public_email||org?.website||'';if(org){el('detailBody').append(text('h3','About the organizer'),text('p',[org.organization||e.club,org.city,org.region].filter(Boolean).join(' · ')));const url=validUrl(org.website);if(url&&url!==primaryContact){const a=text('a','Organizer website / Facebook');a.href=url;a.target='_blank';a.rel='noopener noreferrer';el('detailBody').append(a);}if(org.public_email&&org.public_email!==primaryContact&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(org.public_email)){const p=text('p',''),a=text('a','Contact organizer');a.href='mailto:'+org.public_email;p.append(a);el('detailBody').append(p);}}
     const share=[...el('eventExtraActions').querySelectorAll('button')].find(b=>b.textContent==='Share');if(share)share.onclick=async()=>{window.StrokedTraffic?.action('share_click',live);const url=new URL(v47EventUrl(e));url.searchParams.set('utm_source','share');url.searchParams.set('utm_campaign','event-share');try{if(navigator.share)await navigator.share({title:e.name,url:url.href});else if(navigator.clipboard){await navigator.clipboard.writeText(url.href);status.textContent='Event link copied.';}else prompt('Copy event link:',url.href);}catch(err){if(err.name!=='AbortError')status.textContent='Unable to share this link.';}};
-    promotionTools?.decorateEventDetail(e);engagement?.decorateDetail(e);engagement?.decorateMedia(el('detailBody'),e);updateLiveStats();loadMyRsvp().catch(err=>{if(selectedId===id)status.textContent=failure(err);});
+    promotionTools?.decorateEventDetail(e);engagement?.decorateDetail(e);claims?.decorateDetail(e);engagement?.decorateMedia(el('detailBody'),e);updateLiveStats();loadMyRsvp().catch(err=>{if(selectedId===id)status.textContent=failure(err);});
   };
   function updateLiveStats(){const e=state.events.find(x=>x.id===selectedId);if(!e?.strokedLive||!el('detailsDialog').open)return;const c=totals.get(core.eventId(e)),stats=el('detailBody').querySelector('.stats');if(stats){stats.replaceChildren();for(const [v,label] of [[c?.attendees,'Going on Stroked'],[c?.interested,'interested']]){const div=text('div','');div.append(text('strong',countsReady&&c?v:'—'),text('small',label));stats.append(div);}}}
   async function loadMyRsvp(){
@@ -557,7 +561,7 @@
     traffic?.start();
     if(el('detailsDialog').open){const current=state.events.find(e=>e.id===selectedId);if(current?.strokedLive)window.StrokedTraffic?.action('event_open',core.eventId(current));}
     if(confirmedDraft&&user){try{await finishSignupRsvp(confirmedDraft);}catch(e){message('Unable to finish your RSVP: '+failure(e),true);}return;}
-    await refreshPublic().catch(()=>{});if(initialUrl.searchParams.get('alerts')==='1'){openAccount('rider');if(el('strokedFollowing'))el('strokedFollowing').open=true;}
+    await refreshPublic().catch(()=>{});if(!recovery)claims?.resumeLink();if(initialUrl.searchParams.get('alerts')==='1'){openAccount('rider');if(el('strokedFollowing'))el('strokedFollowing').open=true;}
   }
   start();
 })();

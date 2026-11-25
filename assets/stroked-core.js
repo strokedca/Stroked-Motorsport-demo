@@ -24,7 +24,7 @@
   function callbackUrl(href, kind = 'confirm') {
     const current = new URL(href), result = new URL(current.pathname, current.origin);
     const event = current.searchParams.get('event');
-    if (event?.startsWith('live-') && uuid.test(event.slice(5))) result.searchParams.set('event',event);
+    if (event?.startsWith('live-') && uuid.test(event.slice(5))) {result.searchParams.set('event',event);if(current.searchParams.get('claim')==='1'&&kind!=='recovery')result.searchParams.set('claim','1');}
     result.searchParams.set('auth', kind === 'recovery' ? 'recovery' : 'confirm');
     return result.href;
   }
