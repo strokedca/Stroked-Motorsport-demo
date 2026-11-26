@@ -1,7 +1,7 @@
 {
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.16",
-    "@supabase/supabase-js": "2.110.1",
+    "@electric-sql/pglite": "^0.5.17",
+    "@supabase/supabase-js": "2.119.2",
     "happy-dom": "^21.0.4"
   },
   "name": "stroked-events-v55-testing",
