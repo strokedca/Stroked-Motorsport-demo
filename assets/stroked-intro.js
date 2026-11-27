@@ -6,7 +6,17 @@
   const phone = window.matchMedia('(max-width:650px)');
   const toggle = document.getElementById('strokedIntroToggle');
   const section = video.closest('.stroked-intro');
+  const eyebrow = section.querySelector('.stroked-intro__eyebrow');
   let expanded = false;
+  let seconds = 30;
+  const watchLabel = () => 'Watch intro · ' + seconds + ' sec';
+  // The labels follow the real length of whichever video file is in assets, so the video can be swapped without editing the page.
+  video.addEventListener('loadedmetadata', () => {
+    if (!Number.isFinite(video.duration) || video.duration < 1) return;
+    seconds = Math.round(video.duration);
+    if (eyebrow) eyebrow.textContent = 'Stroked in ' + seconds + ' seconds';
+    if (toggle && !expanded) toggle.textContent = watchLabel();
+  });
   section.classList.add('stroked-intro--ready');
   let visible = false;
   let userPaused = false;
@@ -33,7 +43,7 @@
     expanded = !expanded;
     section.classList.toggle('stroked-intro--expanded', expanded);
     toggle.setAttribute('aria-expanded', String(expanded));
-    toggle.textContent = expanded ? 'Close intro video' : 'Watch intro · 30 sec';
+    toggle.textContent = expanded ? 'Close intro video' : watchLabel();
     if (expanded) {
       userPaused = false;
       video.play()?.catch(() => {});
