@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {eventResponse, eventIcs} from '../lib/public-events.mjs';
+import {eventResponse, eventIcs, calendarResponse} from '../lib/public-events.mjs';
 const id = '12345678-1234-4234-8234-123456789012';
 const base = {name:'Game Rally, Club VTT', club:'Club', date:'2099-01-16', time:'13:00', city:'Brantville', province:'New Brunswick', startLocation:'Parish Hall; Brantville', details:'Bring a helmet', status:'Scheduled', categories:['ATVs / Off-road']};
 const fetcher = payload => async () => Response.json([{id, payload}]);
@@ -11,7 +11,7 @@ test('event page offers Google and .ics calendar links for upcoming events only'
   assert.match(html, /calendar\.google\.com\/calendar\/render\?action=TEMPLATE/);
   assert.match(html, /dates=20990116T130000%2F20990116T150000/);
   assert.match(html, /ctz=America%2FHalifax/);
-  assert.match(html, new RegExp('href="/events/'+id+'/\\?calendar=ics" download'));
+  assert.match(html, new RegExp('href="/events/'+id+'/calendar\\.ics" download'));
   for (const payload of [{...base, status:'Cancelled'}, {...base, date:'2001-01-01'}]) {
     const other = await (await eventResponse(new Request('https://stroked.ca/events/'+id+'/'), id, fetcher(payload))).text();
     assert.doesNotMatch(other, /Add to calendar/);
@@ -37,4 +37,12 @@ test('calendar=ics returns a valid timed or all-day event', async () => {
   assert.match(nl, /TZID=America\/St_Johns/);
   const late = eventIcs(id, {...base, time:'23:00'});
   assert.match(late, /DTEND;TZID=America\/Halifax:20990117T010000/);
+});
+
+test('calendar.ics path returns the file and rejects other names', async () => {
+  const ok = await calendarResponse(new Request('https://stroked.ca/events/'+id+'/calendar.ics'), id, 'calendar.ics', fetcher(base));
+  assert.equal(ok.status, 200);
+  assert.match(ok.headers.get('content-type'), /^text\/calendar/);
+  assert.match(await ok.text(), /^BEGIN:VCALENDAR/);
+  assert.equal((await calendarResponse(new Request('https://stroked.ca/events/'+id+'/x'), id, 'x', fetcher(base))).status, 404);
 });
